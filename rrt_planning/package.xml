@@ -17,11 +17,15 @@
   <depend>nav_core</depend>
   <depend>geometry_msgs</depend>
   <depend>angles</depend>
-  
+  <depend>dynamicvoronoi</depend>
+  <depend>voronoi_planner</depend>
+
   <export>
   	<nav_core plugin="${prefix}/plugins/rrt_planner_plugin.xml" />
   	<nav_core plugin="${prefix}/plugins/theta_star_planner_plugin.xml" />
   	<nav_core plugin="${prefix}/plugins/theta_star_rrt_planner_plugin.xml" />
+	<nav_core plugin="${prefix}/plugins/voronoi_rrt_planner_plugin.xml" />
+	<nav_core plugin="${prefix}/plugins/rrt_star_planner_plugin.xml" />
   </export>
 
 </package>

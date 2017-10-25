@@ -1,9 +1,19 @@
 cmake_minimum_required(VERSION 2.8.3)
 
-find_package(catkin REQUIRED COMPONENTS pluginlib costmap_2d angles)
+find_package(catkin REQUIRED COMPONENTS
+	 pluginlib
+	 costmap_2d
+	 angles
+	 dynamicvoronoi 
+	 voronoi_planner
+	 )
 project(rrt_planning)
 
-catkin_package()
+generate_dynamic_reconfigure_options(
+  cfg/VoronoiPlanner.cfg
+)
+
+catkin_package(CATKIN_DEPENDS voronoi_planner dynamicvoronoi)
 
 # ----------------------- INCLUDES ----------------------------
 
@@ -13,13 +23,14 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 
 find_package(Eigen3 REQUIRED)
 find_package(Boost 1.53 REQUIRED)
+find_package(voronoi_planner REQUIRED)
+find_package(dynamicvoronoi REQUIRED)
 
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 
 
 # ----------------------- GCC FLAGS ----------------------------
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # ------------------------ MESSAGES ----------------------------

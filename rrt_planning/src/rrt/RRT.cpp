@@ -76,6 +76,61 @@ std::vector<Eigen::VectorXd> RRT::getPathToLastNode()
     return path;
 }
 
+std::vector<Eigen::VectorXd> RRT::getPathToLastNode(RRTNode* last)
+{
+    std::vector<Eigen::VectorXd> path;
+    RRTNode* current = last;
+
+    while(current)
+    {
+        path.push_back(current->x);
+        current = current->father;
+    }
+
+    std::reverse(path.begin(), path.end());
+
+    return path;
+}
+
+std::vector<RRTNode*> RRT::findNeighbors(Eigen::VectorXd& xNew, double ray)
+{
+    std::vector<RRTNode*> neighbors;
+
+    for(auto node : nodes)
+    {
+        if(distance(node->x, xNew) <= ray)
+        {
+            neighbors.push_back(node);
+        }
+    }
+
+    return neighbors;
+}
+
+double RRT::computeCost(RRTNode* node)
+{
+    RRTNode* current = node;
+    double cost = 0;
+    while(current != root)
+    {
+        RRTNode* parent = current->father;
+        cost = cost + distance(current->x, parent->x);
+        current = parent;
+    }
+
+    return cost;
+}
+
+RRTNode* RRT::getPointer()
+{
+    return nodes.back();
+}
+
+int RRT::getLength()
+{
+    return nodes.size();
+}
+
 RRT::~RRT()
 {
     for(auto node : nodes)

@@ -59,6 +59,23 @@ bool MotionPrimitivesExtender::compute(const VectorXd& x0, const VectorXd& xRand
     return minDistance < std::numeric_limits<double>::infinity();
 }
 
+bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)
+{
+    double minDistance = std::numeric_limits<double>::infinity();
+
+    for(auto& mp : motionPrimitives)
+    {
+        VectorXd x = model.applyTransform(x0, mp);
+
+        if(map.isFree(x) && x == xGoal)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void MotionPrimitivesExtender::initialize(ros::NodeHandle& nh)
 {
     nh.param("deltaT", deltaT, 0.5);

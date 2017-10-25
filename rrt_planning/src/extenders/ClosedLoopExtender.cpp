@@ -63,6 +63,36 @@ bool ClosedLoopExtender::compute(const VectorXd& x0, const VectorXd& xRand, Vect
     return valid;
 }
 
+bool ClosedLoopExtender::check(const VectorXd& x0, const VectorXd& xGoal)
+{
+    controller.setGoal(xGoal);
+    VectorXd xNew;
+
+    VectorXd xStart = x0;
+
+    bool valid = false;
+
+    for(unsigned i = 0; i < loopN; i++)
+    {
+        VectorXd x = model.compute(xStart, deltaT);
+
+        if(map.isFree(x))
+        {
+            xNew = x;
+            valid = true;
+            xStart = x;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    if(valid && xNew != xGoal) {valid = false;}
+
+    return valid;
+}
+
 void ClosedLoopExtender::initialize(ros::NodeHandle& nh)
 {
     nh.param("deltaT", deltaT, 0.5);

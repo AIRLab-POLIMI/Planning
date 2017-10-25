@@ -1,29 +1,3 @@
-/*
- * rrt_planning,
- *
- *
- * Copyright (C) 2016 Davide Tateo
- * Versione 1.0
- *
- * This file is part of rrt_planning.
- *
- * rrt_planning is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * rrt_planning is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with rrt_planning.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#ifndef INCLUDE_RRTPLANNER_H_
-#define INCLUDE_RRTPLANNER_H_
-
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
@@ -39,25 +13,27 @@
 namespace rrt_planning
 {
 
-class RRTPlanner : public nav_core::BaseGlobalPlanner
+class RRTStarPlanner : public nav_core::BaseGlobalPlanner
 {
 public:
 
-    RRTPlanner();
-    RRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
+    RRTStarPlanner();
+    RRTStarPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
 
     void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros) override;
     bool makePlan(const geometry_msgs::PoseStamped& start,
                   const geometry_msgs::PoseStamped& goal,
                   std::vector<geometry_msgs::PoseStamped>& plan) override;
 
-    virtual ~RRTPlanner();
+    virtual ~RRTStarPlanner();
 
 private:
     bool newState(const Eigen::VectorXd& xRand,
                   const Eigen::VectorXd& xNear,
                   Eigen::VectorXd& xNew);
                   
+    bool collisionFree(const Eigen::VectorXd& x0, const Eigen::VectorXd& xGoal);
+
     Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
 
     void publishPlan(std::vector<Eigen::VectorXd>& path, std::vector<geometry_msgs::PoseStamped>& plan,
@@ -71,6 +47,8 @@ private:
     int K;
     double deltaX;
     double greedy;
+    double gamma;
+    int dimension;
 
     ExtenderFactory extenderFactory;
 
@@ -79,7 +57,3 @@ private:
 };
 
 }
-
-
-
-#endif /* INCLUDE_RRTPLANNER_H_ */

@@ -1,0 +1,37 @@
+<launch>
+	<!-- arguments -->
+	<arg name="map_file" default="$(find rrt_planning)/maps/map.yaml"/>
+	<arg name="world_file" default="$(find rrt_planning)/maps/map.world"/>
+	<arg name="simulated" default="true" />
+	
+	<!-- parameters -->
+	<param name="use_sim_time" value="true" if="$(arg simulated)"/>
+	
+	<!-- Nodes -->
+	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+	
+	<node name="rviz" pkg="rviz" type="rviz" respawn="true"
+	args="-d $(find rrt_planning)/rviz_config/rviz.rviz" />
+	
+	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+		<!-- default configuration -->
+		<param name="controller_frequency" value="10.0" />
+		<rosparam file="$(find rrt_planning)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+		<rosparam file="$(find rrt_planning)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+		<rosparam file="$(find rrt_planning)/config/local_costmap_params.yaml" command="load" />
+		<rosparam file="$(find rrt_planning)/config/global_costmap_params.yaml" command="load" />
+		<rosparam file="$(find rrt_planning)/config/dwa_local_planner_params.yaml" command="load" />
+		
+		<!-- Voronoi configuration -->
+		<param name="base_global_planner" value="voronoi_planner/VoronoiPlanner"/>
+				
+		<!-- Visualization configuration -->
+		<rosparam file="$(find rrt_planning)/config/visualization.yaml" command="load" ns="VoronoiPlanner"/>
+	</node>
+	
+	<include file="$(find rrt_planning)/launch/include/stage.launch" if="$(arg simulated)">
+		<arg name="world_file" value="$(arg world_file)"/>
+	</include>
+	
+	<include file="$(find rrt_planning)/launch/include/fake_localization.launch" unless="$(arg simulated)"/>
+</launch> 
