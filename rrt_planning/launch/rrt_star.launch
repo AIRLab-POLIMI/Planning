@@ -26,7 +26,7 @@
 		
 		<!-- RRT Star configuration -->
 		<param name="base_global_planner" value="rrt_planning/RRTStarPlanner"/>	
-		<rosparam file="$(find rrt_planning)/config/rrt.yaml" command="load" ns="RRTStarPlanner"/>
+		<rosparam file="$(find rrt_planning)/config/rrt_star.yaml" command="load" ns="RRTStarPlanner"/>
 		<rosparam file="$(find rrt_planning)/config/differentialDrive.yaml" command="load" ns="RRTStarPlanner" if="$(arg differentialDrive)"/>
 		<rosparam file="$(find rrt_planning)/config/bicycle.yaml" command="load" ns="RRTStarPlanner" unless="$(arg differentialDrive)"/>	
 		

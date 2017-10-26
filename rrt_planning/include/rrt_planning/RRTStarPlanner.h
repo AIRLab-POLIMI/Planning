@@ -31,7 +31,7 @@ private:
     bool newState(const Eigen::VectorXd& xRand,
                   const Eigen::VectorXd& xNear,
                   Eigen::VectorXd& xNew);
-                  
+
     bool collisionFree(const Eigen::VectorXd& x0, const Eigen::VectorXd& xGoal);
 
     Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
@@ -49,6 +49,7 @@ private:
     double greedy;
     double gamma;
     int dimension;
+    int knn;
 
     ExtenderFactory extenderFactory;
 

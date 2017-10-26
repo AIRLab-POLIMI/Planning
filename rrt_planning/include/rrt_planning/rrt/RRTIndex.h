@@ -85,6 +85,22 @@ public:
         return result.back().getNode();
     }
 
+    inline std::vector<RRTNode*> getNearestNeighbours(const Eigen::VectorXd& x, int k)
+    {
+        RRTNode tmp(nullptr, x);
+        RRTCoverWrapper tmpWrapped(&dist, &tmp);
+        auto result = CoverTree<RRTCoverWrapper>::kNearestNeighbors(tmpWrapped, k);
+
+        std::vector<RRTNode*> neighbors;
+        for (auto n: result)
+        {
+          neighbors.push_back(n.getNode());
+        }
+
+        return neighbors;
+    }
+
+
 private:
     Distance& dist;
 };

@@ -92,11 +92,12 @@ std::vector<Eigen::VectorXd> RRT::getPathToLastNode(RRTNode* last)
     return path;
 }
 
-std::vector<RRTNode*> RRT::findNeighbors(Eigen::VectorXd& xNew, double ray)
+std::vector<RRTNode*> RRT::findNeighbors(Eigen::VectorXd& xNew, int k, double ray)
 {
+    std::vector<RRTNode*> candidates = index.getNearestNeighbours(xNew, k);
     std::vector<RRTNode*> neighbors;
 
-    for(auto node : nodes)
+    for(auto node : candidates)
     {
         if(distance(node->x, xNew) <= ray)
         {

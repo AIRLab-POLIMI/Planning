@@ -19,7 +19,6 @@ using namespace std;
 //Default Constructor
 namespace rrt_planning
 {
-
 RRTStarPlanner::RRTStarPlanner ()
 {
     K = 0;
@@ -27,6 +26,7 @@ RRTStarPlanner::RRTStarPlanner ()
     greedy = 0;
     gamma = 0;
     dimension = 0;
+    knn = 0;
 
     map = nullptr;
     distance = nullptr;
@@ -51,6 +51,7 @@ void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
     private_nh.param("greedy", greedy, 0.1);
     private_nh.param("gamma", gamma, 1.5);
     private_nh.param("dimension", dimension, 3);
+    private_nh.param("knn", knn, 10);
 
     extenderFactory.initialize(private_nh, *map, *distance);
     visualizer.initialize(private_nh);
@@ -73,8 +74,10 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
     visualizer.clean();
 
-    for(unsigned int i = 0; i < K; i++)
+
+    for(unsigned int i = 0; i < K || (i >= K && !plan_found); i++)
     {
+        ROS_WARN_STREAM("K: " << i);
         VectorXd xRand;
 
         if(RandomGenerator::sampleEvent(greedy))
@@ -85,13 +88,11 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         visualizer.addPoint(xRand);
 
         auto* node = rrt.searchNearestNode(xRand);
-
         VectorXd xNew;
 
         if(newState(xRand, node->x, xNew))
         {
             //rrt.addNode(node, xNew);
-
             std::vector<RRTNode*> neighbors;
             double maxCost, newCost;
             RRTNode* father = node;
@@ -99,8 +100,8 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             double radius = gamma*pow(log(cardinality)/cardinality, 1/dimension);
 
             //Find all samples inside ray
-            neighbors = rrt.findNeighbors(xNew, radius);
-            neighbors.push_back(node->father);
+            neighbors = rrt.findNeighbors(xNew, knn, radius);
+           //neighbors.push_back(node->father);
 
             //Compute cost of getting there
             maxCost = rrt.computeCost(node) + distance(node->x, xNew);
@@ -134,6 +135,7 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                     {
                         n->father = newNode;
                         visualizer.addSegment(xNew, n->x);
+                        ROS_INFO("rewiring");
                     }
                 }
             }
@@ -142,7 +144,7 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             {
                 last = rrt.getPointer();
                 plan_found = true;
-                return true;
+                ROS_INFO("AT LAST");
             }
         }
 
@@ -164,7 +166,7 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
     visualizer.flush();
 
-    ROS_WARN_STREAM("Failed to find a plan in " << K << " RRT iterations");
+    ROS_WARN_STREAM("Failed to find a plan in " << K << " RRT Star iterations");
     return false;
 
 }
@@ -240,4 +242,3 @@ RRTStarPlanner::~RRTStarPlanner()
 
 
 };
-

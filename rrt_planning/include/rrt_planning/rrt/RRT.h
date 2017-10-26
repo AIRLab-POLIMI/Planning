@@ -41,8 +41,8 @@ public:
 
     std::vector<Eigen::VectorXd> getPathToLastNode();
     std::vector<Eigen::VectorXd> getPathToLastNode(RRTNode* last);
-    
-    std::vector<RRTNode*> findNeighbors(Eigen::VectorXd& xNew, double ray);
+
+    std::vector<RRTNode*> findNeighbors(Eigen::VectorXd& xNew, int k, double ray);
     double computeCost(RRTNode* node);
     RRTNode* getPointer();
     int getLength();
