@@ -59,6 +59,59 @@ bool MotionPrimitivesExtender::compute(const VectorXd& x0, const VectorXd& xRand
     return minDistance < std::numeric_limits<double>::infinity();
 }
 
+bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew)
+{
+    double minDistance = std::numeric_limits<double>::infinity();
+    bool reachable = false;
+
+    for(auto& mp : motionPrimitives)
+    {
+        VectorXd x = model.applyTransform(x0, mp);
+
+        /*double currentDist = distance(xRand, x);
+
+        if(!reachable && map.isFree(x))
+        {
+            xNew = x;
+            minDistance = currentDist;
+            reachable = true;
+        }
+        else if(currentDist < minDistance)
+        {
+            if(map.isFree(x))
+            {
+                xNew = x;
+                minDistance = currentDist;
+                reachable = true;
+            }
+            else if(!reachable)
+            {
+                xNew = x;
+                minDistance = currentDist;
+            }
+        }*/
+
+        if(map.isFree(x))
+        {
+            double currentDist = distance(xRand, x);
+
+            if(currentDist < minDistance)
+            {
+                xNew = x;
+                minDistance = currentDist;
+            }
+        }
+
+    }
+
+    /*double x = xNew(0);
+    double y = xNew(1);
+    double z = xNew(2);
+    ROS_WARN_STREAM("New pose is (" << x << ", " << y << ", " << z << ") ");*/
+
+    return minDistance < std::numeric_limits<double>::infinity();
+}
+
 bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)
 {
     double minDistance = std::numeric_limits<double>::infinity();

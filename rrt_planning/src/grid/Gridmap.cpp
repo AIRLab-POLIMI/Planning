@@ -3,11 +3,12 @@
 #include <Eigen/Dense>
 
 using namespace std;
+using namespace Eigen;
 
 namespace rrt_planning
 {
 
-Gridmap::Gridmap((Map& map, double gridResolution): map(map),
+Gridmap::Gridmap(Map& map, double gridResolution): map(map),
       gridResolution(gridResolution)
 {
       Bounds bounds = map.getBounds();
@@ -311,14 +312,7 @@ bool Gridmap::los(const Cell& a, const Cell& b, vector<Cell>& collision, Modes m
        if(curr != prev){
            switch(mode){
            case collision_points:
-               if(collision.size() == 1 && isAdjacent(old, b))
-               {
-                   collision.push_back(b);
-               }
-               else
-               {
-                   collision.push_back(old);
-               }
+               collision.push_back(old);
                if(collision.size() == 2)
                {
                   return false;
@@ -443,7 +437,7 @@ bool Gridmap::isSameDirection(const Cell& a, const Cell& b, const Cell& s)
     return true;
 }
 
-Eigen::VectorXd Grid::toMapPose(int X, int Y)
+VectorXd Gridmap::toMapPose(int X, int Y)
 {
     Bounds bounds = map.getBounds();
 
@@ -460,5 +454,23 @@ double Gridmap::distance(const Cell& a, const Cell& b)
     return sqrt(pow(a.first - b.first, 2) + pow(a.second - b.second, 2));
 }
 
+Cell Gridmap::convertPose(const geometry_msgs::PoseStamped& msg)
+{
+    auto& t_ros = msg.pose.position;
 
+    Bounds bounds = map.getBounds();
+
+    int X_index = floor( (t_ros.x - bounds.minX) / gridResolution );
+    int Y_index = floor( (t_ros.y - bounds.minY) / gridResolution );
+
+    return make_pair(X_index, Y_index);
 }
+
+bool Gridmap::isFree(const Cell& s)
+{
+    Eigen::VectorXd pos = toMapPose(s.first, s.second);
+
+    return map.isFree(pos);
+}
+
+};

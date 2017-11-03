@@ -38,6 +38,8 @@ public:
 
     virtual bool compute(const Eigen::VectorXd& x0, const Eigen::VectorXd& xRand, Eigen::VectorXd& xNew) override;
     virtual bool check(const Eigen::VectorXd& x0, const Eigen::VectorXd& xGoal) override;
+    virtual bool los(const Eigen::VectorXd& x0, const Eigen::VectorXd& xRand, Eigen::VectorXd& xNew) override;
+    
     virtual void initialize(ros::NodeHandle& nh) override;
 
     virtual ~ClosedLoopExtender();

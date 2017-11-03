@@ -93,6 +93,12 @@ bool ClosedLoopExtender::check(const VectorXd& x0, const VectorXd& xGoal)
     return valid;
 }
 
+bool ClosedLoopExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew)
+{
+    return false;
+}
+
+
 void ClosedLoopExtender::initialize(ros::NodeHandle& nh)
 {
     nh.param("deltaT", deltaT, 0.5);

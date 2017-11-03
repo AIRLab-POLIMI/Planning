@@ -13,6 +13,7 @@
 #include "rrt_planning/extenders/ExtenderFactory.h"
 #include "rrt_planning/visualization/Visualizer.h"
 #include "rrt_planning/nh/OpenList.h"
+#include "rrt_planning/grid/Gridmap.h"
 
 
 namespace rrt_planning
@@ -40,16 +41,29 @@ private:
 
     void publishPlan(std::vector<Eigen::VectorXd>& path, std::vector<geometry_msgs::PoseStamped>& plan,
                      const ros::Time& stamp);
+                     
+    void addOpen(Node* node, const Action& action, Distance& distance,
+                 Eigen::VectorXd& xGoal);
+                 
+    void addSubgoal(Node* node, const Action& action, Distance& distance,
+                 Eigen::VectorXd& xGoal);
+    
+    std::vector<Action> findAction(const Node* node, const Action& action, 
+                                   Eigen::VectorXd& xGoal);
+    
+    std::vector<Action> followObstacle(const Cell& node,
+                                        const Action& action);
 
+    std::vector<Eigen::VectorXd> retrievePath(Node* node);
 
 private:
     Map* map;
+    Gridmap* gridmap;
     Distance* distance;
     OpenList open;
-    std::map<Cell, Node*> reached;
+    //std::map<Eigen::VectorXd, Node*> reached;
 
     double deltaX;
-    double laneWidth;
 
     ExtenderFactory extenderFactory;
     Visualizer visualizer;

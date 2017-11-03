@@ -1,37 +1,44 @@
 #ifndef OPENLIST_H
 #define OPENLIST_H
 
-#include "rrt_planning/nh/action.h"
-#include "rrt_planning/nh/node.h"
+#include "rrt_planning/nh/Action.h"
+#include "rrt_planning/nh/Node.h"
 #include <math.h>
 #include <typeinfo>
 
+namespace rrt_planning
+{
+
 typedef std::pair<Node*, Action> Key;
-typedef std::pair<Key, double> Tuple;
+typedef std::pair<rrt_planning::Key, double> Tuple;
 
 struct Cmp
 {
-    bool operator()(Tuple a, Tuple b)
+    bool operator()(rrt_planning::Tuple a, rrt_planning::Tuple b)
     {
-        return ((a.second < b.second) || (a.second == b.second && a.first.first->getCost() < b.first.first->getCost())
+        return ((a.second < b.second)
+                || (a.second == b.second && a.first.first->getCost() < b.first.first->getCost())
                 || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getCell() < b.first.first->getCell())
-                || ((a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getCell() == b.first.first->getCell() && a.first.second.getCell() < b.first.second.getCell())));
+                || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getCell() == b.first.first->getCell()
+                    && a.first.second.getCell() < b.first.second.getCell())
+                || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getCell() == b.first.first->getCell()
+                    && a.first.second.getCell() == b.first.second.getCell() && a.first.first->getState()(2) < b.first.first->getState()(2)));
     }
 };
 
-
+}
 class OpenList
 {
 public:
-    OpenList();
+    OpenList() {}
 
-    void insert(const Key& key, double value)
+    void insert(const rrt_planning::Key& key, double value)
     {
-        Tuple new_pair(key, value);
+        rrt_planning::Tuple new_pair(key, value);
         open.insert(new_pair);
     }
 
-    Key pop()
+    rrt_planning::Key pop()
     {
       auto it = open.begin();
       auto ptr = *it;
@@ -44,10 +51,10 @@ public:
     int size() {return open.size();}
     void clear() {open.clear();}
 
-    ~OpenList();
+    //~OpenList();
 
 private:
-    std::set<Tuple, Cmp> open;
+    std::set<rrt_planning::Tuple, rrt_planning::Cmp> open;
 };
 
 #endif // OPENLIST_H
