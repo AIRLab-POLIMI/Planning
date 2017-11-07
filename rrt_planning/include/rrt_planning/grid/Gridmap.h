@@ -27,6 +27,9 @@ public:
     bool isCorner(const Cell& cell);
     double distance(const Cell& a, const Cell& b);
     Cell followObstacle(const Cell& action, const Cell& subgoal);
+    Cell convertPose(const geometry_msgs::PoseStamped& msg);
+    Cell convertPose(const Eigen::VectorXd& pose);
+    Eigen::VectorXd toMapPose(int X, int Y, double theta);
 
 
 private:
@@ -37,7 +40,6 @@ private:
     bool isInside(const Eigen::Vector3d& point);
     Eigen::Vector3d findLine(const Cell& a, const Cell& b);
     std::vector<Cell> findIntersection(const Eigen::Vector3d& line);
-    Cell convertPose(const geometry_msgs::PoseStamped& msg);
     bool isFree(const Cell& s);
     Eigen::VectorXd toMapPose(int X, int Y);
 
@@ -45,7 +47,7 @@ private:
 private:
 
     Map& map;
-    double gridResolution;	
+    double gridResolution;
     int minY, minX, maxX, maxY;
     std::vector<Eigen::Vector3d> lines;
 

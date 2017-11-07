@@ -62,7 +62,8 @@ bool MotionPrimitivesExtender::compute(const VectorXd& x0, const VectorXd& xRand
 bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew)
 {
     double minDistance = std::numeric_limits<double>::infinity();
-    bool reachable = false;
+    //double threshold = minDistance;
+    //bool reachable = false;
 
     for(auto& mp : motionPrimitives)
     {
@@ -91,25 +92,15 @@ bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xRand, Ve
             }
         }*/
 
-        if(map.isFree(x))
-        {
-            double currentDist = distance(xRand, x);
-
-            if(currentDist < minDistance)
-            {
-                xNew = x;
-                minDistance = currentDist;
-            }
-        }
-
+      double currentDist = distance(xRand, x);
+      if(currentDist < minDistance)
+      {
+          xNew = x;
+          minDistance = currentDist;
+      }
     }
 
-    /*double x = xNew(0);
-    double y = xNew(1);
-    double z = xNew(2);
-    ROS_WARN_STREAM("New pose is (" << x << ", " << y << ", " << z << ") ");*/
-
-    return minDistance < std::numeric_limits<double>::infinity();
+    return ((minDistance < std::numeric_limits<double>::infinity()) && map.isFree(xNew));
 }
 
 bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)

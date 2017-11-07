@@ -63,11 +63,11 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     VectorXd&& xGoal = convertPose(goal_pose);
 
     //Initialization
-    Cell start(x0(0), x0(1));
+    Cell start = gridmap->convertPose(start_pose);
+    Cell goal = gridmap->convertPose(goal_pose);
     Node* start_node = new Node(start, x0, nullptr, 0);
     start_node->setParent(start_node);
 
-    Cell goal(xGoal(0), xGoal(1));
     Action target(goal, xGoal, xGoal, true, true, nullptr);
     shared_ptr<Action> goal_action = make_shared<Action>(target);
     goal_action->setParent(goal_action);
@@ -108,25 +108,19 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             VectorXd xCurr = current->getState();
             VectorXd xNew;
             bool is_valid = true;
-            ROS_INFO("Trying to reach action ");
-            while(is_valid && !(distance(xCurr, action.getState()) < deltaX))
-            {
-                double x = xCurr(0);
-                double y = xCurr(1);
 
-                /*ROS_WARN_STREAM("Trying to reach action from (" << x << ", " << y << ", " << z << ") ");*/
-                is_valid = newState(xCurr, action.getState(), xNew);
-                double z = xNew(0);
-                double w = xNew(1);
-                if(x == z && y == w)
-                    is_valid = false;
-                xCurr = xNew;
-            }
-            ROS_INFO("Checking if action was reached");
+            ROS_INFO("trying to reach");
+            do{
+              is_valid = newState(xCurr, action.getState(), xNew);
+              xCurr = xNew;
+            } while(is_valid && !(distance(xCurr, action.getState()) < deltaX));
+
+
             if(is_valid)
             {
                 double cost = current->getCost() + distance(current->getState(), xCurr);
-                Node* new_node = new Node(Cell(xCurr(0),xCurr(1)), xCurr, current, cost);
+                Cell cell_node = gridmap->convertPose(xCurr);
+                Node* new_node = new Node(cell_node, xCurr, current, cost);
                 addOpen(new_node, target, distance, xGoal);
                 Action parent(action.getParent()->getCell(), action.getParent()->getState(), action.getParent()->getState(), action.getParent()->isClockwise(), true, action.getParent()->getParent());
                 addOpen(new_node, parent, distance, xGoal);
@@ -136,13 +130,13 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         }
         if(improve)
         {
-            ROS_INFO("Improving the action");
             vector<Action> new_actions = findAction(current, action, xGoal);
             for(auto a : new_actions)
             {
                 visualizer.addPoint(a.getState());
+                ROS_WARN_STREAM("added point: " << a.getCell().first << ", " << a.getCell().second );
                 addOpen(current, a, distance, xGoal);
-                if(gridmap->isCorner(a.getCell()))
+                if(gridmap->isCorner(a.getCell()) && a.getState() != xGoal)
                     addSubgoal(current, a, distance, xGoal);
             }
         }
@@ -267,8 +261,8 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Vec
         {
             shared_ptr<Action> p = action.getParent();
             VectorXd sub = action.getSubgoal();
-            theta = atan2(collision[0].first - n.first, collision[0].second - n.second);
-            VectorXd state = Vector3d(collision[0].first, collision[0].second, theta);
+            theta = atan2(collision[0].second - n.second, collision[0].first - n.first);
+            VectorXd state = gridmap->toMapPose(collision[0].first, collision[0].second, theta);
             if(sample)
             {
                 p = make_shared<Action>(action);
@@ -287,8 +281,8 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Vec
         {
             shared_ptr<Action> p = action.getParent();
             VectorXd sub = action.getSubgoal();
-            theta = atan2(collision[0].first - n.first, collision[0].second - n.second);
-            VectorXd state = Vector3d(collision[0].first, collision[0].second, theta);
+            theta = atan2(collision[0].second - n.second, collision[0].first - n.first);
+            VectorXd state = gridmap->toMapPose(collision[0].first, collision[0].second, theta);
             if(sample)
             {
                 p = make_shared<Action>(action);
@@ -333,8 +327,8 @@ vector<Action> NHPlanner::followObstacle(const Cell& node, const Action& action)
             prev = corner;
 
     }
-    double theta = atan2(corner.first - node.first, corner.second - node.second);
-    VectorXd state = Vector3d(corner.first, corner.second, theta);
+    double theta = atan2(corner.second - node.second, corner.first - node.first);
+    VectorXd state = gridmap->toMapPose(corner.first, corner.second, theta);
 
     actions.push_back(Action(corner, state, action.getSubgoal(), action.isClockwise(), false, action.getParent()));
 

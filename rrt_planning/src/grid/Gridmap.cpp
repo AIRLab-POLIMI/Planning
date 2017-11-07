@@ -449,6 +449,20 @@ VectorXd Gridmap::toMapPose(int X, int Y)
     return pos;
 }
 
+VectorXd Gridmap::toMapPose(int X, int Y, double theta)
+{
+  Bounds bounds = map.getBounds();
+
+  Eigen::VectorXd pos(3);
+
+  pos(0) = X * gridResolution + bounds.minX;
+  pos(1) = Y * gridResolution + bounds.minY;
+  pos(2) = theta;
+
+  return pos;
+
+}
+
 double Gridmap::distance(const Cell& a, const Cell& b)
 {
     return sqrt(pow(a.first - b.first, 2) + pow(a.second - b.second, 2));
@@ -466,9 +480,20 @@ Cell Gridmap::convertPose(const geometry_msgs::PoseStamped& msg)
     return make_pair(X_index, Y_index);
 }
 
+Cell Gridmap::convertPose(const VectorXd& pose)
+{
+    Bounds bounds = map.getBounds();
+
+    int X_index = floor( (pose(0) - bounds.minX) / gridResolution );
+    int Y_index = floor( (pose(1) - bounds.minY) / gridResolution );
+
+    return make_pair(X_index, Y_index);
+
+}
+
 bool Gridmap::isFree(const Cell& s)
 {
-    Eigen::VectorXd pos = toMapPose(s.first, s.second);
+    VectorXd pos = toMapPose(s.first, s.second);
 
     return map.isFree(pos);
 }
