@@ -34,6 +34,7 @@ class RandomGenerator
 public:
     static bool sampleEvent(double p);
     static double sampleUniform(double a, double b);
+    static double sampleExponential(double lambda);
 
 private:
     static std::random_device rd;

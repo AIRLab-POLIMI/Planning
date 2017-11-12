@@ -11,23 +11,25 @@ class Action
 {
 public:
     inline Action(){}
-    inline Action(const Cell& cell, const Eigen::VectorXd state, const Eigen::VectorXd& subgoal, bool cw, bool sample, std::shared_ptr<Action> parent):
-               cell(cell), state(state), subgoal(subgoal), cw(cw), sample(sample), parent(parent) {}
+    inline Action(const Cell& cell, const Eigen::VectorXd state, const Cell& subgoal, bool cw, bool sample, bool corner, std::shared_ptr<Action> parent):
+               cell(cell), state(state), subgoal(subgoal), cw(cw), sample(sample), corner(corner), parent(parent) {}
 
     Cell getCell() const {return cell;}
     Eigen::VectorXd getState() const {return state;}
-    Eigen::VectorXd getSubgoal() const {return subgoal;}
+    Cell getSubgoal() const {return subgoal;}
     bool isClockwise() const {return cw;}
     bool isSubgoal() const {return sample;}
+    bool isCorner() const {return corner;}
     std::shared_ptr<Action> getParent() const {return parent;}
     void setParent(std::shared_ptr<Action> p) {parent = p;}
 
 private:
     Cell cell;
     Eigen::VectorXd state;
-    Eigen::VectorXd subgoal;
+    Cell subgoal;
     bool cw;
     bool sample;
+    bool corner;
     std::shared_ptr<Action> parent;
 };
 }

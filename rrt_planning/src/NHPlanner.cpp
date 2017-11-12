@@ -1,5 +1,6 @@
 #include <pluginlib/class_list_macros.h>
 #include <visualization_msgs/Marker.h>
+#include <random>
 
 #include "rrt_planning/NHPlanner.h"
 
@@ -7,6 +8,7 @@
 #include "rrt_planning/map/ROSMap.h"
 #include "rrt_planning/kinematics_models/DifferentialDrive.h"
 #include "rrt_planning/utils/RandomGenerator.h"
+
 
 using namespace Eigen;
 
@@ -46,7 +48,7 @@ void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_r
 
     map = new ROSMap(costmap_ros);
     gridmap = new Gridmap(*map, discretization);
-    distance = new L2ThetaDistance();
+    distance = new L2Distance();
 
     extenderFactory.initialize(private_nh, *map, *distance);
     visualizer.initialize(private_nh);
@@ -67,13 +69,14 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     Cell goal = gridmap->convertPose(goal_pose);
     Node* start_node = new Node(start, x0, nullptr, 0);
     start_node->setParent(start_node);
+    reached[x0] = start_node;
 
-    Action target(goal, xGoal, xGoal, true, true, nullptr);
+    target = Action(goal, xGoal, goal, true, true, false, nullptr);
     shared_ptr<Action> goal_action = make_shared<Action>(target);
     goal_action->setParent(goal_action);
     target = *goal_action;
 
-    addOpen(start_node, target, distance, xGoal);
+    addOpen(start_node, target, distance);
     //reached[x0] = start_node;
 
     ROS_INFO("Pick a god and pray");
@@ -92,6 +95,8 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             ROS_INFO("Retrieving plan");
             auto&& path = retrievePath(current);
             publishPlan(path, plan, start_pose.header.stamp);
+            open.clear();
+            reached.clear();
 
             visualizer.displayPlan(plan);
             visualizer.flush();
@@ -102,42 +107,88 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         }
 
         //Add new subgoal reached to the list
-        if(action.getCell() == goal || gridmap->isCorner(action.getCell()))
+        if(action.getCell() == goal || action.isCorner())
         {
             //Motion primitives
             VectorXd xCurr = current->getState();
             VectorXd xNew;
+            int loop = 0;
             bool is_valid = true;
+            vector<VectorXd> parents;
 
             ROS_INFO("trying to reach");
             do{
               is_valid = newState(xCurr, action.getState(), xNew);
               xCurr = xNew;
-            } while(is_valid && !(distance(xCurr, action.getState()) < deltaX));
+              parents.push_back(xCurr);
+              loop++;
+            } while(is_valid && !(distance(xCurr, action.getState()) < deltaX) && loop < 20);
+
+            if(loop >= 20) is_valid = false;
 
 
             if(is_valid)
             {
-                double cost = current->getCost() + distance(current->getState(), xCurr);
-                Cell cell_node = gridmap->convertPose(xCurr);
-                Node* new_node = new Node(cell_node, xCurr, current, cost);
-                addOpen(new_node, target, distance, xGoal);
-                Action parent(action.getParent()->getCell(), action.getParent()->getState(), action.getParent()->getState(), action.getParent()->isClockwise(), true, action.getParent()->getParent());
-                addOpen(new_node, parent, distance, xGoal);
+                Node* new_node;
+                if(!reached.count(xCurr))
+                {
+                    parents.pop_back();
+                    Node* curr = current;
+                    for(auto p : parents)
+                    {
+                      double c = curr->getCost() + distance(curr->getState(), p);
+                      Cell cell = gridmap->convertPose(p);
+                      Node* ancestor = new Node(cell, p, curr, c);
+                      curr = ancestor;
+                    }
+                    Cell cell_node = gridmap->convertPose(xCurr);
+                    double cost = curr->getCost() + distance(curr->getState(), xCurr);
+                    new_node = new Node(cell_node, xCurr, curr, cost);
+                    reached[xCurr] = new_node;
+                    addOpen(new_node, target, distance);
+                }
+                  else
+                {
+                    new_node = reached.at(xCurr);
+                }
+
+                visualizer.addSegment(current->getState(), new_node->getState());
+                Action parent(action.getParent()->getCell(), action.getParent()->getState(), action.getParent()->getCell(),
+                              action.getParent()->isClockwise(), true, action.getParent()->isCorner(), action.getParent()->getParent());
+                addOpen(new_node, parent, distance);
                 improve = false;
+
+                if(distance(new_node->getState(), xGoal) < deltaX)
+                {
+                    ROS_INFO("Retrieving plan");
+                    auto&& path = retrievePath(new_node);
+                    publishPlan(path, plan, start_pose.header.stamp);
+                    open.clear();
+                    reached.clear();
+
+                    visualizer.displayPlan(plan);
+                    visualizer.flush();
+
+                    ROS_INFO("Plan found");
+
+                    return true;
+                }
             }
 
         }
         if(improve)
         {
-            vector<Action> new_actions = findAction(current, action, xGoal);
+            vector<Action> new_actions = findAction(current, action);
             for(auto a : new_actions)
             {
                 visualizer.addPoint(a.getState());
                 ROS_WARN_STREAM("added point: " << a.getCell().first << ", " << a.getCell().second );
-                addOpen(current, a, distance, xGoal);
-                if(gridmap->isCorner(a.getCell()) && a.getState() != xGoal)
-                    addSubgoal(current, a, distance, xGoal);
+                if(!current->contains(a))
+                {
+                    addOpen(current, a, distance);
+                    if(a.isCorner() && a.getState() != xGoal)
+                      addSubgoal(current, a, distance);
+                }
             }
         }
     }
@@ -200,31 +251,35 @@ void NHPlanner::publishPlan(std::vector<VectorXd>& path,
     }
 }
 
-void NHPlanner::addOpen(Node* node, const Action& action, Distance& distance, VectorXd& xGoal)
+void NHPlanner::addOpen(Node* node, const Action& action, Distance& distance)
 {
-    //if(!node->contains(action))
-    //{
+    if(!node->contains(action))
+    {
         Key key(node, action);
-        double h = distance(node->getState(), action.getState()) + distance(action.getState(), xGoal);
+        double h = distance(node->getState(), action.getState()) + distance(action.getState(), target.getState());
         open.insert(key, h + node->getCost());
-        //node->addClosed(action);
-    //}
+        node->addClosed(action);
+    }
 }
 
-void NHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance, VectorXd& xGoal)
+void NHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
 {
-    Action subgoal(action.getCell(), action.getState(), action.getState(), action.isClockwise(), true, action.getParent());
+    Action subgoal(action.getCell(), action.getState(), action.getCell(), action.isClockwise(), true, action.isCorner(), action.getParent());
     Node* parent = node->getParent();
 
-    while(parent->getCost() != 0)
+    while(!parent->contains(subgoal))
     {
-        addOpen(parent, subgoal, distance, xGoal);
+        if(reached.count(parent->getState()))
+        {
+          addOpen(parent, subgoal, distance);
+          parent->addSubgoal(subgoal.getCell());
+        }
         parent = parent->getParent();
     }
-    addOpen(parent, subgoal, distance, xGoal);
+
 }
 
-vector<Action> NHPlanner::findAction(const Node* node, const Action& action, VectorXd& xGoal)
+vector<Action> NHPlanner::findAction(const Node* node, const Action& action)
 {
     vector<Action> actions;
     Cell n = node->getCell();
@@ -260,17 +315,21 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Vec
         if(is_los)
         {
             shared_ptr<Action> p = action.getParent();
-            VectorXd sub = action.getSubgoal();
+            Cell sub = action.getSubgoal();
             theta = atan2(collision[0].second - n.second, collision[0].first - n.first);
+            bool corner = gridmap->isCorner(collision[0]);
+            //bool corner = false;
             VectorXd state = gridmap->toMapPose(collision[0].first, collision[0].second, theta);
             if(sample)
             {
                 p = make_shared<Action>(action);
-                if(action.getSubgoal() == xGoal && action.getSubgoal() != xGoal){
-                    sub = action.getState();
+                if(action.getSubgoal() == target.getCell() && action.getCell() != target.getCell()){
+                    sub = action.getCell();
                 }
             }
-            actions.push_back(Action(collision[0], state, sub, true, false, p));
+            actions.push_back(Action(collision[0], state, sub, true, false, corner, p));
+            if(corner)
+              sampleCorner(n, actions.back(), actions);
          }
     }
 
@@ -280,21 +339,46 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Vec
         if(is_los)
         {
             shared_ptr<Action> p = action.getParent();
-            VectorXd sub = action.getSubgoal();
+            Cell sub = action.getSubgoal();
             theta = atan2(collision[0].second - n.second, collision[0].first - n.first);
+            bool corner = gridmap->isCorner(collision[0]);
+            //bool corner = false;
             VectorXd state = gridmap->toMapPose(collision[0].first, collision[0].second, theta);
             if(sample)
             {
                 p = make_shared<Action>(action);
-                if(action.getSubgoal() == xGoal && action.getSubgoal() != xGoal){
-                    sub = action.getState();
+                if(action.getSubgoal() == target.getCell() && action.getCell() != target.getCell()){
+                    sub = action.getCell();
                 }
             }
-            actions.push_back(Action(collision[0], state, sub, false, false, p));
+            actions.push_back(Action(collision[0], state, sub, false, false, corner, p));
+            if(corner)
+              sampleCorner(n, actions.back(), actions);
          }
     }
 
     return actions;
+}
+
+void NHPlanner::sampleCorner(const Cell& current, const Action& action, vector<Action> actions)
+{
+    double lambda = 2.0;
+    int samples = 10;
+    Cell a = action.getCell();
+    VectorXd state = action.getState();
+
+    double theta = atan2(a.second - current.second, a.first - current.first);
+    double theta_new = action.isClockwise() ? theta - M_PI/2 : theta + M_PI/2;
+
+
+    for(int i = 0; i < samples; i++)
+    {
+      double sample = RandomGenerator::sampleExponential(lambda);
+      VectorXd new_state = Vector3d(state(0) + sample*cos(theta_new), state(1) + sample*sin(theta_new), state(2));
+      Cell new_corner = gridmap->convertPose(new_state);
+      actions.push_back(Action(new_corner, new_state, action.getSubgoal(), false, action.isClockwise(), true, action.getParent()));
+    }
+
 }
 
 
@@ -329,9 +413,11 @@ vector<Action> NHPlanner::followObstacle(const Cell& node, const Action& action)
     }
     double theta = atan2(corner.second - node.second, corner.first - node.first);
     VectorXd state = gridmap->toMapPose(corner.first, corner.second, theta);
+    bool is_corner = gridmap->isCorner(corner);
 
-    actions.push_back(Action(corner, state, action.getSubgoal(), action.isClockwise(), false, action.getParent()));
-
+    actions.push_back(Action(corner, state, action.getSubgoal(), action.isClockwise(), false, is_corner, action.getParent()));
+    if(is_corner)
+      sampleCorner(node, actions.back(), actions);
     return actions;
 }
 

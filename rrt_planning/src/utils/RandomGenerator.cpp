@@ -43,4 +43,11 @@ double RandomGenerator::sampleUniform(double a, double b)
     return d(gen);
 }
 
+double RandomGenerator::sampleExponential(double lambda)
+{
+  std::exponential_distribution<double> d(lambda);
+
+  return d(gen);  
+}
+
 }

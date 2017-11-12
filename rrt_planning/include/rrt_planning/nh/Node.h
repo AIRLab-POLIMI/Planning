@@ -25,15 +25,13 @@ public:
 
     void addClosed(const Action& action)
     {
-        Eigen::VectorXd sub = action.getSubgoal();
-        CellPair pair(action.getCell(), Cell(sub(0), sub(1)));
+        CellPair pair(action.getCell(), action.getSubgoal());
         closed.insert(pair);
     }
 
     bool contains(const Action& action)
     {
-        Eigen::VectorXd sub = action.getSubgoal();
-        CellPair pair(action.getCell(), Cell(sub(0), sub(1)));
+        CellPair pair(action.getCell(), action.getSubgoal());
         return closed.count(pair);
     }
 

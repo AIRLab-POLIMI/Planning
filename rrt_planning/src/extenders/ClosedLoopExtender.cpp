@@ -95,7 +95,29 @@ bool ClosedLoopExtender::check(const VectorXd& x0, const VectorXd& xGoal)
 
 bool ClosedLoopExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew)
 {
-    return false;
+  controller.setGoal(xRand);
+
+  VectorXd xStart = x0;
+
+  bool valid = true;
+
+  while (valid) {
+      VectorXd x = model.compute(xStart, deltaT);
+
+      if(map.isFree(x))
+      {
+        xNew = x;
+        xStart = x;
+        if(distance(xNew, xRand) < 0.5)
+          break;
+      }
+       else
+      {
+        valid = false;
+      }
+  }
+
+  return valid;
 }
 
 
