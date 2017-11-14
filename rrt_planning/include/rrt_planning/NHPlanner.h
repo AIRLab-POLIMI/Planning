@@ -60,7 +60,7 @@ private:
     std::vector<Action> followObstacle(const Cell& node, const Action& action);
 
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
-    void sampleCorner(const Cell& current, const Action& corner, std::vector<Action> actions);
+    void sampleCorner(const Cell& current, const Action& corner, std::vector<Action>& actions);
 
 private:
     Map* map;

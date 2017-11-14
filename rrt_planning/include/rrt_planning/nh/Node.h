@@ -32,7 +32,7 @@ public:
     bool contains(const Action& action)
     {
         CellPair pair(action.getCell(), action.getSubgoal());
-        return closed.count(pair);
+        return (closed.count(pair) == 1);
     }
 
     Node* setParent(Node* p){parent = p;}
