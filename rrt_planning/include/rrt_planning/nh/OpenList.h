@@ -18,11 +18,9 @@ struct Cmp
     {
         return ((a.second < b.second)
                 || (a.second == b.second && a.first.first->getCost() < b.first.first->getCost())
-                || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getCell() < b.first.first->getCell())
-                || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getCell() == b.first.first->getCell()
-                    && a.first.second.getCell() < b.first.second.getCell())
-                || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getCell() == b.first.first->getCell()
-                    && a.first.second.getCell() == b.first.second.getCell() && a.first.first->getState()(2) < b.first.first->getState()(2)));
+                || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getState() != b.first.first->getState())
+                || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getState() == b.first.first->getState()
+                    && a.first.second.getState() != b.first.second.getState()));
     }
 };
 

@@ -41,6 +41,32 @@ unsigned char DebugMap::getCost(const Eigen::VectorXd& p)
     return 0;
 }
 
+bool DebugMap::los(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions, Modes mode)
+{
+  return true;
+}
+
+bool DebugMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions)
+{
+  return true;
+}
+
+Eigen::VectorXd DebugMap::computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
+{
+  VectorXd dummy;
+  return dummy;
+}
+
+bool DebugMap::clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
+{
+  return false;
+}
+
+bool DebugMap::insideBound(const Eigen::VectorXd& p)
+{
+  return false;
+}
+
 DebugMap::~DebugMap()
 {
 

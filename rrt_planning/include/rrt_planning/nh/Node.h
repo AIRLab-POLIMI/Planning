@@ -8,42 +8,35 @@
 namespace rrt_planning
 {
 
-typedef std::pair<Cell, Cell> CellPair;
+typedef std::pair<Eigen::VectorXd, Eigen::VectorXd> CoorPair;
 
 class Node
 {
 public:
     inline Node();
-    inline Node(const Cell& cell, const Eigen::VectorXd state, Node* parent, double cost):
-        cell(cell), state(state), parent(parent), cost(cost) {}
+    inline Node(const Eigen::VectorXd& state, Node* parent, double cost):
+                state(state), parent(parent), cost(cost) {}
 
-    void addSubgoal(const Cell& subgoal)
+    void addSubgoal(const Eigen::VectorXd& subgoal)
     {
-        CellPair pair(subgoal, subgoal);
+        CoorPair pair(subgoal, subgoal);
         closed.insert(pair);
     }
 
-    void addClosed(const Action& action)
-    {
-        CellPair pair(action.getCell(), action.getSubgoal());
-        closed.insert(pair);
-    }
 
     bool contains(const Action& action)
     {
-        CellPair pair(action.getCell(), action.getSubgoal());
+        CellPair pair(action.getState(), action.getSubgoal());
         return (closed.count(pair) == 1);
     }
 
     Node* setParent(Node* p){parent = p;}
 
-    Cell getCell() const {return cell;}
     Eigen::VectorXd getState() const {return state;}
     Node* getParent() {return parent;}
     double getCost() const {return cost;}
 
 private:
-    Cell cell;
     Eigen::VectorXd state;
     Node* parent;
     double cost;

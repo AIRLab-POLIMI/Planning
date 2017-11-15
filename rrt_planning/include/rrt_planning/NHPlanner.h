@@ -64,7 +64,6 @@ private:
 
 private:
     Map* map;
-    Gridmap* gridmap;
     Distance* distance;
     OpenList open;
     Action target;

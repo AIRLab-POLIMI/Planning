@@ -36,6 +36,11 @@ public:
 
     virtual bool isFree(const Eigen::VectorXd& p) override;
     virtual unsigned char getCost(const Eigen::VectorXd& p) override;
+    virtual bool los(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions, Modes mode) override;
+    virtual bool forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions) override;
+    virtual Eigen::VectorXd computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b) override;
+    virtual bool clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b) override;
+    virtual bool insideBound(const Eigen::VectorXd& p) override;
 
     virtual ~DebugMap();
 

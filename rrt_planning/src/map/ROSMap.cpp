@@ -63,6 +63,160 @@ unsigned char ROSMap::getCost(const Eigen::VectorXd& p)
 
 }
 
+bool ROSMap::collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions)
+{
+  double DX = b(0) - a(0);
+  double DY = b(1) - a(1);
+
+  //FIXME use parameters
+  double step = 0.05;
+
+  int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
+  double dx = DX / k;
+  double dy = DY / k;
+  VectorXd p = a;
+  bool curr, prev;
+  curr = prev = isFree(p);
+
+  for(uint i = 0; i < k, i++)
+  {
+    p(0) += dx;
+    p(1) += dy;
+    curr = isFree(p);
+
+    if(curr != prev)
+    {
+      actions.push_back(p);
+      if(actions.size() == 2)
+        return false;
+    }
+    prev = curr;
+  }
+
+  return true;
+
+}
+
+Eigen::VectorXd ROSMap::exitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw)
+{
+  VectorXd line = current.cross(middle);
+  double c = (-middle(0) * -line(1)) + (-middle(1) * line(0));
+  Vector3d normal(-line(1), line(0), c);
+  normal /= normal(2);
+
+  double DX = normal(1);
+  double DY = -normal(0);
+
+  //FIXME use parameters
+  double step = 0.05;
+
+  int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
+  double dx = DX / k;
+  double dy = DY / k;
+  VectorXd p = middle;
+  bool curr, prev;
+  prev = isFree(p);
+
+  //Check direction
+  p(0) += dx;
+  p(1) += dy;
+  bool dir = clockwise(middle - current, p - current);
+  if(dir != cw)
+  {
+      dx = -dx;
+      dy = -dy;
+      p = middle;
+      p(0) += dx;
+      p(1) += dy;
+  }
+
+  while (insideBound(p))
+  {
+      curr = isFree(p);
+      if(curr != prev)
+      {
+        return p;
+      }
+      prev = curr;
+
+      p(0) += dx;
+      p(1) += dy;
+  }
+
+  return Vector3d(-1, -1, -1);
+}
+
+bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions)
+{
+  double DX = b(0) - a(0);
+  double DY = b(1) - a(1);
+
+  //FIXME use parameters
+  double step = 0.05;
+
+  int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
+  double dx = DX / k;
+  double dy = DY / k;
+  VectorXd p = b;
+  bool curr, prev;
+  curr = prev = isFree(p);
+
+  while (insideBound(p))
+  {
+      curr = isFree(p);
+      p(0) += dx;
+      p(1) += dy;
+
+      if(curr != prev)
+      {
+        actions.push_back(p)
+        if(actions.size() == 2) return false;
+      }
+
+      prev = curr;
+  }
+
+  return true;
+
+}
+
+bool ROSMap::isCorner(const VectorXd& current)
+{
+  double step = 0.3;
+  double x = current(0) + cos(current(2)) * step;
+  double y = current(1) + sin(current(2)) * step;
+
+  return isFree(Vector3d(x, y, current(2)));
+}
+
+Eigen::VectorXd ROSMap::computeMiddle(const VectorXd& a, const VectorXd& b)
+{
+  double dx = fabs(b(0) - a(0));
+  double dy = fabs(b(1) - a(1));
+  VectorXd middle;
+
+  middle(0) = (b(0) > a(0)) ? (a(0) + dx/2) : (b(0) + dx/2);
+  middle(1) = (b(1) > a(1)) ? (a(1) + dy/2) : (b(1) + dy/2);
+  middle(2) = a(2);
+
+  return middle;
+}
+
+bool ROSMap::clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
+{
+  double angle = std::atan2(a(1), a(0)) - std::atan2(b(1), b(0));
+  if(fabs(angle) > M_PI){
+      angle = ( angle > 0 ) ? (angle - 2*M_PI) : (angle + 2*M_PI);
+  }
+  return (angle < 0);
+}
+
+bool ROSMap::insideBound(const VectorXd& p)
+{
+  return ((p(0) >= bounds.minX) && (p(0) < bounds.maxX) &&
+          (p(1) >= bounds.minY) && (p(1) < bounds.maxY));
+}
+
 ROSMap::~ROSMap()
 {
 
