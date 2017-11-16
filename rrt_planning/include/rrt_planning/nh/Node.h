@@ -1,14 +1,26 @@
 #ifndef NODE_H
 #define NODE_H
 
-#include <map>
+#include <cassert>
+#include <set>
 #include <Eigen/Dense>
 #include "rrt_planning/nh/Action.h"
+
+
 
 namespace rrt_planning
 {
 
-typedef std::pair<Eigen::VectorXd, Eigen::VectorXd> CoorPair;
+typedef std::pair<const Eigen::VectorXd, const Eigen::VectorXd> CoorPair;
+
+struct CoorCmp
+{
+    bool operator()(const rrt_planning::CoorPair& a, const rrt_planning::CoorPair& b) const
+    {
+        return ((a.first != b.first) || (a.first == b.first && a.second != b.second));
+    }
+    
+};
 
 class Node
 {
@@ -19,14 +31,13 @@ public:
 
     void addSubgoal(const Eigen::VectorXd& subgoal)
     {
-        CoorPair pair(subgoal, subgoal);
+        rrt_planning::CoorPair pair(subgoal, subgoal);
         closed.insert(pair);
     }
 
-
     bool contains(const Action& action)
     {
-        CellPair pair(action.getState(), action.getSubgoal());
+        rrt_planning::CoorPair pair(action.getState(), action.getSubgoal());
         return (closed.count(pair) == 1);
     }
 
@@ -40,7 +51,7 @@ private:
     Eigen::VectorXd state;
     Node* parent;
     double cost;
-    std::set<CellPair> closed;
+    std::set<rrt_planning::CoorPair, rrt_planning::CoorCmp> closed;
 };
 
 }

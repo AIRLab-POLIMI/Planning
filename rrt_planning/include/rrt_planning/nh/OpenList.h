@@ -22,6 +22,7 @@ struct Cmp
                 || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getState() == b.first.first->getState()
                     && a.first.second.getState() != b.first.second.getState()));
     }
+    
 };
 
 }

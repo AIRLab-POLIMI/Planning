@@ -41,19 +41,25 @@ unsigned char DebugMap::getCost(const Eigen::VectorXd& p)
     return 0;
 }
 
-bool DebugMap::los(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions, Modes mode)
+bool DebugMap::collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions)
 {
-  return true;
+    return true;
 }
 
-bool DebugMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions)
+Eigen::VectorXd DebugMap::exitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw)
+{
+    Eigen::VectorXd dummy = Eigen::Vector2d(-1,-1);
+    return dummy;
+}
+
+bool DebugMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions)
 {
   return true;
 }
 
 Eigen::VectorXd DebugMap::computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
 {
-  VectorXd dummy;
+  Eigen::VectorXd dummy;
   return dummy;
 }
 
@@ -65,6 +71,11 @@ bool DebugMap::clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
 bool DebugMap::insideBound(const Eigen::VectorXd& p)
 {
   return false;
+}
+
+bool DebugMap::isCorner(const Eigen::VectorXd& current)
+{
+    return true;
 }
 
 DebugMap::~DebugMap()

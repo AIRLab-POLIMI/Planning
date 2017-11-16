@@ -25,6 +25,7 @@
 
 #include <costmap_2d/cost_values.h>
 
+
 namespace rrt_planning
 {
 
@@ -63,7 +64,7 @@ unsigned char ROSMap::getCost(const Eigen::VectorXd& p)
 
 }
 
-bool ROSMap::collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions)
+bool ROSMap::collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions)
 {
   double DX = b(0) - a(0);
   double DY = b(1) - a(1);
@@ -74,11 +75,11 @@ bool ROSMap::collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b,
   int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
   double dx = DX / k;
   double dy = DY / k;
-  VectorXd p = a;
+  Eigen::VectorXd p = a;
   bool curr, prev;
   curr = prev = isFree(p);
 
-  for(uint i = 0; i < k, i++)
+  for(uint i = 0; i < k; i++)
   {
     p(0) += dx;
     p(1) += dy;
@@ -99,9 +100,11 @@ bool ROSMap::collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b,
 
 Eigen::VectorXd ROSMap::exitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw)
 {
-  VectorXd line = current.cross(middle);
+  Eigen::Vector3d c_point(current(0), current(1), current(2));
+  Eigen::Vector3d m_point(middle(0), middle(1), middle(2));
+  Eigen::Vector3d line = c_point.cross(m_point);
   double c = (-middle(0) * -line(1)) + (-middle(1) * line(0));
-  Vector3d normal(-line(1), line(0), c);
+  Eigen::Vector3d normal(-line(1), line(0), c);
   normal /= normal(2);
 
   double DX = normal(1);
@@ -113,7 +116,7 @@ Eigen::VectorXd ROSMap::exitPoint(const Eigen::VectorXd& current, const Eigen::V
   int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
   double dx = DX / k;
   double dy = DY / k;
-  VectorXd p = middle;
+  Eigen::VectorXd p = middle;
   bool curr, prev;
   prev = isFree(p);
 
@@ -143,10 +146,10 @@ Eigen::VectorXd ROSMap::exitPoint(const Eigen::VectorXd& current, const Eigen::V
       p(1) += dy;
   }
 
-  return Vector3d(-1, -1, -1);
+  return Eigen::Vector3d(-1, -1, -1);
 }
 
-bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions)
+bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions)
 {
   double DX = b(0) - a(0);
   double DY = b(1) - a(1);
@@ -157,7 +160,7 @@ bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, st
   int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
   double dx = DX / k;
   double dy = DY / k;
-  VectorXd p = b;
+  Eigen::VectorXd p = b;
   bool curr, prev;
   curr = prev = isFree(p);
 
@@ -169,7 +172,7 @@ bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, st
 
       if(curr != prev)
       {
-        actions.push_back(p)
+        actions.push_back(p);
         if(actions.size() == 2) return false;
       }
 
@@ -180,20 +183,20 @@ bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, st
 
 }
 
-bool ROSMap::isCorner(const VectorXd& current)
+bool ROSMap::isCorner(const Eigen::VectorXd& current)
 {
   double step = 0.3;
   double x = current(0) + cos(current(2)) * step;
   double y = current(1) + sin(current(2)) * step;
 
-  return isFree(Vector3d(x, y, current(2)));
+  return isFree(Eigen::Vector3d(x, y, current(2)));
 }
 
-Eigen::VectorXd ROSMap::computeMiddle(const VectorXd& a, const VectorXd& b)
+Eigen::VectorXd ROSMap::computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
 {
   double dx = fabs(b(0) - a(0));
   double dy = fabs(b(1) - a(1));
-  VectorXd middle;
+  Eigen::VectorXd middle;
 
   middle(0) = (b(0) > a(0)) ? (a(0) + dx/2) : (b(0) + dx/2);
   middle(1) = (b(1) > a(1)) ? (a(1) + dy/2) : (b(1) + dy/2);
@@ -211,7 +214,7 @@ bool ROSMap::clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
   return (angle < 0);
 }
 
-bool ROSMap::insideBound(const VectorXd& p)
+bool ROSMap::insideBound(const Eigen::VectorXd& p)
 {
   return ((p(0) >= bounds.minX) && (p(0) < bounds.maxX) &&
           (p(1) >= bounds.minY) && (p(1) < bounds.maxY));

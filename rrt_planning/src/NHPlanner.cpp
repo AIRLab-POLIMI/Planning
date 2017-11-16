@@ -46,7 +46,6 @@ void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_r
     private_nh.param("discretization", discretization, 0.2);
 
     map = new ROSMap(costmap_ros);
-    gridmap = new Gridmap(*map, discretization);
     distance = new L2Distance();
 
     extenderFactory.initialize(private_nh, *map, *distance);
@@ -102,8 +101,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             return true;
         }
 
-        //Add new subgoal reached to the list
-        if(action.getState() == xGoal || action.isCorner())
+        if(action.isCorner() || action.getState() == xGoal)
         {
             //Motion primitives
             VectorXd xCurr = current->getState();
@@ -120,6 +118,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
             if(is_valid)
             {
+                //If I can reach it, see if I already passed it or if it's the Goal
                 Node* new_node;
                 if(!reached.count(xCurr))
                 {
@@ -147,6 +146,8 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 addOpen(new_node, parent, distance);
                 improve = false;
 
+
+                //I check if it's the goal, return path
                 if(distance(new_node->getState(), xGoal) < deltaX)
                 {
                     ROS_INFO("Retrieving plan");
@@ -163,23 +164,25 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                     return true;
                 }
             }
-
         }
+
+        //Couldn't reach the action and it is not valid, improve it
         if(improve)
         {
-            vector<Action> new_actions = findAction(current, action);
+            vector<Action> new_actions = findAction(current, action, distance);
             for(auto a : new_actions)
             {
 
-                if(!current->contains(a))
+                if(!current->contains(action) && fabs(current->getState()(2)) < 2*M_PI)
                 {
                     addOpen(current, a, distance);
                     visualizer.addPoint(a.getState());
                     ROS_WARN_STREAM( "node " << current->getState()(0) << ", " << current->getState()(1) << ", " << current->getState()(2)
-                                    << " added point: " << a.getCell().first << ", " << a.getCell().second
-                                    << " sub: " << a.getSubgoal().first << ", " << a.getSubgoal().second);
-                    if(a.isCorner() && a.getState() != xGoal){
-                      addSubgoal(current, a, distance);
+                                    << " added point: " << a.getState()(0) << ", " << a.getState()(1)
+                                    << " sub: " << a.getSubgoal()(0) << ", " << a.getSubgoal()(1));
+                    if(map->isCorner(a.getState()))
+                    {
+                        addSubgoal(current, a, distance);
                     }
                 }
             }
@@ -246,12 +249,12 @@ void NHPlanner::publishPlan(std::vector<VectorXd>& path,
 
 void NHPlanner::addOpen(Node* node, const Action& action, Distance& distance)
 {
-    if(!node->contains(action) && fabs(node->getState()(2)) < 2*M_PI)
+    if(!node->contains(action))
     {
         Key key(node, action);
         double h = distance(node->getState(), action.getState()) + distance(action.getState(), target.getState());
         open.insert(key, h + node->getCost());
-        node->addClosed(action);
+        //node->addClosed(action);
     }
 }
 
@@ -284,24 +287,25 @@ void NHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
 
 }
 
-vector<Action> NHPlanner::findAction(const Node* node, const Action& action)
+vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Distance& distance)
 {
     vector<Action> actions;
     VectorXd n = node->getState();
     VectorXd a = action.getState();
     vector<VectorXd> collision;
+    VectorXd new_state;
 
     bool is_los = map->collisionPoints(a, n, collision);
 
     if(is_los)
     {
-        is_los = map->forcedUpdate(n, a , actions);
+        is_los = map->forcedUpdate(n, a , collision);
     }
 
     if(is_los || collision.size() < 2) {return actions;}
 
-    double c1 = distance(collision(0), a);
-    double c2 = distance(collision(1), a);
+    double c1 = distance(collision[0], a);
+    double c2 = distance(collision[1], a);
     double step = 0.05;
 
     bool sample = action.isSubgoal();
@@ -312,7 +316,7 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action)
 
     if(action.isClockwise() || sample)
     {
-      is_los = map->exitPoint(n, middle, true);
+      new_state = map->exitPoint(n, middle, true);
       if(is_los)
       {
           shared_ptr<Action> p = action.getParent();
@@ -330,7 +334,7 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action)
 
     if(!action.isClockwise() || sample)
     {
-      is_los = map->exitPoint(n, middle, false);
+      new_state = map->exitPoint(n, middle, false);
       if(is_los)
       {
           shared_ptr<Action> p = action.getParent();
@@ -374,10 +378,10 @@ vector<Action> NHPlanner::followObstacle(const Cell& node, const Action& action)
     /*Cell a = action.getCell();
     Cell corner;
     int dx = a.first - node.first;
-    int dy = a.second - node.second;
+    int dy = a.second - node.second;*/
     std::vector<Action> actions;
 
-    bool no_action = false;
+    /*bool no_action = false;
     Cell prev = a;
 
     while(!no_action)
@@ -404,7 +408,7 @@ vector<Action> NHPlanner::followObstacle(const Cell& node, const Action& action)
 
     actions.push_back(Action(corner, state, action.getSubgoal(), action.isClockwise(), false, is_corner, action.getParent()));
     if(is_corner)
-      sampleCorner(node, actions.back(), actions);*
+      sampleCorner(node, actions.back(), actions);*/
     return actions;
 }
 

@@ -55,12 +55,12 @@ private:
 
     void addSubgoal(Node* node, const Action& action, Distance& distance);
 
-    std::vector<Action> findAction(const Node* node, const Action& action);
+    std::vector<Action> findAction(const Node* node, const Action& action, Distance& distance);
 
     std::vector<Action> followObstacle(const Cell& node, const Action& action);
 
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
-    void sampleCorner(const Cell& current, const Action& corner, std::vector<Action>& actions);
+    void sampleCorner(const Eigen::VectorXd& current, const Action& corner, std::vector<Action>& actions);
 
 private:
     Map* map;

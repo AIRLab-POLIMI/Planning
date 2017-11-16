@@ -30,17 +30,17 @@
 namespace rrt_planning
 {
 
-enum Modes {collision_points, exit_point, is_los};
-
 class Map
 {
 
 public:
     virtual bool isFree(const Eigen::VectorXd& p) = 0;
     virtual unsigned char getCost(const Eigen::VectorXd& p) = 0;
-    virtual bool los(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions, Modes mode) = 0;
-    virtual bool forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Action>& actions) = 0;
+    virtual bool collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions) = 0;
+    virtual Eigen::VectorXd exitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw) = 0;
+    virtual bool forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions) = 0;
     virtual bool insideBound(const Eigen::VectorXd& p) = 0;
+    virtual bool isCorner(const Eigen::VectorXd& current) = 0;
     virtual Eigen::VectorXd computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b) = 0;
     virtual bool clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b) = 0;
     
