@@ -72,6 +72,9 @@ private:
     double deltaX;
 
     ExtenderFactory extenderFactory;
+    int discretization;
+    double ray;
+    double threshold;
     Visualizer visualizer;
 
 };

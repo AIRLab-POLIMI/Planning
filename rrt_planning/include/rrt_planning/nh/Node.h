@@ -17,9 +17,14 @@ struct CoorCmp
 {
     bool operator()(const rrt_planning::CoorPair& a, const rrt_planning::CoorPair& b) const
     {
-        return ((a.first != b.first) || (a.first == b.first && a.second != b.second));
+        return (eigenOrdering(a.first, b.first) || a.first == b.first && eigenOrdering(a.second, b.second));
     }
-    
+
+    bool eigenOrdering(const Eigen::VectorXd& a, const Eigen::VectorXd& b) const
+    {
+      return (a(0) < b(0) || a(0) == b(0) && a(1) < b(1));
+    }
+
 };
 
 class Node
@@ -33,6 +38,12 @@ public:
     {
         rrt_planning::CoorPair pair(subgoal, subgoal);
         closed.insert(pair);
+    }
+
+    void addClosed(const Action& a)
+    {
+      rrt_planning::CoorPair pair(a.getState(), a.getSubgoal());
+      closed.insert(pair);
     }
 
     bool contains(const Action& action)

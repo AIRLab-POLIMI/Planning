@@ -117,8 +117,12 @@ Eigen::VectorXd ROSMap::exitPoint(const Eigen::VectorXd& current, const Eigen::V
   double dx = DX / k;
   double dy = DY / k;
   Eigen::VectorXd p = middle;
+  p(2) = 0;
   bool curr, prev;
-  prev = isFree(p);
+  prev = false;
+
+  if(isFree(p))
+    return p;
 
   //Check direction
   p(0) += dx;
@@ -183,24 +187,46 @@ bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, st
 
 }
 
-bool ROSMap::isCorner(const Eigen::VectorXd& current)
+/*bool ROSMap::isCorner(const Eigen::VectorXd& current)
 {
   double step = 0.3;
   double x = current(0) + cos(current(2)) * step;
   double y = current(1) + sin(current(2)) * step;
 
   return isFree(Eigen::Vector3d(x, y, current(2)));
+}*/
+
+bool ROSMap::isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold)
+{
+    int count = 0;
+    Eigen::VectorXd point = current;
+    double delta = 2*M_PI / discretization;
+    double angle = current(2);
+
+    for(uint i = 0; i < discretization; i++)
+    {
+      angle += delta;
+      point(0) = current(0) + ray*cos(angle);
+      point(1) = current(1) + ray*sin(angle);
+      if(!isFree(point)){
+        count++;
+        if(count > threshold *discretization)
+          return false;
+      }
+
+    }
+
+    return true;
 }
 
 Eigen::VectorXd ROSMap::computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
 {
   double dx = fabs(b(0) - a(0));
   double dy = fabs(b(1) - a(1));
-  Eigen::VectorXd middle;
+  Eigen::VectorXd middle = a;
 
   middle(0) = (b(0) > a(0)) ? (a(0) + dx/2) : (b(0) + dx/2);
   middle(1) = (b(1) > a(1)) ? (a(1) + dy/2) : (b(1) + dy/2);
-  middle(2) = a(2);
 
   return middle;
 }

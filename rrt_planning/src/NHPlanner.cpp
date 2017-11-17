@@ -37,13 +37,13 @@ NHPlanner::NHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 
 void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
-    double discretization;
-
     //Get parameters from ros parameter server
     ros::NodeHandle private_nh("~/" + name);
 
     private_nh.param("deltaX", deltaX, 0.5);
-    private_nh.param("discretization", discretization, 0.2);
+    private_nh.param("ray", ray, 0.5);
+    private_nh.param("threshold", threshold, 0.35);
+    private_nh.param("discretization", discretization, 5);
 
     map = new ROSMap(costmap_ros);
     distance = new L2Distance();
@@ -66,12 +66,13 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     Node* start_node = new Node(x0, nullptr, 0);
     start_node->setParent(start_node);
 
-    target = Action(xGoal, xGoal, true, true, false, nullptr);
+    target = Action(xGoal, xGoal, xGoal, true, true, false, nullptr);
     shared_ptr<Action> goal_action = make_shared<Action>(target);
     goal_action->setParent(goal_action);
     target = *goal_action;
 
     addOpen(start_node, target, distance);
+    start_node->addSubgoal(xGoal);
     reached[x0] = start_node;
 
     ROS_INFO("Pick a god and pray");
@@ -134,6 +135,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                     new_node = new Node(xCurr, curr, cost);
                     reached[xCurr] = new_node;
                     addOpen(new_node, target, distance);
+                    new_node->addSubgoal(xGoal);
                 }
                   else
                 {
@@ -141,7 +143,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 }
 
                 visualizer.addSegment(current->getState(), new_node->getState());
-                Action parent(action.getParent()->getState(), action.getParent()->getState(),
+                Action parent(action.getParent()->getState(), action.getParent()->getState(), action.getParent()->getState(),
                               action.getParent()->isClockwise(), true, action.getParent()->isCorner(), action.getParent()->getParent());
                 addOpen(new_node, parent, distance);
                 improve = false;
@@ -173,15 +175,17 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             for(auto a : new_actions)
             {
 
-                if(!current->contains(action) && fabs(current->getState()(2)) < 2*M_PI)
+                if(fabs(current->getState()(2)) < 2*M_PI)
                 {
                     addOpen(current, a, distance);
                     visualizer.addPoint(a.getState());
+                    bool stop = true;
                     ROS_WARN_STREAM( "node " << current->getState()(0) << ", " << current->getState()(1) << ", " << current->getState()(2)
                                     << " added point: " << a.getState()(0) << ", " << a.getState()(1)
                                     << " sub: " << a.getSubgoal()(0) << ", " << a.getSubgoal()(1));
-                    if(map->isCorner(a.getState()))
+                    if(a.isCorner())
                     {
+                        ROS_INFO("Passed subgoal");
                         addSubgoal(current, a, distance);
                     }
                 }
@@ -254,33 +258,22 @@ void NHPlanner::addOpen(Node* node, const Action& action, Distance& distance)
         Key key(node, action);
         double h = distance(node->getState(), action.getState()) + distance(action.getState(), target.getState());
         open.insert(key, h + node->getCost());
-        //node->addClosed(action);
+        node->addClosed(action);
     }
 }
 
 void NHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
 {
 
-    Action subgoal(action.getState(), action.getState(), action.isClockwise(), true, action.isCorner(), action.getParent());
+    Action subgoal(action.getState(), action.getState(), action.getState(), action.isClockwise(), true, action.isCorner(), action.getParent());
     Node* parent = node->getParent();
 
     while(!parent->contains(subgoal))
     {
         if(reached.count(parent->getState()))
         {
-          /*bool is_valid = true;
-          VectorXd xCurr = parent->getState();
-          VectorXd xNew;
-          do{
-            is_valid = newState(xCurr, subgoal.getState(), xNew);
-            xCurr = xNew;
-
-          } while(is_valid && !(distance(xCurr, action.getState()) < deltaX));
-
-          if(is_valid)*/
           addOpen(parent, subgoal, distance);
-
-          //parent->addSubgoal(subgoal.getCell());
+          parent->addSubgoal(subgoal.getState());
         }
         parent = parent->getParent();
     }
@@ -293,34 +286,46 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
     VectorXd n = node->getState();
     VectorXd a = action.getState();
     vector<VectorXd> collision;
+    VectorXd old = a;
     VectorXd new_state;
+    Vector3d NULL_VEC(-1, -1, -1);
+    double step = 0.3;
 
     bool is_los = map->collisionPoints(a, n, collision);
 
     if(is_los)
     {
-        is_los = map->forcedUpdate(n, a , collision);
+        /*is_los = map->forcedUpdate(n, a, collision);
+        double d = (collision.empty())? step : distance(collision[0], a);
+        if(d >= step)
+        {*/
+          is_los = map->collisionPoints(a, action.getOld(), collision);
+          old = action.getOld();
+        //}
+
     }
 
     if(is_los || collision.size() < 2) {return actions;}
 
     double c1 = distance(collision[0], a);
     double c2 = distance(collision[1], a);
-    double step = 0.05;
+
 
     bool sample = action.isSubgoal();
     if( c1 > step && c2 > step) {sample = true;}
     if(!is_los) {swap(collision[0], collision[1]);}
 
     VectorXd middle = map->computeMiddle(collision[0], collision[1]);
+    //if(map->isFree(middle)){ ROS_INFO("middle is free"); visualizer.addPoint(collision[0]); visualizer.addPoint(collision[1]); }
 
     if(action.isClockwise() || sample)
     {
       new_state = map->exitPoint(n, middle, true);
-      if(is_los)
+      if(new_state != NULL_VEC)
       {
           shared_ptr<Action> p = action.getParent();
           VectorXd sub = action.getSubgoal();
+          bool corner = map->isCorner(new_state, discretization, ray, threshold);
           if(sample)
           {
               p = make_shared<Action>(action);
@@ -328,17 +333,20 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
                   sub = action.getState();
               }
           }
-          actions.push_back(Action(collision[0], sub, true, false, false, p));
+          actions.push_back(Action(new_state, sub, old, true, false, corner, p));
+          if(corner)
+            sampleCorner(n, actions.back(), actions);
        }
     }
 
     if(!action.isClockwise() || sample)
     {
       new_state = map->exitPoint(n, middle, false);
-      if(is_los)
+      if(new_state != NULL_VEC)
       {
           shared_ptr<Action> p = action.getParent();
           VectorXd sub = action.getSubgoal();
+          bool corner = map->isCorner(new_state, discretization, ray, threshold);
           if(sample)
           {
               p = make_shared<Action>(action);
@@ -346,7 +354,9 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
                   sub = action.getState();
               }
           }
-          actions.push_back(Action(collision[0], sub, false, false, false, p));
+          actions.push_back(Action(new_state, sub, old, false, false, corner, p));
+          if(corner)
+            sampleCorner(n, actions.back(), actions);
        }
     }
 
@@ -355,7 +365,8 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
 
 void NHPlanner::sampleCorner(const VectorXd& current, const Action& action, vector<Action>& actions)
 {
-    double lambda = 2.0;
+    return;
+    double lambda = 1/deltaX;
     int samples = 1;
     VectorXd a = action.getState();
     VectorXd vec = a - current;
@@ -368,7 +379,7 @@ void NHPlanner::sampleCorner(const VectorXd& current, const Action& action, vect
     {
       double sample = RandomGenerator::sampleExponential(lambda);
       VectorXd new_state = Vector3d(a(0) + sample*cos(theta_new), a(1) + sample*sin(theta_new), a(2));
-      actions.push_back(Action(new_state, action.getSubgoal(), false, action.isClockwise(), false, action.getParent()));
+      actions.push_back(Action(new_state, action.getSubgoal(), a, false, action.isClockwise(), true, action.getParent()));
     }
 }
 

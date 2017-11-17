@@ -42,7 +42,7 @@ public:
     virtual Eigen::VectorXd computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b) override;
     virtual bool clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b) override;
     virtual bool insideBound(const Eigen::VectorXd& p) override;
-    virtual bool isCorner(const Eigen::VectorXd& current) override;
+    virtual bool isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold) override;
 
     virtual ~DebugMap();
 
