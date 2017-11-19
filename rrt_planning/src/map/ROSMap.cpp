@@ -66,6 +66,7 @@ unsigned char ROSMap::getCost(const Eigen::VectorXd& p)
 
 bool ROSMap::collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions)
 {
+  actions.clear();
   double DX = b(0) - a(0);
   double DY = b(1) - a(1);
 
@@ -100,8 +101,8 @@ bool ROSMap::collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b,
 
 Eigen::VectorXd ROSMap::exitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw)
 {
-  Eigen::Vector3d c_point(current(0), current(1), current(2));
-  Eigen::Vector3d m_point(middle(0), middle(1), middle(2));
+  Eigen::Vector3d c_point(current(0), current(1), 1);
+  Eigen::Vector3d m_point(middle(0), middle(1), 1);
   Eigen::Vector3d line = c_point.cross(m_point);
   double c = (-middle(0) * -line(1)) + (-middle(1) * line(0));
   Eigen::Vector3d normal(-line(1), line(0), c);
@@ -137,7 +138,11 @@ Eigen::VectorXd ROSMap::exitPoint(const Eigen::VectorXd& current, const Eigen::V
       p(1) += dy;
   }
 
-  while (insideBound(p))
+  if(!insideBound(p)){
+    ROS_INFO("middle outside bounds");
+  }
+
+  while(insideBound(p))
   {
       curr = isFree(p);
       if(curr != prev)
@@ -168,7 +173,7 @@ bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, st
   bool curr, prev;
   curr = prev = isFree(p);
 
-  while (insideBound(p))
+  while(insideBound(p))
   {
       curr = isFree(p);
       p(0) += dx;
@@ -242,8 +247,13 @@ bool ROSMap::clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
 
 bool ROSMap::insideBound(const Eigen::VectorXd& p)
 {
-  return ((p(0) >= bounds.minX) && (p(0) < bounds.maxX) &&
-          (p(1) >= bounds.minY) && (p(1) < bounds.maxY));
+  double wx = p(0);
+  double wy = p(1);
+
+  unsigned int mx;
+  unsigned int my;
+
+  return costmap->worldToMap(wx, wy, mx, my);
 }
 
 ROSMap::~ROSMap()

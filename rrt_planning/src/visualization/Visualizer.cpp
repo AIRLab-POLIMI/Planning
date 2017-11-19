@@ -66,6 +66,21 @@ void Visualizer::addSegment(const Eigen::VectorXd& start, const Eigen::VectorXd&
 
 }
 
+void Visualizer::addUpdate(const Eigen::VectorXd& start, const Eigen::VectorXd& end)
+{
+    if(disableVisualization)
+        return;
+
+    updates.push_back(std::make_pair(start, end));
+
+
+    if(updates.size() >= minSegments)
+    {
+        displayUpdates();
+    }
+
+}
+
 void Visualizer::displayPlan(const std::vector<geometry_msgs::PoseStamped>& plan)
 {
     if(disableVisualization)
@@ -200,10 +215,59 @@ void Visualizer::displaySegments()
     segments.clear();
 }
 
+void Visualizer::displayUpdates()
+{
+    static int id = 0;
+
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = ros::Time();
+    marker.ns = "updates";
+    marker.id = id++;
+    marker.type = visualization_msgs::Marker::LINE_LIST;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.05;
+    marker.scale.y = 0;
+    marker.scale.z = 0;
+    marker.color.a = 1.0;
+    marker.color.r = 0.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+
+    for(auto& segment : updates)
+    {
+        geometry_msgs::Point p1;
+        geometry_msgs::Point p2;
+
+        p1.x = segment.first(0);
+        p1.y = segment.first(1);
+        p1.z = segment.first(2);
+
+        p2.x = segment.second(0);
+        p2.y = segment.second(1);
+        p2.z = segment.second(2);
+
+        marker.points.push_back(p1);
+        marker.points.push_back(p2);
+    }
+
+    pub.publish(marker);
+
+    updates.clear();
+}
+
 void Visualizer::flush()
 {
     displayPoints();
     displaySegments();
+    displayUpdates();
 }
 
 void Visualizer::clean()
@@ -224,6 +288,9 @@ void Visualizer::clean()
 
     //Delete plan
     marker.ns = "plan";
+    pub.publish(marker);
+
+    marker.ns = "updates";
     pub.publish(marker);
 }
 

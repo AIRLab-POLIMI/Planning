@@ -41,10 +41,12 @@ public:
 
     void addPoint(const Eigen::VectorXd& point);
     void addSegment(const Eigen::VectorXd& start, const Eigen::VectorXd& end);
+    void addUpdate(const Eigen::VectorXd& start, const Eigen::VectorXd& end);
     void displayPlan(const std::vector<geometry_msgs::PoseStamped>& plan);
 
     void displayPoints();
     void displaySegments();
+    void displayUpdates();
 
     void flush();
 
@@ -55,6 +57,7 @@ private:
 
     std::vector<Eigen::VectorXd> points;
     std::vector<Segment> segments;
+    std::vector<Segment> updates;
 
     int minPoints;
     int minSegments;

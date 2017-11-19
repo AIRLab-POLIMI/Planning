@@ -196,6 +196,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     visualizer.flush();
 
     ROS_WARN_STREAM("Picked the wrong God. Try Dio Brando next time.");
+    //exit(0);
     return false;
 
 }
@@ -284,43 +285,43 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
 {
     vector<Action> actions;
     VectorXd n = node->getState();
+    VectorXd curr = n;
     VectorXd a = action.getState();
     vector<VectorXd> collision;
     VectorXd old = a;
     VectorXd new_state;
     Vector3d NULL_VEC(-1, -1, -1);
     double step = 0.3;
+    bool update = false;
 
     bool is_los = map->collisionPoints(a, n, collision);
 
     if(is_los)
     {
-        /*is_los = map->forcedUpdate(n, a, collision);
-        double d = (collision.empty())? step : distance(collision[0], a);
-        if(d >= step)
-        {*/
-          is_los = map->collisionPoints(a, action.getOld(), collision);
-          old = action.getOld();
-        //}
-
+        is_los = map->collisionPoints(a, target.getState(), collision);
+        old = action.getOld();
+        curr = a;
+        update = true;
     }
 
     if(is_los || collision.size() < 2) {return actions;}
 
     double c1 = distance(collision[0], a);
     double c2 = distance(collision[1], a);
-
-
     bool sample = action.isSubgoal();
     if( c1 > step && c2 > step) {sample = true;}
     if(!is_los) {swap(collision[0], collision[1]);}
 
     VectorXd middle = map->computeMiddle(collision[0], collision[1]);
-    //if(map->isFree(middle)){ ROS_INFO("middle is free"); visualizer.addPoint(collision[0]); visualizer.addPoint(collision[1]); }
 
     if(action.isClockwise() || sample)
     {
-      new_state = map->exitPoint(n, middle, true);
+      new_state = map->exitPoint(curr, middle, true);
+      if(update)
+      {
+        //visualizer.addUpdate(new_state, a);
+      }
+
       if(new_state != NULL_VEC)
       {
           shared_ptr<Action> p = action.getParent();
@@ -341,7 +342,11 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
 
     if(!action.isClockwise() || sample)
     {
-      new_state = map->exitPoint(n, middle, false);
+      new_state = map->exitPoint(curr, middle, false);
+      if(update)
+      {
+        //visualizer.addUpdate(new_state, a);
+      }
       if(new_state != NULL_VEC)
       {
           shared_ptr<Action> p = action.getParent();
