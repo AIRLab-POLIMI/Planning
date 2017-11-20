@@ -43,6 +43,7 @@ public:
     virtual bool isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold, std::vector<Eigen::VectorXd>& points) = 0;
     virtual Eigen::VectorXd computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b) = 0;
     virtual bool clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b) = 0;
+    virtual bool isTrueCornerWOW(const Eigen::VectorXd& current) = 0;
 
 
     inline Bounds getBounds()

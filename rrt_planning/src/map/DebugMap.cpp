@@ -78,6 +78,10 @@ bool DebugMap::isCorner(const Eigen::VectorXd& current, int discretization, doub
     return true;
 }
 
+bool DebugMap::isTrueCornerWOW(const Eigen::VectorXd& current){
+return true;
+  }
+
 DebugMap::~DebugMap()
 {
 

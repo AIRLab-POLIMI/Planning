@@ -192,14 +192,14 @@ bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, st
 
 }
 
-/*bool ROSMap::isCorner(const Eigen::VectorXd& current)
+bool ROSMap::isTrueCornerWOW(const Eigen::VectorXd& current)
 {
   double step = 0.3;
   double x = current(0) + cos(current(2)) * step;
   double y = current(1) + sin(current(2)) * step;
 
   return isFree(Eigen::Vector3d(x, y, current(2)));
-}*/
+}
 
 bool ROSMap::isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold, std::vector<Eigen::VectorXd>& points)
 {

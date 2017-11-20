@@ -77,8 +77,9 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     reached[x0] = start_node;
 
     CornerIndex index(distance);
+    index.insert(xGoal);
 
-    ROS_INFO("Pick a god and pray");
+    ROS_FATAL("Start Search: pick a god and pray");
 
     //Start search
     while(!open.empty())
@@ -91,7 +92,6 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         //Check if the goal is reached
         if(distance(current->getState(), xGoal) < deltaX)
         {
-            ROS_INFO("Retrieving plan");
             auto&& path = retrievePath(current);
             publishPlan(path, plan, start_pose.header.stamp);
             open.clear();
@@ -100,7 +100,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             visualizer.displayPlan(plan);
             visualizer.flush();
 
-            ROS_INFO("Plan found");
+            ROS_FATAL("Plan found: simple geometry");
 
             return true;
         }
@@ -109,16 +109,32 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         {
             //Motion primitives
             VectorXd xCurr = current->getState();
-            VectorXd xNew;
+            VectorXd xNew, xCorner;
             bool is_valid = true;
             vector<VectorXd> parents;
 
-            ROS_INFO("trying to reach");
+
+            ROS_FATAL("trying to reach");
             do{
               is_valid = newState(xCurr, action.getState(), xNew);
               xCurr = xNew;
               parents.push_back(xCurr);
             } while(is_valid && !(distance(xCurr, action.getState()) < deltaX));
+
+            if(!is_valid || !map->isTrueCornerWOW(xCurr)){
+              ROS_FATAL("trying to reach sample");
+              vector<Action> actions;
+              sampleCorner(xCurr, action, actions);
+              xCorner = actions[0].getState();
+              visualizer.addCorner(xCorner);
+              xCurr = current->getState();
+              parents.clear();
+              do {
+                is_valid = newState(xCurr, xCorner, xNew);
+                xCurr = xNew;
+                parents.push_back(xCurr);
+              } while(is_valid && !(distance(xCurr, xCorner) < deltaX));
+            }
 
             if(is_valid)
             {
@@ -150,24 +166,6 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                               action.getParent()->isClockwise(), true, action.getParent()->isCorner(), action.getParent()->getParent());
                 addOpen(new_node, parent, distance);
                 improve = false;
-
-
-                //I check if it's the goal, return path
-                if(distance(new_node->getState(), xGoal) < deltaX)
-                {
-                    ROS_INFO("Retrieving plan");
-                    auto&& path = retrievePath(new_node);
-                    publishPlan(path, plan, start_pose.header.stamp);
-                    open.clear();
-                    reached.clear();
-
-                    visualizer.displayPlan(plan);
-                    visualizer.flush();
-
-                    ROS_INFO("Plan found");
-
-                    return true;
-                }
             }
         }
 
@@ -197,9 +195,9 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                         visualizer.addPoint(a.getState());
 
                     addOpen(current, a, distance);
-                    /*ROS_WARN_STREAM( "node " << current->getState()(0) << ", " << current->getState()(1) << ", " << current->getState()(2)
+                    ROS_WARN_STREAM( "node " << current->getState()(0) << ", " << current->getState()(1) << ", " << current->getState()(2)
                                     << " added point: " << a.getState()(0) << ", " << a.getState()(1)
-                                    << " sub: " << a.getSubgoal()(0) << ", " << a.getSubgoal()(1));*/
+                                    << " sub: " << a.getSubgoal()(0) << ", " << a.getSubgoal()(1));
                 }
             }
         }
@@ -207,7 +205,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
     visualizer.flush();
 
-    ROS_INFO("Omae wa mou shindeiru");
+    ROS_FATAL("Failed to find plan: omae wa mou shindeiru");
     //exit(0);
     return false;
 
@@ -330,11 +328,6 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
     if(action.isClockwise() || sample)
     {
       new_state = map->exitPoint(curr, middle, true);
-      if(update)
-      {
-        //visualizer.addUpdate(new_state, a);
-      }
-
       if(new_state != NULL_VEC)
       {
           shared_ptr<Action> p = action.getParent();
@@ -350,7 +343,6 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
           actions.push_back(Action(new_state, sub, old, true, false, corner, p));
           if(corner)
           {
-            sampleCorner(n, actions.back(), actions);
             for(auto p : points)
                 visualizer.addPoint(p);
           }
@@ -360,10 +352,6 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
     if(!action.isClockwise() || sample)
     {
       new_state = map->exitPoint(curr, middle, false);
-      if(update)
-      {
-        //visualizer.addUpdate(new_state, a);
-      }
       if(new_state != NULL_VEC)
       {
           shared_ptr<Action> p = action.getParent();
@@ -379,7 +367,6 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
           actions.push_back(Action(new_state, sub, old, false, false, corner, p));
           if(corner)
           {
-            sampleCorner(n, actions.back(), actions);
             for(auto p : points)
                 visualizer.addPoint(p);
           }
@@ -391,8 +378,7 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
 
 void NHPlanner::sampleCorner(const VectorXd& current, const Action& action, vector<Action>& actions)
 {
-    return;
-    double lambda = 1/deltaX;
+    double lambda = 1/0.25;
     int samples = 1;
     VectorXd a = action.getState();
     VectorXd vec = a - current;
