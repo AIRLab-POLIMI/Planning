@@ -201,8 +201,9 @@ bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, st
   return isFree(Eigen::Vector3d(x, y, current(2)));
 }*/
 
-bool ROSMap::isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold)
+bool ROSMap::isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold, std::vector<Eigen::VectorXd>& points)
 {
+    points.clear();
     int count = 0;
     Eigen::VectorXd point = current;
     double delta = 2*M_PI / discretization;
@@ -213,9 +214,10 @@ bool ROSMap::isCorner(const Eigen::VectorXd& current, int discretization, double
       angle += delta;
       point(0) = current(0) + ray*cos(angle);
       point(1) = current(1) + ray*sin(angle);
+      points.push_back(point);
       if(!isFree(point)){
         count++;
-        if(count > threshold *discretization)
+        if(count >= threshold*discretization)
           return false;
       }
 

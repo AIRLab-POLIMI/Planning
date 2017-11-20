@@ -51,6 +51,19 @@ void Visualizer::addPoint(const Eigen::VectorXd& point)
     }
 }
 
+void Visualizer::addCorner(const Eigen::VectorXd& corner)
+{
+    if(disableVisualization)
+        return;
+
+    corners.push_back(corner);
+
+    if(corners.size() >= minPoints)
+    {
+        displayCorners();
+    }
+}
+
 void Visualizer::addSegment(const Eigen::VectorXd& start, const Eigen::VectorXd& end)
 {
     if(disableVisualization)
@@ -167,6 +180,48 @@ void Visualizer::displayPoints()
     points.clear();
 }
 
+void Visualizer::displayCorners()
+{
+    static int id = 0;
+
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = ros::Time();
+    marker.ns = "points";
+    marker.id = id++;
+    marker.type = visualization_msgs::Marker::POINTS;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.10;
+    marker.scale.y = 0.10;
+    marker.scale.z = 0;
+    marker.color.a = 1.0;
+    marker.color.r = 0.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+
+    for(auto& p_eigen : corners)
+    {
+        geometry_msgs::Point p;
+
+        p.x = p_eigen(0);
+        p.y = p_eigen(1);
+        p.z = 0;
+
+        marker.points.push_back(p);
+    }
+
+    pub.publish(marker);
+
+    corners.clear();
+}
+
 void Visualizer::displaySegments()
 {
     static int id = 0;
@@ -185,7 +240,7 @@ void Visualizer::displaySegments()
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;
     marker.pose.orientation.w = 1.0;
-    marker.scale.x = 0.05;
+    marker.scale.x = 0.005;
     marker.scale.y = 0;
     marker.scale.z = 0;
     marker.color.a = 1.0;

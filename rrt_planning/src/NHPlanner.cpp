@@ -27,6 +27,7 @@ NHPlanner::NHPlanner()
 
     map = nullptr;
     distance = nullptr;
+
 }
 
 NHPlanner::NHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
@@ -74,6 +75,8 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     addOpen(start_node, target, distance);
     start_node->addSubgoal(xGoal);
     reached[x0] = start_node;
+
+    CornerIndex index(distance);
 
     ROS_INFO("Pick a god and pray");
 
@@ -177,17 +180,26 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
                 if(fabs(current->getState()(2)) < 2*M_PI)
                 {
-                    addOpen(current, a, distance);
-                    visualizer.addPoint(a.getState());
-                    bool stop = true;
-                    ROS_WARN_STREAM( "node " << current->getState()(0) << ", " << current->getState()(1) << ", " << current->getState()(2)
-                                    << " added point: " << a.getState()(0) << ", " << a.getState()(1)
-                                    << " sub: " << a.getSubgoal()(0) << ", " << a.getSubgoal()(1));
+
                     if(a.isCorner())
                     {
-                        ROS_INFO("Passed subgoal");
+                        VectorXd curr = a.getState();
+                        VectorXd nearest = index.getNearestNeighbour(curr);
+                        if(distance(nearest, curr) < deltaX)
+                            a.setState(nearest);
+                        else
+                            index.insert(curr);
+
                         addSubgoal(current, a, distance);
+                        visualizer.addCorner(a.getState());
                     }
+                    else
+                        visualizer.addPoint(a.getState());
+
+                    addOpen(current, a, distance);
+                    /*ROS_WARN_STREAM( "node " << current->getState()(0) << ", " << current->getState()(1) << ", " << current->getState()(2)
+                                    << " added point: " << a.getState()(0) << ", " << a.getState()(1)
+                                    << " sub: " << a.getSubgoal()(0) << ", " << a.getSubgoal()(1));*/
                 }
             }
         }
@@ -195,7 +207,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
     visualizer.flush();
 
-    ROS_WARN_STREAM("Picked the wrong God. Try Dio Brando next time.");
+    ROS_INFO("Omae wa mou shindeiru");
     //exit(0);
     return false;
 
@@ -293,6 +305,7 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
     Vector3d NULL_VEC(-1, -1, -1);
     double step = 0.3;
     bool update = false;
+    std::vector<Eigen::VectorXd> points;
 
     bool is_los = map->collisionPoints(a, n, collision);
 
@@ -326,7 +339,7 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
       {
           shared_ptr<Action> p = action.getParent();
           VectorXd sub = action.getSubgoal();
-          bool corner = map->isCorner(new_state, discretization, ray, threshold);
+          bool corner = map->isCorner(new_state, discretization, ray, threshold, points);
           if(sample)
           {
               p = make_shared<Action>(action);
@@ -336,7 +349,11 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
           }
           actions.push_back(Action(new_state, sub, old, true, false, corner, p));
           if(corner)
+          {
             sampleCorner(n, actions.back(), actions);
+            for(auto p : points)
+                visualizer.addPoint(p);
+          }
        }
     }
 
@@ -351,7 +368,7 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
       {
           shared_ptr<Action> p = action.getParent();
           VectorXd sub = action.getSubgoal();
-          bool corner = map->isCorner(new_state, discretization, ray, threshold);
+          bool corner = map->isCorner(new_state, discretization, ray, threshold, points);
           if(sample)
           {
               p = make_shared<Action>(action);
@@ -361,7 +378,11 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
           }
           actions.push_back(Action(new_state, sub, old, false, false, corner, p));
           if(corner)
+          {
             sampleCorner(n, actions.back(), actions);
+            for(auto p : points)
+                visualizer.addPoint(p);
+          }
        }
     }
 

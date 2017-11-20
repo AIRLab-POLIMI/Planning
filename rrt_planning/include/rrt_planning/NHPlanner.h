@@ -12,6 +12,7 @@
 #include "rrt_planning/distance/Distance.h"
 #include "rrt_planning/extenders/ExtenderFactory.h"
 #include "rrt_planning/visualization/Visualizer.h"
+#include "rrt_planning/nh/CornerIndex.h"
 #include "rrt_planning/nh/OpenList.h"
 #include "rrt_planning/grid/Gridmap.h"
 
@@ -70,11 +71,11 @@ private:
     std::map<Eigen::VectorXd, Node*, rrt_planning::CmpReached> reached;
 
     double deltaX;
-
-    ExtenderFactory extenderFactory;
     int discretization;
     double ray;
     double threshold;
+
+    ExtenderFactory extenderFactory;
     Visualizer visualizer;
 
 };

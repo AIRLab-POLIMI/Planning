@@ -73,7 +73,7 @@ bool DebugMap::insideBound(const Eigen::VectorXd& p)
   return false;
 }
 
-bool DebugMap::isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold)
+bool DebugMap::isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold, std::vector<Eigen::VectorXd>& points)
 {
     return true;
 }

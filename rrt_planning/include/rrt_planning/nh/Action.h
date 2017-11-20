@@ -23,6 +23,7 @@ public:
     std::shared_ptr<Action> getParent() const {return parent;}
     void setParent(std::shared_ptr<Action> p) {parent = p;}
     void setCorner(bool isCorner) {corner = isCorner;}
+    void setState(Eigen::VectorXd& new_state) {state = new_state;}
 
 
 private:
