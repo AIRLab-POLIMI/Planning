@@ -18,11 +18,17 @@ struct Cmp
     {
         return ((a.second < b.second)
                 || (a.second == b.second && a.first.first->getCost() < b.first.first->getCost())
-                || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getState() != b.first.first->getState())
+                || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && eigenOrdering(a.first.first->getState(),b.first.first->getState()))
                 || (a.second == b.second && a.first.first->getCost() == b.first.first->getCost() && a.first.first->getState() == b.first.first->getState()
-                    && a.first.second.getState() != b.first.second.getState()));
+                    && eigenOrdering(a.first.second.getState(), b.first.second.getState())));
     }
-    
+
+    bool eigenOrdering(const Eigen::VectorXd& a, const Eigen::VectorXd& b) const
+    {
+      return (a(0) < b(0) || a(0) == b(0) && a(1) < b(1)
+              ||a(0) == b(0) && a(1) == b(1) && a(2) < b(2));
+    }
+
 };
 
 }

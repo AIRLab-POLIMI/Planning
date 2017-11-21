@@ -115,6 +115,10 @@ Eigen::VectorXd ROSMap::exitPoint(const Eigen::VectorXd& current, const Eigen::V
   double step = 0.05;
 
   int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
+
+  //FML again
+  k = (k == 0) ? 1 : k;
+
   double dx = DX / k;
   double dy = DY / k;
   Eigen::VectorXd p = middle;
@@ -126,17 +130,19 @@ Eigen::VectorXd ROSMap::exitPoint(const Eigen::VectorXd& current, const Eigen::V
     return p;
 
   //Check direction
-  p(0) += dx;
-  p(1) += dy;
-  bool dir = clockwise(middle - current, p - current);
+  p(0) += (5*dx);
+  p(1) += (5*dy);
+  Eigen::VectorXd a = Eigen::Vector2d(middle(0)- current(0), middle(1) - current(1));
+  Eigen::VectorXd b = Eigen::Vector2d(p(0) - current(0), p(1) - current(1));
+  bool dir = clockwise(a, b);
+  //bool dir = clockwise(middle - current, p - current);
   if(dir != cw)
   {
       dx = -dx;
       dy = -dy;
-      p = middle;
-      p(0) += dx;
-      p(1) += dy;
   }
+
+  p = middle;
 
   if(!insideBound(p)){
     ROS_INFO("middle outside bounds");
@@ -240,7 +246,7 @@ Eigen::VectorXd ROSMap::computeMiddle(const Eigen::VectorXd& a, const Eigen::Vec
 
 bool ROSMap::clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
 {
-  double angle = std::atan2(a(1), a(0)) - std::atan2(b(1), b(0));
+  double angle = std::atan2(b(1), b(0)) - std::atan2(a(1), a(0));
   if(fabs(angle) > M_PI){
       angle = ( angle > 0 ) ? (angle - 2*M_PI) : (angle + 2*M_PI);
   }
@@ -254,8 +260,13 @@ bool ROSMap::insideBound(const Eigen::VectorXd& p)
 
   unsigned int mx;
   unsigned int my;
+  bool result = costmap->worldToMap(wx, wy, mx, my);
 
-  return costmap->worldToMap(wx, wy, mx, my);
+  if(!result){
+    ROS_FATAL("MUDAMUDAMUDAMUDAMUDAMUDAMUDAMUDA");
+  }
+
+  return result;
 }
 
 ROSMap::~ROSMap()

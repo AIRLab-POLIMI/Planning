@@ -24,6 +24,8 @@
 #include "rrt_planning/visualization/Visualizer.h"
 
 #include <visualization_msgs/Marker.h>
+#include <chrono>
+#include <thread>
 
 namespace rrt_planning
 {
@@ -176,7 +178,6 @@ void Visualizer::displayPoints()
     }
 
     pub.publish(marker);
-
     points.clear();
 }
 
@@ -288,7 +289,7 @@ void Visualizer::displayUpdates()
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;
     marker.pose.orientation.w = 1.0;
-    marker.scale.x = 0.05;
+    marker.scale.x = 0.02;
     marker.scale.y = 0;
     marker.scale.z = 0;
     marker.color.a = 1.0;
@@ -314,6 +315,8 @@ void Visualizer::displayUpdates()
     }
 
     pub.publish(marker);
+
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     updates.clear();
 }
