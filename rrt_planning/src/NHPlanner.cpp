@@ -320,20 +320,19 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
     VectorXd new_state;
     Vector3d NULL_VEC(-1, -1, -1);
     double step = 0.3;
-    bool update = false;
     std::vector<Eigen::VectorXd> points;
 
     bool is_los = map->collisionPoints(a, n, collision);
-    /*if(!is_los)
-      visualizer.addUpdate(a, n);
-    */
+
     if(is_los)
     {
         old = action.getOld();
-        is_los = map->collisionPoints(a, old, collision);
-        //visualizer.addUpdate(a, old);
+        is_los = map->followObstacle(n, a, collision);
+        if(is_los){
+          actions.push_back(Action(collision[0], action.getSubgoal(), action.getOld(), action.isClockwise(), false, true, action.getParent()));
+          return actions;
+        }
         curr = a;
-        update = true;
     }
 
     if(is_los || collision.size() < 2) {
@@ -400,6 +399,7 @@ vector<Action> NHPlanner::findAction(const Node* node, const Action& action, Dis
     if(actions.empty())
       ROS_FATAL("LOL2");
 
+    ROS_FATAL("Finished update");
     return actions;
   }
 

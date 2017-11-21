@@ -166,6 +166,7 @@ Eigen::VectorXd ROSMap::exitPoint(const Eigen::VectorXd& current, const Eigen::V
 
 bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions)
 {
+  actions.clear();
   double DX = b(0) - a(0);
   double DY = b(1) - a(1);
 
@@ -173,6 +174,7 @@ bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, st
   double step = 0.05;
 
   int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
+  k = (k == 0) ? 1 : k;
   double dx = DX / k;
   double dy = DY / k;
   Eigen::VectorXd p = b;
@@ -195,6 +197,42 @@ bool ROSMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, st
   }
 
   return true;
+
+}
+
+bool ROSMap::followObstacle(const Eigen::VectorXd& current, const Eigen::VectorXd& a, std::vector<Eigen::VectorXd>& actions)
+{
+  actions.clear();
+  double DX = a(0) - current(0);
+  double DY = a(1) - current(1);
+
+  //FIXME use parameters
+  double step = 0.5;
+
+  int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
+  k = (k == 0) ? 1 : k;
+  double dx = DX / k;
+  double dy = DY / k;
+  Eigen::VectorXd p = a;
+  std::vector<Eigen::VectorXd> dummy;
+
+  while(insideBound(p) && isFree(p))
+  {
+      if(isCorner(p, 360, 0.5, 0.4, dummy))
+      {
+        actions.push_back(p);
+        return true;
+      }
+      p(0) += dx;
+      p(1) += dy;
+  }
+  ROS_FATAL("Start forced update");
+
+  bool check = forcedUpdate(current, a, actions);
+  if(check){
+    ROS_FATAL("NOPE");
+  }
+  return false;
 
 }
 

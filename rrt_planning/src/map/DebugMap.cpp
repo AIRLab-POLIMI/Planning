@@ -78,6 +78,11 @@ bool DebugMap::isCorner(const Eigen::VectorXd& current, int discretization, doub
     return true;
 }
 
+bool DebugMap::followObstacle(const Eigen::VectorXd& current, const Eigen::VectorXd& a, std::vector<Eigen::VectorXd>& actions)
+{
+  return false;
+}
+
 bool DebugMap::isTrueCornerWOW(const Eigen::VectorXd& current){
 return true;
   }

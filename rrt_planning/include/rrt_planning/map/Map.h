@@ -44,6 +44,7 @@ public:
     virtual Eigen::VectorXd computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b) = 0;
     virtual bool clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b) = 0;
     virtual bool isTrueCornerWOW(const Eigen::VectorXd& current) = 0;
+    virtual bool followObstacle(const Eigen::VectorXd& current, const Eigen::VectorXd& a, std::vector<Eigen::VectorXd>& actions) = 0;
 
 
     inline Bounds getBounds()

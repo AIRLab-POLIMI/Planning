@@ -46,7 +46,8 @@ public:
     virtual bool insideBound(const Eigen::VectorXd& p) override;
     virtual bool isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold, std::vector<Eigen::VectorXd>& points) override;
     virtual bool isTrueCornerWOW(const Eigen::VectorXd& current) override;
-    
+    virtual bool followObstacle(const Eigen::VectorXd& current, const Eigen::VectorXd& a, std::vector<Eigen::VectorXd>& actions) override;
+
     virtual ~ROSMap();
 
 
