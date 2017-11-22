@@ -36,15 +36,8 @@ public:
 
     virtual bool isFree(const Eigen::VectorXd& p) override;
     virtual unsigned char getCost(const Eigen::VectorXd& p) override;
-    virtual bool collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions) override;
-    virtual Eigen::VectorXd exitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw) override;
-    virtual bool forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions) override;
-    virtual Eigen::VectorXd computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b) override;
-    virtual bool clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b) override;
     virtual bool insideBound(const Eigen::VectorXd& p) override;
-    virtual bool isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold, std::vector<Eigen::VectorXd>& points) override;
-    virtual bool isTrueCornerWOW(const Eigen::VectorXd& current) override;
-    virtual bool followObstacle(const Eigen::VectorXd& current, const Eigen::VectorXd& a, std::vector<Eigen::VectorXd>& actions) override;
+
     virtual ~DebugMap();
 
 private:

@@ -41,51 +41,10 @@ unsigned char DebugMap::getCost(const Eigen::VectorXd& p)
     return 0;
 }
 
-bool DebugMap::collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions)
-{
-    return true;
-}
-
-Eigen::VectorXd DebugMap::exitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw)
-{
-    Eigen::VectorXd dummy = Eigen::Vector2d(-1,-1);
-    return dummy;
-}
-
-bool DebugMap::forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions)
-{
-  return true;
-}
-
-Eigen::VectorXd DebugMap::computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
-{
-  Eigen::VectorXd dummy;
-  return dummy;
-}
-
-bool DebugMap::clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b)
-{
-  return false;
-}
-
 bool DebugMap::insideBound(const Eigen::VectorXd& p)
 {
   return false;
 }
-
-bool DebugMap::isCorner(const Eigen::VectorXd& current, int discretization, double ray, double threshold, std::vector<Eigen::VectorXd>& points)
-{
-    return true;
-}
-
-bool DebugMap::followObstacle(const Eigen::VectorXd& current, const Eigen::VectorXd& a, std::vector<Eigen::VectorXd>& actions)
-{
-  return false;
-}
-
-bool DebugMap::isTrueCornerWOW(const Eigen::VectorXd& current){
-return true;
-  }
 
 DebugMap::~DebugMap()
 {

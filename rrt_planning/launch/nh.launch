@@ -18,7 +18,7 @@
 	args="-d $(find rrt_planning)/rviz_config/rviz.rviz" />
 
 	<!-- launch-prefix="gdbserver localhost:10000" -->
-	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" >
 		<!-- basic configuration -->
 		<param name="controller_frequency" value="10.0" />
 		<rosparam file="$(find rrt_planning)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />

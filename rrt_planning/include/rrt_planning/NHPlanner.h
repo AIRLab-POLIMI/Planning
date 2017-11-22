@@ -14,7 +14,7 @@
 #include "rrt_planning/visualization/Visualizer.h"
 #include "rrt_planning/nh/CornerIndex.h"
 #include "rrt_planning/nh/OpenList.h"
-#include "rrt_planning/grid/Gridmap.h"
+#include "rrt_planning/map/SGMap.h"
 
 
 namespace rrt_planning
@@ -64,7 +64,8 @@ private:
     void sampleCorner(const Eigen::VectorXd& current, const Action& corner, std::vector<Action>& actions);
 
 private:
-    Map* map;
+    Map* rosmap;
+    SGMap* map;
     Distance* distance;
     OpenList open;
     Action target;

@@ -12,6 +12,7 @@ namespace rrt_planning
 {
 
 typedef std::pair<const Eigen::VectorXd, const Eigen::VectorXd> CoorPair;
+typedef std::pair<double, double> Sub;
 
 struct CoorCmp
 {
@@ -31,13 +32,13 @@ class Node
 {
 public:
     inline Node();
-    inline Node(const Eigen::VectorXd& state, Node* parent, double cost):
-                state(state), parent(parent), cost(cost) {}
+    inline Node(const Eigen::VectorXd& state, Node* parent, double cost, std::vector<Eigen::VectorXd> mp):
+                state(state), parent(parent), cost(cost), mp(mp) {}
 
     void addSubgoal(const Eigen::VectorXd& subgoal)
     {
-        rrt_planning::CoorPair pair(subgoal, subgoal);
-        closed.insert(pair);
+        rrt_planning::Sub pair(subgoal(0), subgoal(1));
+        subgoals.insert(pair);
     }
 
     void addClosed(const Action& a)
@@ -48,21 +49,34 @@ public:
 
     bool contains(const Action& action)
     {
-        rrt_planning::CoorPair pair(action.getState(), action.getSubgoal());
-        return (closed.count(pair) == 1);
+        rrt_planning::Sub pair(action.getState()(0), action.getState()(1));
+        return (subgoals.count(pair) == 1);
+    }
+
+    int getSize()
+    {
+      return closed.size();
+    }
+
+    std::set<rrt_planning::CoorPair, rrt_planning::CoorCmp> getClosed()
+    {
+      return closed;
     }
 
     Node* setParent(Node* p){parent = p;}
 
     Eigen::VectorXd getState() const {return state;}
     Node* getParent() {return parent;}
+    std::vector<Eigen::VectorXd> getMotionPrimitives() {return mp;}
     double getCost() const {return cost;}
 
 private:
     Eigen::VectorXd state;
     Node* parent;
     double cost;
+    std::vector<Eigen::VectorXd> mp; //motion primitives to reach parent
     std::set<rrt_planning::CoorPair, rrt_planning::CoorCmp> closed;
+    std::set<Sub> subgoals;
 };
 
 }
