@@ -56,12 +56,12 @@ private:
 
     void addSubgoal(Node* node, const Action& action, Distance& distance);
 
-    std::vector<Action> findAction(const Node* node, const Action& action, Distance& distance);
-
-    std::vector<Action> followObstacle(const Cell& node, const Action& action);
+    std::vector<Action> findAction(Node* node, const Action& action, Distance& distance);
 
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
     void sampleCorner(const Eigen::VectorXd& current, const Action& corner, std::vector<Action>& actions);
+    void addGlobal(const Eigen::VectorXd& node, const Eigen::VectorXd& action, const Eigen::VectorXd& parent);
+    bool insideGlobal(const Eigen::VectorXd& p);
 
 private:
     Map* rosmap;
@@ -70,6 +70,7 @@ private:
     OpenList open;
     Action target;
     std::map<Eigen::VectorXd, Node*, rrt_planning::CmpReached> reached;
+    std::vector<Triangle> global_closed;
 
     double deltaX;
     int discretization;

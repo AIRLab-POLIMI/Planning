@@ -36,7 +36,8 @@ bool SGMap::collisionPoints(const VectorXd& a, const VectorXd& b, vector<VectorX
     p(1) += dy;
     curr = map.isFree(p);
 
-    if(curr != prev)
+
+   if(curr != prev)
     {
       //Get collisions as points outside the obstacle
       if(actions.empty())
@@ -69,12 +70,6 @@ VectorXd SGMap::exitPoint(const VectorXd& current, const VectorXd& middle, bool 
   double step = 0.05;
   double norm = sqrt(pow(DX, 2) + pow(DY, 2));
 
-
-  //int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
-
-  //FML again
-  //k = (k == 0) ? 1 : k;
-
   double dx = (DX / norm) * step;
   double dy = (DY / norm) * step;
   VectorXd p = middle;
@@ -88,7 +83,7 @@ VectorXd SGMap::exitPoint(const VectorXd& current, const VectorXd& middle, bool 
   VectorXd a = Vector2d(middle(0)- current(0), middle(1) - current(1));
   VectorXd b = Vector2d(p(0) - current(0), p(1) - current(1));
   bool dir = clockwise(a, b);
-  //bool dir = clockwise(middle - current, p - current);
+
   if(dir != cw)
   {
       dx = -dx;
@@ -117,6 +112,7 @@ VectorXd SGMap::exitPoint(const VectorXd& current, const VectorXd& middle, bool 
       p(1) += dy;
   }
 
+  ROS_FATAL_STREAM("Point " << p(0) << ", " << p(1));
   return Vector3d(-1, -1, -1);
 }
 
@@ -130,8 +126,6 @@ bool SGMap::forcedUpdate(const VectorXd& a, const VectorXd& b, vector<VectorXd>&
   double step = 0.05;
   double norm = sqrt(pow(DX, 2) + pow(DY, 2));
 
-  //int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
-  //k = (k == 0) ? 1 : k;
   double dx = (DX / norm) * step;
   double dy = (DY / norm) * step;
   VectorXd p = b;
@@ -186,7 +180,7 @@ bool SGMap::followObstacle(const VectorXd& current, const VectorXd& a, vector<Ve
   if(!map.insideBound(p))
     ROS_FATAL("KEK");
 
-  ROS_FATAL("Start forced update");
+  //ROS_FATAL("Start forced update");
 
   bool check = forcedUpdate(current, a, actions);
   if(check){
@@ -250,7 +244,6 @@ bool SGMap::clockwise(const VectorXd& a, const VectorXd& b)
   }
   return (angle < 0);
 }
-
 
 SGMap::~SGMap()
 {

@@ -43,12 +43,14 @@ public:
     void addCorner(const Eigen::VectorXd& corner);
     void addSegment(const Eigen::VectorXd& start, const Eigen::VectorXd& end);
     void addUpdate(const Eigen::VectorXd& start, const Eigen::VectorXd& end);
+    void addTriangle(const Eigen::VectorXd& a, const Eigen::VectorXd& b, const Eigen::VectorXd& c, const Eigen::VectorXd& point);
     void displayPlan(const std::vector<geometry_msgs::PoseStamped>& plan);
 
     void displayPoints();
     void displaySegments();
     void displayUpdates();
     void displayCorners();
+    void displayTriangle();
 
     void flush();
 
@@ -60,6 +62,8 @@ private:
     std::vector<Eigen::VectorXd> points;
     std::vector<Segment> segments;
     std::vector<Segment> updates;
+    std::vector<Segment> triangle;
+    std::vector<Eigen::VectorXd> inside_point;
     std::vector<Eigen::VectorXd> corners;
 
     int minPoints;

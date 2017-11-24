@@ -5,6 +5,7 @@
 #include <set>
 #include <Eigen/Dense>
 #include "rrt_planning/nh/Action.h"
+#include "rrt_planning/nh/Triangle.h"
 
 
 
@@ -47,6 +48,22 @@ public:
       closed.insert(pair);
     }
 
+    void addTriangle(const Triangle& t)
+    {
+      closed_area.push_back(t);
+    }
+
+    bool insideArea(const Eigen::VectorXd& p)
+    {
+      for(auto t : closed_area)
+      {
+        if(t.contains(p))
+          return true;
+      }
+
+      return false;      
+    }
+
     bool contains(const Action& action)
     {
         rrt_planning::Sub pair(action.getState()(0), action.getState()(1));
@@ -77,6 +94,7 @@ private:
     std::vector<Eigen::VectorXd> mp; //motion primitives to reach parent
     std::set<rrt_planning::CoorPair, rrt_planning::CoorCmp> closed;
     std::set<Sub> subgoals;
+    std::vector<Triangle> closed_area;
 };
 
 }

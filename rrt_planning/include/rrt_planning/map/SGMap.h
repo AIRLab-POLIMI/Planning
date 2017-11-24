@@ -4,6 +4,7 @@
 #include "rrt_planning/map/Map.h"
 #include "costmap_2d/costmap_2d_ros.h"
 #include "costmap_2d/costmap_2d.h"
+#include "rrt_planning/nh/Triangle.h"
 
 namespace rrt_planning
 {
@@ -21,7 +22,7 @@ public:
     bool isCorner(const Eigen::VectorXd& current, std::vector<Eigen::VectorXd>& points);
     bool isTrueCornerWOW(const Eigen::VectorXd& current);
     bool followObstacle(const Eigen::VectorXd& current, const Eigen::VectorXd& a, std::vector<Eigen::VectorXd>& actions);
-
+  
     virtual ~SGMap();
 
 

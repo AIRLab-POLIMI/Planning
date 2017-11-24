@@ -96,6 +96,24 @@ void Visualizer::addUpdate(const Eigen::VectorXd& start, const Eigen::VectorXd& 
 
 }
 
+void Visualizer::addTriangle(const Eigen::VectorXd& a, const Eigen::VectorXd& b, const Eigen::VectorXd& c, const Eigen::VectorXd& point)
+{
+  if(disableVisualization)
+      return;
+
+  triangle.push_back(std::make_pair(a,b));
+  triangle.push_back(std::make_pair(b,c));
+  triangle.push_back(std::make_pair(c,a));
+
+  inside_point.push_back(point);
+
+  if(triangle.size() >= minSegments && inside_point.size() >= minSegments)
+  {
+    displayTriangle();
+  }
+
+}
+
 void Visualizer::displayPlan(const std::vector<geometry_msgs::PoseStamped>& plan)
 {
     if(disableVisualization)
@@ -321,6 +339,94 @@ void Visualizer::displayUpdates()
     updates.clear();
 }
 
+void Visualizer::displayTriangle()
+{
+  static int id = 0;
+
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.ns = "updates";
+  marker.id = id++;
+  marker.type = visualization_msgs::Marker::LINE_LIST;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.position.x = 0;
+  marker.pose.position.y = 0;
+  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.02;
+  marker.scale.y = 0;
+  marker.scale.z = 0;
+  marker.color.a = 1.0;
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+
+  for(auto& segment : triangle)
+  {
+      geometry_msgs::Point p1;
+      geometry_msgs::Point p2;
+
+      p1.x = segment.first(0);
+      p1.y = segment.first(1);
+      p1.z = segment.first(2);
+
+      p2.x = segment.second(0);
+      p2.y = segment.second(1);
+      p2.z = segment.second(2);
+
+      marker.points.push_back(p1);
+      marker.points.push_back(p2);
+  }
+
+  pub.publish(marker);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+  triangle.clear();
+
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.ns = "inside_points";
+  marker.id = id++;
+  marker.type = visualization_msgs::Marker::POINTS;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.position.x = 0;
+  marker.pose.position.y = 0;
+  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.10;
+  marker.scale.y = 0.10;
+  marker.scale.z = 0;
+  marker.color.a = 1.0;
+  marker.color.r = 0.0;
+  marker.color.g = 0.0;
+  marker.color.b = 1.0;
+
+  for(auto& p_eigen : inside_point)
+  {
+      geometry_msgs::Point p;
+
+      p.x = p_eigen(0);
+      p.y = p_eigen(1);
+      p.z = 0;
+
+      marker.points.push_back(p);
+  }
+
+  pub.publish(marker);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+  inside_point.clear();
+}
+
 void Visualizer::flush()
 {
     displayPoints();
@@ -349,6 +455,9 @@ void Visualizer::clean()
     pub.publish(marker);
 
     marker.ns = "updates";
+    pub.publish(marker);
+
+    marker.ns = "inside_points";
     pub.publish(marker);
 }
 
