@@ -92,12 +92,6 @@ VectorXd SGMap::exitPoint(const VectorXd& current, const VectorXd& middle, bool 
 
     p = middle;
 
-    if(map.isFree(middle))
-    //ROS_FATAL("FATALITY");
-
-    if(!map.insideBound(p)){
-    ROS_INFO("middle outside bounds");
-    }
 
     while(map.insideBound(p))
     {
@@ -111,7 +105,6 @@ VectorXd SGMap::exitPoint(const VectorXd& current, const VectorXd& middle, bool 
       p(1) += dy;
     }
 
-    ROS_FATAL_STREAM("Point " << p(0) << ", " << p(1));
     return Vector3d(-1, -1, -1);
 }
 
@@ -128,20 +121,26 @@ bool SGMap::forcedUpdate(const VectorXd& a, const VectorXd& b, vector<VectorXd>&
   double dx = (DX / norm) * step;
   double dy = (DY / norm) * step;
   VectorXd p = b;
+  VectorXd old = b;
   bool curr, prev;
   curr = prev = map.isFree(p);
 
   while(map.insideBound(p))
   {
       curr = map.isFree(p);
-      p(0) += dx;
-      p(1) += dy;
 
       if(curr != prev)
       {
-        actions.push_back(p);
+        if(!curr)
+            actions.push_back(old);
+        else
+            actions.push_back(p);
         if(actions.size() == 2) return false;
       }
+
+      old = p;
+      p(0) += dx;
+      p(1) += dy;
 
       prev = curr;
   }

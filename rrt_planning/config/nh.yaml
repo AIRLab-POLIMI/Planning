@@ -3,4 +3,4 @@ deltaX: 0.3
 ray: 0.5
 threshold: 0.40
 discretization: 360
-epsilon: 0.5
+epsilon: 0.15

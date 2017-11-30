@@ -133,9 +133,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             bool is_valid = true;
             vector<VectorXd> parents;
             double cost = current->getCost();
-            //visualizer.addUpdate(xCurr, action.getState());
 
-            //ROS_FATAL("trying to reach");
             do{
               is_valid = newState(xCurr, action.getState(), xNew);
               cost += distance(xCurr, xNew);
@@ -143,13 +141,12 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
               parents.push_back(xCurr);
             } while(is_valid && !(distance(xCurr, action.getState()) < deltaX));
 
-            if(action.getState()!= xGoal && (!is_valid || !map->isTrueCornerWOW(xCurr))){
-              //ROS_FATAL("trying to reach sample");
+            if(action.getState()!= xGoal && (!is_valid || !map->isTrueCornerWOW(xCurr)))
+            {
               vector<Action> actions;
               xCurr = current->getState();
               sampleCorner(xCurr, action, actions);
               xCorner = actions[0].getState();
-              //visualizer.addUpdate(xCurr, xCorner);
 
               if(!rosmap->isFree(xCorner))
                 continue;
@@ -342,11 +339,11 @@ void NHPlanner::addOpen(Node* node, const Action& action, Distance& distance)
       return;
     }
 
-    /*if(!action.isSubgoal() && node->insideArea(action.getState()))
+    if(!action.isSubgoal() && node->insideArea(action.getState()))
     {
       ROS_FATAL("(Add open) King Crimson");
       return;
-    }*/
+    }
 
     Key key(node, action);
     double h = distance(node->getState(), action.getState()) + distance(action.getState(), target.getState());
@@ -378,6 +375,8 @@ void NHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
         parent->addSubgoal(subgoal.getState());
         parent = parent->getParent();
     }
+    if(parent->getCost() != 0)
+        visualizer.addUpdate(parent->getState(), subgoal.getState());
 
 }
 
@@ -424,10 +423,6 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
         if(is_los){
           actions.push_back(Action(collision[0], action.getSubgoal(), action.getOld(), action.isClockwise(), false, true, action.getParent()));
           //ROS_FATAL("is true corner wow... ?");
-          if(collision[0](0) == a(0) && collision[0](1) == a(1))
-          {
-            //ROS_FATAL("you thought it was a corner, but it was me THE ACTION");
-          }
           return actions;
         }
         //curr = a;
@@ -446,24 +441,10 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
     if(!is_los) {swap(collision[0], collision[1]);}
 
     VectorXd middle = map->computeMiddle(collision[0], collision[1]);
-    //bool trick = (distance(collision[0], collision[1]) < 0.1) ? true : false;
-    bool trick = false;
 
     if(action.isClockwise() || sample)
     {
-        if(trick)
-        {
-            Vector3d point1(collision[0](0), collision[1](1), 1);
-            Vector3d point2(collision[1](0), collision[0](1), 1);
-            new_state = (rosmap->isFree(point1)) ? point1 : point2;
-
-            new_state(2) = atan2(new_state(1) - n(1), new_state(0) - n(0));
-            ROS_FATAL("GOTCHA, BITCH");
-            if(rosmap->isFree(new_state))
-                ROS_FATAL("I am free");
-        }
-        else
-            new_state = map->exitPoint(curr, middle, true);
+      new_state = map->exitPoint(curr, middle, true);
       if(new_state != NULL_VEC)
       {
           shared_ptr<Action> p = action.getParent();
@@ -477,28 +458,12 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
               }
           }
           actions.push_back(Action(new_state, sub, old, true, false, corner, p));
-          /*if(corner)
-          {
-            for(auto p : points)
-                visualizer.addPoint(p);
-          }*/
        }
     }
 
     if(!action.isClockwise() || sample)
     {
-      if(trick)
-      {
-          Vector3d point1(collision[0](0), collision[1](1), 1);
-          Vector3d point2(collision[1](0), collision[0](1), 1);
-          new_state = (rosmap->isFree(point1)) ? point1 : point2;
-          new_state(2) = atan2(new_state(1) - n(1), new_state(0) - n(0));
-          ROS_FATAL("GOTCHA, BITCH");
-          if(rosmap->isFree(new_state))
-              ROS_FATAL("I am free");
-      }
-      else
-          new_state = map->exitPoint(curr, middle, false);
+      new_state = map->exitPoint(curr, middle, false);
       if(new_state != NULL_VEC)
       {
           shared_ptr<Action> p = action.getParent();
@@ -512,11 +477,6 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
               }
           }
           actions.push_back(Action(new_state, sub, old, false, false, corner, p));
-          /*if(corner)
-          {
-            for(auto p : points)
-                visualizer.addPoint(p);
-          }*/
        }
     }
 
@@ -526,7 +486,6 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
         {
             if(distance(a, new_a.getState()) <= epsilon)
             {
-                ROS_FATAL("epsilon updating");
                 new_a = epsilonUpdate(node, action, new_a, distance);
             }
         }
@@ -556,7 +515,7 @@ bool NHPlanner::insideGlobal(const Eigen::VectorXd& p)
   {
     if(t.contains(p))
     {
-        visualizer.addTriangle(t.a, t.b, t.c, p);
+        //visualizer.addTriangle(t.a, t.b, t.c, p);
         return true;
     }
   }
@@ -587,28 +546,39 @@ Action NHPlanner::epsilonUpdate(Node* node, const Action& action, const Action& 
 {
     VectorXd n = node->getState();
     VectorXd a = action.getState();
-    VectorXd fake_update = new_a.getState();
-    double dist = distance(a, fake_update);
+    VectorXd a2 = new_a.getState();
+    VectorXd fake_update = a2;
+    double dist = distance(a, a2);
     vector<VectorXd> collision;
+    Vector3d error(-1, -1, -1);
 
     while(dist < epsilon)
     {
-        double DX = (fake_update(0) - a(0));
-        double DY = (fake_update(1) - a(1));
+        double DX = (a2(0) - a(0));
+        double DY = (a2(1) - a(1));
         double dx = DX/dist * epsilon;
         double dy = DY/dist * epsilon;
         fake_update(0)+= dx;
         fake_update(1)+= dy;
+
         if(!rosmap->isFree(fake_update))
         {
-            bool check = map->forcedUpdate(a, fake_update, collision);
+            bool check = map->forcedUpdate(a, a2, collision);
+
             if(!check)
             {
+                //visualizer.addPoint(collision[0], collision[1]);
                 VectorXd middle = map->computeMiddle(collision[0], collision[1]);
-                fake_update = map->exitPoint(fake_update, middle, new_a.isClockwise());
+                fake_update = map->exitPoint(a, middle, new_a.isClockwise());
             }
         }
-        dist = distance(a, fake_update);
+        a2 = fake_update;
+        dist = distance(a, a2);
+    }
+
+    if(fake_update == error)
+    {
+        return action;
     }
 
     bool corner = map->isCorner(fake_update, collision);
