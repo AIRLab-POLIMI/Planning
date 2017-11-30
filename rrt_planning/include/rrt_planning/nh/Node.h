@@ -29,6 +29,15 @@ struct CoorCmp
 
 };
 
+struct eigenCmp
+{
+	bool operator()(const Eigen::VectorXd& a, const Eigen::VectorXd& b) const
+    {
+      return (a(0) < b(0) || a(0) == b(0) && a(1) < b(1));
+    }
+
+};
+
 class Node
 {
 public:
@@ -48,20 +57,25 @@ public:
       closed.insert(pair);
     }
 
-    void addTriangle(const Triangle& t)
+    void addTriangle(Triangle* t)
     {
-      closed_area.push_back(t);
-    }
+	  closed_area[t->a] = t;
+	}
+
+	Triangle* getTriangle(const Eigen::VectorXd& p)
+	{
+		return closed_area.at(p);
+	}
 
     bool insideArea(const Eigen::VectorXd& p)
     {
       for(auto t : closed_area)
       {
-        if(t.contains(p))
+        if(t.second->contains(p))
           return true;
       }
 
-      return false;      
+      return false;
     }
 
     bool contains(const Action& action)
@@ -94,7 +108,8 @@ private:
     std::vector<Eigen::VectorXd> mp; //motion primitives to reach parent
     std::set<rrt_planning::CoorPair, rrt_planning::CoorCmp> closed;
     std::set<Sub> subgoals;
-    std::vector<Triangle> closed_area;
+    //std::vector<Triangle> closed_area;
+	std::map<Eigen::VectorXd, Triangle*, eigenCmp> closed_area;
 };
 
 }

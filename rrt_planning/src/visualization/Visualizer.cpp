@@ -53,6 +53,20 @@ void Visualizer::addPoint(const Eigen::VectorXd& point)
     }
 }
 
+void Visualizer::addPathPoint(const Eigen::VectorXd& point)
+{
+    if(disableVisualization)
+        return;
+
+    path_points.push_back(point);
+
+
+    if(path_points.size() >= minPoints)
+    {
+        displayPathPoints();
+    }
+}
+
 void Visualizer::addCorner(const Eigen::VectorXd& corner)
 {
     if(disableVisualization)
@@ -197,6 +211,47 @@ void Visualizer::displayPoints()
 
     pub.publish(marker);
     points.clear();
+}
+
+void Visualizer::displayPathPoints()
+{
+    static int id = 0;
+
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = ros::Time();
+    marker.ns = "path_points";
+    marker.id = id++;
+    marker.type = visualization_msgs::Marker::POINTS;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.2;
+    marker.scale.y = 0.2;
+    marker.scale.z = 0;
+    marker.color.a = 1.0;
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+
+    for(auto& p_eigen : path_points)
+    {
+        geometry_msgs::Point p;
+
+        p.x = p_eigen(0);
+        p.y = p_eigen(1);
+        p.z = 0;
+
+        marker.points.push_back(p);
+    }
+
+    pub.publish(marker);
+    path_points.clear();
 }
 
 void Visualizer::displayCorners()
@@ -384,47 +439,49 @@ void Visualizer::displayTriangle()
 
   pub.publish(marker);
 
-  //std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
   triangle.clear();
+  displayInsidePoint();
+}
 
-  marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time();
-  marker.ns = "inside_points";
-  marker.id = id++;
-  marker.type = visualization_msgs::Marker::POINTS;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.pose.position.x = 0;
-  marker.pose.position.y = 0;
-  marker.pose.position.z = 0;
-  marker.pose.orientation.x = 0.0;
-  marker.pose.orientation.y = 0.0;
-  marker.pose.orientation.z = 0.0;
-  marker.pose.orientation.w = 1.0;
-  marker.scale.x = 0.10;
-  marker.scale.y = 0.10;
-  marker.scale.z = 0;
-  marker.color.a = 1.0;
-  marker.color.r = 0.0;
-  marker.color.g = 0.0;
-  marker.color.b = 1.0;
+void Visualizer::displayInsidePoint()
+{
+      static int id = 0;
+	  visualization_msgs::Marker marker;
+	  marker.header.frame_id = "map";
+	  marker.header.stamp = ros::Time();
+	  marker.ns = "inside_points";
+	  marker.id = id++;
+	  marker.type = visualization_msgs::Marker::POINTS;
+	  marker.action = visualization_msgs::Marker::ADD;
+	  marker.pose.position.x = 0;
+	  marker.pose.position.y = 0;
+	  marker.pose.position.z = 0;
+	  marker.pose.orientation.x = 0.0;
+	  marker.pose.orientation.y = 0.0;
+	  marker.pose.orientation.z = 0.0;
+	  marker.pose.orientation.w = 1.0;
+	  marker.scale.x = 0.10;
+	  marker.scale.y = 0.10;
+	  marker.scale.z = 0;
+	  marker.color.a = 1.0;
+	  marker.color.r = 0.0;
+	  marker.color.g = 0.0;
+	  marker.color.b = 1.0;
 
-  for(auto& p_eigen : inside_point)
-  {
-      geometry_msgs::Point p;
+	  for(auto& p_eigen : inside_point)
+	  {
+	      geometry_msgs::Point p;
 
-      p.x = p_eigen(0);
-      p.y = p_eigen(1);
-      p.z = 0;
+	      p.x = p_eigen(0);
+	      p.y = p_eigen(1);
+	      p.z = 0;
 
-      marker.points.push_back(p);
-  }
+	      marker.points.push_back(p);
+	  }
 
-  pub.publish(marker);
+	  pub.publish(marker);
 
-  //std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-  inside_point.clear();
+	  inside_point.clear();
 }
 
 void Visualizer::flush()
@@ -432,6 +489,7 @@ void Visualizer::flush()
     displayPoints();
     displaySegments();
     displayUpdates();
+	displayPathPoints();
 }
 
 void Visualizer::clean()
@@ -445,6 +503,10 @@ void Visualizer::clean()
     //Delete points
     marker.ns = "points";
     pub.publish(marker);
+
+	//Delete path points
+	marker.ns = "path_points";
+	pub.publish(marker);
 
     //Delete rrt tree
     marker.ns = "rrt";

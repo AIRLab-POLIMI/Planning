@@ -40,6 +40,7 @@ public:
     void initialize(ros::NodeHandle& nh);
 
     void addPoint(const Eigen::VectorXd& point);
+	void addPathPoint(const Eigen::VectorXd& point);
     void addCorner(const Eigen::VectorXd& corner);
     void addSegment(const Eigen::VectorXd& start, const Eigen::VectorXd& end);
     void addUpdate(const Eigen::VectorXd& start, const Eigen::VectorXd& end);
@@ -47,10 +48,12 @@ public:
     void displayPlan(const std::vector<geometry_msgs::PoseStamped>& plan);
 
     void displayPoints();
+	void displayPathPoints();
     void displaySegments();
     void displayUpdates();
     void displayCorners();
     void displayTriangle();
+	void displayInsidePoint();
 
     void flush();
 
@@ -60,6 +63,7 @@ private:
     ros::Publisher pub;
 
     std::vector<Eigen::VectorXd> points;
+	std::vector<Eigen::VectorXd> path_points;
     std::vector<Segment> segments;
     std::vector<Segment> updates;
     std::vector<Segment> triangle;

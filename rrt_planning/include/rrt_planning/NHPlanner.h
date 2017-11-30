@@ -60,14 +60,14 @@ private:
 
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
     void sampleCorner(const Eigen::VectorXd& current, const Action& corner, std::vector<Action>& actions);
-    Action epsilonUpdate(Node* node, const Action& action, const Action& new_a, Distance& distance);
     void addGlobal(const Eigen::VectorXd& node, const Eigen::VectorXd& action, const Eigen::VectorXd& parent);
-    bool insideGlobal(const Eigen::VectorXd& p);
+    bool insideGlobal(const Eigen::VectorXd& p, bool subgoal);
 
 private:
     Map* rosmap;
     SGMap* map;
     Distance* distance;
+	Distance* h_distance;
     OpenList open;
     Action target;
     std::map<Eigen::VectorXd, Node*, rrt_planning::CmpReached> reached;
@@ -77,7 +77,6 @@ private:
     int discretization;
     double ray;
     double threshold;
-    double epsilon;
 
     ExtenderFactory extenderFactory;
     Visualizer visualizer;

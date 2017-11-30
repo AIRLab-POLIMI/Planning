@@ -55,57 +55,61 @@ bool SGMap::collisionPoints(const VectorXd& a, const VectorXd& b, vector<VectorX
 }
 
 VectorXd SGMap::exitPoint(const VectorXd& current, const VectorXd& middle, bool cw)
-{   
-    Vector3d c_point(current(0), current(1), 1);
-    Vector3d m_point(middle(0), middle(1), 1);
-    Vector3d line = c_point.cross(m_point);
-    double c = (-middle(0) * -line(1)) + (-middle(1) * line(0));
-    Vector3d normal(-line(1), line(0), c);
-    normal /= normal(2);
+{
+  Vector3d c_point(current(0), current(1), 1);
+  Vector3d m_point(middle(0), middle(1), 1);
+  Vector3d line = c_point.cross(m_point);
+  double c = (-middle(0) * -line(1)) + (-middle(1) * line(0));
+  Vector3d normal(-line(1), line(0), c);
+  normal /= normal(2);
 
-    double DX = normal(1);
-    double DY = -normal(0);
+  double DX = normal(1);
+  double DY = -normal(0);
 
-    //FIXME use parameters
-    double step = 0.05;
-    double norm = sqrt(pow(DX, 2) + pow(DY, 2));
+  //FIXME use parameters
+  double step = 0.05;
+  double norm = sqrt(pow(DX, 2) + pow(DY, 2));
 
-    double dx = (DX / norm) * step;
-    double dy = (DY / norm) * step;
-    VectorXd p = middle;
-    p(2) = 0;
-    bool curr, prev;
-    prev = false;
+  double dx = (DX / norm) * step;
+  double dy = (DY / norm) * step;
+  VectorXd p = middle;
+  p(2) = 0;
+  bool curr, prev;
+  prev = false;
 
-    //Check direction
-    p(0) += (5*dx);
-    p(1) += (5*dy);
-    VectorXd a = Vector2d(middle(0)- current(0), middle(1) - current(1));
-    VectorXd b = Vector2d(p(0) - current(0), p(1) - current(1));
-    bool dir = clockwise(a, b);
+  //Check direction
+  p(0) += (5*dx);
+  p(1) += (5*dy);
+  VectorXd a = Vector2d(middle(0)- current(0), middle(1) - current(1));
+  VectorXd b = Vector2d(p(0) - current(0), p(1) - current(1));
+  bool dir = clockwise(a, b);
 
-    if(dir != cw)
-    {
+  if(dir != cw)
+  {
       dx = -dx;
       dy = -dy;
-    }
+  }
 
-    p = middle;
+  p = middle;
 
+  if(!map.insideBound(p)){
+    ROS_INFO("middle outside bounds");
+  }
 
-    while(map.insideBound(p))
-    {
+  while(map.insideBound(p))
+  {
       curr = map.isFree(p);
       if(curr != prev)
-          return p;
-
+      {
+        return p;
+      }
       prev = curr;
 
       p(0) += dx;
       p(1) += dy;
-    }
+  }
 
-    return Vector3d(-1, -1, -1);
+  return p;
 }
 
 bool SGMap::forcedUpdate(const VectorXd& a, const VectorXd& b, vector<VectorXd>& actions)
@@ -121,36 +125,22 @@ bool SGMap::forcedUpdate(const VectorXd& a, const VectorXd& b, vector<VectorXd>&
   double dx = (DX / norm) * step;
   double dy = (DY / norm) * step;
   VectorXd p = b;
-  VectorXd old = b;
   bool curr, prev;
   curr = prev = map.isFree(p);
 
   while(map.insideBound(p))
   {
       curr = map.isFree(p);
-
-      if(curr != prev)
-      {
-        if(!curr)
-            actions.push_back(old);
-        else
-            actions.push_back(p);
-        if(actions.size() == 2) return false;
-      }
-
-      old = p;
       p(0) += dx;
       p(1) += dy;
 
-      prev = curr;
-  }
+      if(curr != prev)
+      {
+        actions.push_back(p);
+        if(actions.size() == 2) return false;
+      }
 
-  if(actions.size() == 1)
-  {
-      p(0) -= dx;
-      p(1) -= dy;
-      actions.push_back(p);
-      return false;
+      prev = curr;
   }
 
   return true;
@@ -183,15 +173,9 @@ bool SGMap::followObstacle(const VectorXd& current, const VectorXd& a, vector<Ve
       p(0) += dx;
       p(1) += dy;
   }
-  if(!map.insideBound(p))
-    ROS_FATAL("KEK");
-
-  //ROS_FATAL("Start forced update");
 
   bool check = forcedUpdate(current, a, actions);
-  if(check){
-    ROS_FATAL("NOPE");
-  }
+
   return false;
 
 }
