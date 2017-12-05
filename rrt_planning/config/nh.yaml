@@ -1,5 +1,6 @@
 # Configuration of NH Planner
 deltaX: 0.3
+deltaTheta: 0.785398
 ray: 0.3
 threshold: 0.40
 discretization: 360

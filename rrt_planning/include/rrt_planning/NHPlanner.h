@@ -66,14 +66,16 @@ private:
 private:
     Map* rosmap;
     SGMap* map;
-    Distance* distance;
-	Distance* h_distance;
+    Distance* l2dis;
+	Distance* l2thetadis;
+	Distance* thetadis;
     OpenList open;
     Action target;
     std::map<Eigen::VectorXd, Node*, rrt_planning::CmpReached> reached;
     std::vector<Triangle> global_closed;
 
     double deltaX;
+	double deltaTheta;
     int discretization;
     double ray;
     double threshold;

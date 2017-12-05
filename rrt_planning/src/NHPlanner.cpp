@@ -27,8 +27,9 @@ NHPlanner::NHPlanner()
 
     rosmap = nullptr;
     map = nullptr;
-    distance = nullptr;
-	h_distance = nullptr;
+    l2dis = nullptr;
+	thetadis = nullptr;
+	l2thetadis = nullptr;
 
 }
 
@@ -44,16 +45,18 @@ void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_r
     ros::NodeHandle private_nh("~/" + name);
 
     private_nh.param("deltaX", deltaX, 0.5);
+	private_nh.param("deltaTheta", deltaTheta, 0.5);
     private_nh.param("ray", ray, 0.5);
     private_nh.param("threshold", threshold, 0.35);
     private_nh.param("discretization", discretization, 5);
 
     rosmap = new ROSMap(costmap_ros);
     map = new SGMap(*rosmap, discretization, ray, threshold);
-    distance = new L2ThetaDistance();
-	h_distance = new L2Distance();
+    l2dis = new L2Distance();
+	thetadis = new ThetaDistance();
+	l2thetadis = new L2ThetaDistance();
 
-    extenderFactory.initialize(private_nh, *rosmap, *distance);
+    extenderFactory.initialize(private_nh, *rosmap, *l2thetadis);
     visualizer.initialize(private_nh);
 }
 
@@ -63,8 +66,9 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 {
     visualizer.clean();
 
-    Distance& distance = *this->distance;
-	Distance& h_distance = *this->h_distance;
+    Distance& l2thetadis = *this->l2thetadis;
+	Distance& l2dis = *this->l2dis;
+	Distance& thetadis = *this->thetadis;
     VectorXd&& x0 = convertPose(start_pose);
     VectorXd&& xGoal = convertPose(goal_pose);
 
@@ -90,11 +94,11 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     goal_action->setParent(goal_action);
     target = *goal_action;
 
-    addOpen(start_node, target, h_distance);
+    addOpen(start_node, target, l2dis);
     start_node->addSubgoal(xGoal);
     reached[x0] = start_node;
 
-    CornerIndex index(h_distance);
+    CornerIndex index(l2dis);
     index.insert(xGoal);
 
     ROS_FATAL("Start Search: pick a god and pray");
@@ -109,7 +113,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         bool improve = true;
 
         //Check if the goal is reached
-        if(distance(current->getState(), xGoal) < deltaX)
+        if(l2dis(current->getState(), xGoal) < deltaX && thetadis(current->getState(), xGoal) < deltaTheta)
         {
             auto&& path = retrievePath(current);
             publishPlan(path, plan, start_pose.header.stamp);
@@ -130,9 +134,6 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             //Motion primitives
 			VectorXd xCurr = current->getState();
             VectorXd xCorner = action.getState();
-            /*if(action.getState() != xGoal){
-                    visualizer.addUpdate(xCurr, xCorner);
-            }*/
             VectorXd xNew = xCurr;
             double theta = atan2(xCorner(1) - xCurr(1), xCorner(0) - xCurr(0));
             xCorner(2) = theta;
@@ -146,10 +147,10 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
               if(!check.insert(xNew).second){
                       is_valid = false;
               }
-              cost += h_distance(xCurr, xNew);
+              cost += l2dis(xCurr, xNew);
               xCurr = xNew;
               parents.push_back(xCurr);
-            } while(is_valid && !(distance(xCurr, xCorner) < deltaX));
+		  } while(is_valid && !(l2dis(xCurr, xCorner) < deltaX && thetadis(xCurr, xCorner) < deltaTheta));
 
             if(action.getState()!= xGoal && (!is_valid || !map->isTrueCornerWOW(xCurr)))
             {
@@ -163,16 +164,16 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 //visualizer.addUpdate(xCurr, xCorner);
                 cost = current->getCost();
                 parents.clear();
-                          check.clear();
+                check.clear();
                 do {
                     is_valid = newState(xCurr, xCorner, xNew);
                     if(!check.insert(xNew).second){
                       is_valid = false;
                     }
-                    cost += h_distance(xCurr, xNew);
+                    cost += l2dis(xCurr, xNew);
                     xCurr = xNew;
                     parents.push_back(xCurr);
-                } while(is_valid && !(distance(xCurr, xCorner) < deltaX));
+                } while(is_valid && !(l2dis(xCurr, xCorner) < deltaX && thetadis(xCurr, xCorner) < deltaTheta));
             }
 
             if(is_valid)
@@ -185,7 +186,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                     parents.pop_back();
                     new_node = new Node(xCurr, current, cost, parents);
                     reached[xCurr] = new_node;
-                    addOpen(new_node, target, h_distance);
+                    addOpen(new_node, target, l2dis);
                     new_node->addSubgoal(xGoal);
                 }
                   else
@@ -199,7 +200,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 {
                     Action parent(p.getState(), p.getState(), p.getState(),
                     p.isClockwise(), true, p.isCorner(), p.getParent());
-                    addOpen(new_node, parent, h_distance);
+                    addOpen(new_node, parent, l2dis);
                     new_node->addSubgoal(parent.getState());
                 }
                 addGlobal(current->getState(), action.getState(), action.getParent()->getState());
@@ -207,7 +208,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 improve = false;
 
                 //Check if the goal is reached
-                if(distance(new_node->getState(), xGoal) < deltaX)
+                if(l2dis(current->getState(), xGoal) < deltaX && thetadis(current->getState(), xGoal) < deltaTheta)
                 {
                     auto&& path = retrievePath(new_node);
                     publishPlan(path, plan, start_pose.header.stamp);
@@ -228,20 +229,20 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         //Couldn't reach the action and it is not valid, improve it
         if(improve)
         {
-            vector<Action> new_actions = findAction(current, action, h_distance);
+            vector<Action> new_actions = findAction(current, action, l2dis);
             for(auto a : new_actions)
             {
 
                 if(fabs(current->getState()(2)) < 2*M_PI && a.getState() != action.getState())
                 {
-                    addOpen(current, a, h_distance);
+                    addOpen(current, a, l2dis);
 
                     if(a.isCorner())
                     {
                         Action copy = a;
                         VectorXd curr = a.getState();
                         VectorXd nearest = index.getNearestNeighbour(curr);
-                        if(h_distance(nearest, curr) < deltaX)
+                        if(l2dis(nearest, curr) < deltaX)
                         {
                             copy.setState(nearest);
                         }
@@ -250,7 +251,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                             index.insert(curr);
                         }
 
-                        addSubgoal(current, copy, h_distance);
+                        addSubgoal(current, copy, l2dis);
                         visualizer.addCorner(copy.getState());
                     }
                     else
@@ -501,7 +502,7 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
 
 void NHPlanner::addGlobal(const VectorXd& node, const VectorXd& action, const VectorXd& parent)
   {
-	 Distance& distance= *this->h_distance;
+	 Distance& distance= *this->l2dis;
      vector<VectorXd> collision;
 	 //check los(node, action)
 	bool is_los = map->collisionPoints(node, action, collision);
@@ -586,8 +587,14 @@ vector<VectorXd> NHPlanner::retrievePath(Node* node)
 
 NHPlanner::~NHPlanner()
 {
-    if(distance)
-        delete distance;
+    if(l2dis)
+        delete l2dis;
+
+	if(thetadis)
+		delete thetadis;
+
+	if(l2thetadis)
+		delete l2thetadis;
 
     if(map)
         delete map;

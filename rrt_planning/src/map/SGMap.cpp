@@ -181,9 +181,7 @@ bool SGMap::followObstacle(const VectorXd& current, const VectorXd& a, vector<Ve
   }
 
   bool check = forcedUpdate(current, a, actions);
-
   return false;
-
 }
 
 bool SGMap::isTrueCornerWOW(const VectorXd& current)
@@ -241,11 +239,14 @@ bool SGMap::isCorner(const VectorXd& current, vector<VectorXd>& points)
     //middle point and traslated point must be inside obstacle
     VectorXd middle = computeMiddle(points[0], points[1]);
     if(map.isFree(middle))
+    {
         return false;
+
+    }
 
     double DX = current(0) - middle(0);
     double DY = current(1) - middle(1);
-    double step = ray/3.0;
+    double step = 0.05;
     double norm = sqrt(pow(DX, 2) + pow(DY, 2));
     double dx = (DX / norm) * step;
     double dy = (DY / norm) * step;

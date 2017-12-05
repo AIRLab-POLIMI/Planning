@@ -53,7 +53,7 @@ public:
 class L2ThetaDistance : public Distance
 {
 public:
-    L2ThetaDistance(double wt = 1.0, double wr = 0.5) : wt(wt), wr(wr)
+    L2ThetaDistance(double wt = 1.0, double wr = 0.2) : wt(wt), wr(wr)
     {
 
     }
@@ -70,6 +70,26 @@ public:
 private:
     const double wt;
     const double wr;
+
+};
+
+class ThetaDistance : public Distance
+{
+public:
+	inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
+	{
+		double theta1 = x1(2);
+		double theta2 = x2(2);
+		if(theta1 < 0){
+			theta1 += 2 * M_PI;
+		}
+
+		if(theta2 < 0){
+			theta2 += 2 * M_PI;
+		}
+
+		return fabs(theta1 - theta2);
+	}
 
 };
 
