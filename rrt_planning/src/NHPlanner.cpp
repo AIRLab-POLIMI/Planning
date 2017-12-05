@@ -130,48 +130,49 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             //Motion primitives
 			VectorXd xCurr = current->getState();
             VectorXd xCorner = action.getState();
-			/*if(action.getState() != xGoal){
-				visualizer.addUpdate(xCurr, xCorner);
-			}*/
-			VectorXd xNew = xCurr;
-			double theta = atan2(xCorner(1) - xCurr(1), xCorner(0) - xCurr(0));
-			xCorner(2) = theta;
+            /*if(action.getState() != xGoal){
+                    visualizer.addUpdate(xCurr, xCorner);
+            }*/
+            VectorXd xNew = xCurr;
+            double theta = atan2(xCorner(1) - xCurr(1), xCorner(0) - xCurr(0));
+            xCorner(2) = theta;
             bool is_valid = true;
-			vector<VectorXd> parents;
-			set<VectorXd, CmpReached> check;
+            vector<VectorXd> parents;
+            set<VectorXd, CmpReached> check;
             double cost = current->getCost();
 
             do{
               is_valid = newState(xCurr, xCorner, xNew);
-			  if(!check.insert(xNew).second){
-				  is_valid = false;
-			  }
-			  cost += h_distance(xCurr, xNew);
-	          xCurr = xNew;
-	          parents.push_back(xCurr);
-	      	} while(is_valid && !(distance(xCurr, xCorner) < deltaX));
+              if(!check.insert(xNew).second){
+                      is_valid = false;
+              }
+              cost += h_distance(xCurr, xNew);
+              xCurr = xNew;
+              parents.push_back(xCurr);
+            } while(is_valid && !(distance(xCurr, xCorner) < deltaX));
 
-            if(action.getState()!= xGoal && (!is_valid || !map->isTrueCornerWOW(xCurr))){
-              //ROS_FATAL("trying to reach sample");
-              vector<Action> actions;
-              xCurr = current->getState();
-              sampleCorner(xCurr, action, actions);
-              xCorner = actions[0].getState();
-			  xCorner(2) = theta;
-              visualizer.addCorner(xCorner);
-			  //visualizer.addUpdate(xCurr, xCorner);
-			  cost = current->getCost();
-              parents.clear();
-			  check.clear();
-              do {
-                is_valid = newState(xCurr, xCorner, xNew);
-				if(!check.insert(xNew).second){
-  				  is_valid = false;
-  			  	}
-                cost += h_distance(xCurr, xNew);
-                xCurr = xNew;
-                parents.push_back(xCurr);
-              } while(is_valid && !(distance(xCurr, xCorner) < deltaX));
+            if(action.getState()!= xGoal && (!is_valid || !map->isTrueCornerWOW(xCurr)))
+            {
+                //ROS_FATAL("trying to reach sample");
+                vector<Action> actions;
+                xCurr = current->getState();
+                sampleCorner(xCurr, action, actions);
+                xCorner = actions[0].getState();
+                xCorner(2) = theta;
+                // visualizer.addCorner(xCorner);
+                //visualizer.addUpdate(xCurr, xCorner);
+                cost = current->getCost();
+                parents.clear();
+                          check.clear();
+                do {
+                    is_valid = newState(xCurr, xCorner, xNew);
+                    if(!check.insert(xNew).second){
+                      is_valid = false;
+                    }
+                    cost += h_distance(xCurr, xNew);
+                    xCurr = xNew;
+                    parents.push_back(xCurr);
+                } while(is_valid && !(distance(xCurr, xCorner) < deltaX));
             }
 
             if(is_valid)
@@ -193,14 +194,14 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 }
 
                 visualizer.addSegment(current->getState(), new_node->getState());
-				Action p = *action.getParent();
-				if(!new_node->contains(p))
-				{
-					Action parent(p.getState(), p.getState(), p.getState(),
-	                              p.isClockwise(), true, p.isCorner(), p.getParent());
-	                addOpen(new_node, parent, h_distance);
-					new_node->addSubgoal(parent.getState());
-				}
+                Action p = *action.getParent();
+                if(!new_node->contains(p))
+                {
+                    Action parent(p.getState(), p.getState(), p.getState(),
+                    p.isClockwise(), true, p.isCorner(), p.getParent());
+                    addOpen(new_node, parent, h_distance);
+                    new_node->addSubgoal(parent.getState());
+                }
                 addGlobal(current->getState(), action.getState(), action.getParent()->getState());
 				current->addSubgoal(action.getState());
                 improve = false;
@@ -230,6 +231,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             vector<Action> new_actions = findAction(current, action, h_distance);
             for(auto a : new_actions)
             {
+
                 if(fabs(current->getState()(2)) < 2*M_PI && a.getState() != action.getState())
                 {
                     addOpen(current, a, h_distance);
@@ -240,13 +242,13 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                         VectorXd curr = a.getState();
                         VectorXd nearest = index.getNearestNeighbour(curr);
                         if(h_distance(nearest, curr) < deltaX)
-						{
-							copy.setState(nearest);
-						}
+                        {
+                            copy.setState(nearest);
+                        }
                         else
-						{
+                        {
                             index.insert(curr);
-						}
+                        }
 
                         addSubgoal(current, copy, h_distance);
                         visualizer.addCorner(copy.getState());
@@ -259,10 +261,10 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         }
     }
 
-	for(auto t : global_closed)
-	{
-		visualizer.addTriangle(t.a, t.b, t.c, t.b);
-	}
+    for(auto t : global_closed)
+    {
+            visualizer.addTriangle(t.a, t.b, t.c, t.b);
+    }
     visualizer.flush();
 
     ROS_FATAL("Failed to find plan: omae wa mou shindeiru");
@@ -360,18 +362,21 @@ void NHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
 
     Action subgoal(action.getState(), action.getState(), action.getState(), action.isClockwise(), true, action.isCorner(), action.getParent());
     Node* parent = node->getParent();
-	if(insideGlobal(action.getState(), action.isSubgoal()))
-	{
-		return;
-	}
+    if(insideGlobal(action.getState(), action.isSubgoal()))
+    {
+        return;
+    }
 
     while(!parent->contains(subgoal))
     {
-		Key key(parent, subgoal);
-	    double h = distance(parent->getState(), subgoal.getState()) + distance(subgoal.getState(), target.getState());
-	    open.insert(key, h + parent->getCost());
+        if(!parent->insideArea(subgoal.getState()))
+        {
+            Key key(parent, subgoal);
+            double h = distance(parent->getState(), subgoal.getState()) + distance(subgoal.getState(), target.getState());
+            open.insert(key, h + parent->getCost());
+        }
         parent->addSubgoal(subgoal.getState());
-		parent = parent->getParent();
+        parent = parent->getParent();
     }
 
 }
@@ -392,8 +397,8 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
     bool is_los = map->collisionPoints(a, n, collision);
     if(is_los)
     {
-		vector<VectorXd> collision;
-		VectorXd p = action.getParent()->getState();
+        vector<VectorXd> collision;
+        VectorXd p = action.getParent()->getState();
         bool is_los = map->collisionPoints(n, p, collision);
         if(collision.size() == 2)
         {
@@ -432,6 +437,7 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
       {
           shared_ptr<Action> p = action.getParent();
           VectorXd sub = action.getSubgoal();
+
           bool corner = map->isCorner(new_state, points);
           if(sample)
           {
@@ -440,10 +446,11 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
                   sub = action.getState();
               }
           } else
-		  {
-			  Triangle* t = node->getTriangle(action.getParent()->getState());
-			  t->changeCw(new_state);
-		  }
+          {
+              Triangle* t = node->getTriangle(action.getParent()->getState());
+              //if(t)
+              //  t->changeCw(new_state);
+          }
           actions.push_back(Action(new_state, sub, old, true, false, corner, p));
           /*if(corner)
           {
@@ -461,6 +468,7 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
       {
           shared_ptr<Action> p = action.getParent();
           VectorXd sub = action.getSubgoal();
+
           bool corner = map->isCorner(new_state, points);
           if(sample)
           {
@@ -469,10 +477,11 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
                   sub = action.getState();
               }
           } else
-		  {
-			  Triangle* t = node->getTriangle(action.getParent()->getState());
-			  t->changeCcw(new_state);
-		  }
+          {
+              Triangle* t = node->getTriangle(action.getParent()->getState());
+              //if(t)
+              //  t->changeCcw(new_state);
+          }
           actions.push_back(Action(new_state, sub, old, false, false, corner, p));
           /*if(corner)
           {
@@ -483,10 +492,10 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
     }
 
     if(sample && vertices.size() == 2)
-	{
-		Triangle* t = new Triangle(a, vertices[0], vertices[1]);
-		node->addTriangle(t);
-	}
+    {
+            Triangle* t = new Triangle(a, vertices[0], vertices[1]);
+            node->addTriangle(t);
+    }
     return actions;
   }
 

@@ -154,10 +154,8 @@ bool SGMap::followObstacle(const VectorXd& current, const VectorXd& a, vector<Ve
   double DY = a(1) - current(1);
 
   //FIXME use parameters
-  double step = 0.5;
+  double step = 0.1;
   double norm = sqrt(pow(DX, 2) + pow(DY, 2));
-  //int k = floor(sqrt(pow(DX, 2) + pow(DY, 2)) / step);
-  //k = (k == 0) ? 1 : k;
   double dx = (DX / norm) * step;
   double dy = (DY / norm) * step;
   VectorXd p = a;
@@ -170,6 +168,14 @@ bool SGMap::followObstacle(const VectorXd& current, const VectorXd& a, vector<Ve
         actions.push_back(p);
         return true;
       }
+      if(dummy.size() == 0)
+      {
+          //ROS_FATAL("sigsev indotto");
+          //VectorXd ayy_lmao = dummy[4];
+          actions.push_back(p);
+          return true;
+      }
+
       p(0) += dx;
       p(1) += dy;
   }
@@ -192,24 +198,63 @@ bool SGMap::isTrueCornerWOW(const VectorXd& current)
 bool SGMap::isCorner(const VectorXd& current, vector<VectorXd>& points)
 {
     points.clear();
-    int count = 0;
-    VectorXd point = current;
+
     double delta = 2*M_PI / discretization;
     double angle = current(2);
 
+    VectorXd p = current;
+    p(0) = current(0) + ray*cos(angle);
+    p(1) = current(1) + ray*sin(angle);
+    VectorXd old = p;
+    bool curr, prev;
+    curr = prev = map.isFree(p);
+
     for(uint i = 0; i < discretization; i++)
     {
-      angle += delta;
-      point(0) = current(0) + ray*cos(angle);
-      point(1) = current(1) + ray*sin(angle);
-      points.push_back(point);
-      if(!map.isFree(point)){
-        count++;
-        if(count >= threshold*discretization)
-          return false;
-      }
+        old = p;
+        angle += delta;
+        p(0) = current(0) + ray*cos(angle);
+        p(1) = current(1) + ray*sin(angle);
+        curr = map.isFree(p);
 
+        if(curr != prev)
+        {
+            //Get collisions as points inside the obstacle
+            if(curr)
+                points.push_back(p);
+            else
+                points.push_back(old);
+        }
+
+        if(points.size() == 2)
+            break;
+
+        prev = curr;
     }
+
+    if(points.size() < 2)
+    {
+        return false;
+    }
+
+    //Check if it's a corner
+    //middle point and traslated point must be inside obstacle
+    VectorXd middle = computeMiddle(points[0], points[1]);
+    if(map.isFree(middle))
+        return false;
+
+    double DX = current(0) - middle(0);
+    double DY = current(1) - middle(1);
+    double step = ray/3.0;
+    double norm = sqrt(pow(DX, 2) + pow(DY, 2));
+    double dx = (DX / norm) * step;
+    double dy = (DY / norm) * step;
+
+    middle(0) += dx;
+    middle(1) += dy;
+
+    if(map.isFree(middle))
+        return false;
 
     return true;
 }

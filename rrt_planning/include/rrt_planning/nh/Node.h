@@ -64,7 +64,12 @@ public:
 
 	Triangle* getTriangle(const Eigen::VectorXd& p)
 	{
-		return closed_area.at(p);
+        Triangle* triangle = nullptr;
+        
+        if(closed_area.count(p))
+            triangle = closed_area.at(p);
+            
+		return triangle;
 	}
 
     bool insideArea(const Eigen::VectorXd& p)
