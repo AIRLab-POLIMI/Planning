@@ -13,6 +13,7 @@ namespace rrt_planning
 {
 
 typedef std::pair<const Eigen::VectorXd, const Eigen::VectorXd> CoorPair;
+//typedef std::pair<const Action a, const Action b> actionPair;
 typedef std::pair<double, double> Sub;
 
 struct CoorCmp
@@ -65,10 +66,10 @@ public:
 	Triangle* getTriangle(const Eigen::VectorXd& p)
 	{
         Triangle* triangle = nullptr;
-        
+
         if(closed_area.count(p))
             triangle = closed_area.at(p);
-            
+
 		return triangle;
 	}
 
@@ -106,6 +107,10 @@ public:
     std::vector<Eigen::VectorXd> getMotionPrimitives() {return mp;}
     double getCost() const {return cost;}
 
+public:
+    std::map<Eigen::VectorXd, Triangle*, eigenCmp> closed_area;
+    std::vector<CoorPair> forcedUp;
+
 private:
     Eigen::VectorXd state;
     Node* parent;
@@ -114,7 +119,7 @@ private:
     std::set<rrt_planning::CoorPair, rrt_planning::CoorCmp> closed;
     std::set<Sub> subgoals;
     //std::vector<Triangle> closed_area;
-	std::map<Eigen::VectorXd, Triangle*, eigenCmp> closed_area;
+	//std::map<Eigen::VectorXd, Triangle*, eigenCmp> closed_area;
 };
 
 }

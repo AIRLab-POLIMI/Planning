@@ -33,6 +33,7 @@ class Distance
 {
 public:
     virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) = 0;
+    virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, double length) = 0;
     virtual ~Distance()
     {
 
@@ -47,24 +48,29 @@ public:
         return (x1.head(2)-x2.head(2)).norm();
     }
 
+    inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, double length) override
+    {
+        return length;
+    }
 };
 
 
 class L2ThetaDistance : public Distance
 {
 public:
-    L2ThetaDistance(double wt = 1.0, double wr = 0.2) : wt(wt), wr(wr)
-    {
-
-    }
+    L2ThetaDistance(double wt = 1.0, double wr = 0.05) : wt(wt), wr(wr){}
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
     {
         double poseDistance = (x1.head(2)-x2.head(2)).squaredNorm();
-
         double angleDistance = std::pow(1.0 - std::cos(x1(2) - x2(2)), 2);
 
         return wt*poseDistance + wr*angleDistance;
+    }
+
+    inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, double length) override
+    {
+        return length;
     }
 
 private:
@@ -73,23 +79,49 @@ private:
 
 };
 
+class WeightedL2ThetaDistance: public Distance
+{
+public:
+    WeightedL2ThetaDistance(double wt = 1.0, double r_min = 0.05, double r_max = 0.5): wt(wt), r_min(r_min), r_max(r_max) {}
+
+    inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
+    {
+        return 0;
+    }
+
+    inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, double length)
+    {
+        double poseDistance = (x1.head(2)-x2.head(2)).squaredNorm();
+        double angleDistance = std::pow(1.0 - std::cos(x1(2) - x2(2)), 2);
+        double t = (length -  poseDistance) / length;
+        double wr = (1 - t)* r_min + t * r_max;
+
+        return wt * poseDistance + wr * angleDistance;
+    }
+private:
+    const double wt;
+    const double r_min;
+    const double r_max;
+
+};
+
 class ThetaDistance : public Distance
 {
 public:
-	inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
-	{
-		double theta1 = x1(2);
-		double theta2 = x2(2);
-		if(theta1 < 0){
-			theta1 += 2 * M_PI;
-		}
+    inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, double length) override
+    {
+        return length;
+    }
 
-		if(theta2 < 0){
-			theta2 += 2 * M_PI;
-		}
+    inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
+    {
+        double angle = x1(2) - x2(2);
+        if(fabs(angle) > M_PI){
+            angle = ( angle > 0 ) ? (angle - 2*M_PI) : (angle + 2*M_PI);
+        }
 
-		return fabs(theta1 - theta2);
-	}
+        return fabs(angle);
+}
 
 };
 

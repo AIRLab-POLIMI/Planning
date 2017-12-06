@@ -41,7 +41,7 @@ public:
     }
 
     virtual bool compute(const Eigen::VectorXd& x0, const Eigen::VectorXd& xRand, Eigen::VectorXd& xNew) = 0;
-    virtual bool los(const Eigen::VectorXd& x0, const Eigen::VectorXd& xRand, Eigen::VectorXd& xNew) = 0;
+    virtual bool los(const Eigen::VectorXd& x0, const Eigen::VectorXd& xRand, Eigen::VectorXd& xNew, double length) = 0;
     virtual bool check(const Eigen::VectorXd& x0, const Eigen::VectorXd& xGoal) = 0;
     virtual void initialize(ros::NodeHandle& nh) = 0;
 

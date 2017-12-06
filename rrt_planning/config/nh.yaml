@@ -1,7 +1,20 @@
 # Configuration of NH Planner
+
+#Reached parameters
 deltaX: 0.3
 deltaTheta: 0.785398
+
+#Corner parameters
 ray: 0.3
 threshold: 0.40
 discretization: 360
+
+#Weighted distance parameters
+r_min: 0.05
+r_max: 0.5
+wt: 1.0
+
+
+
+# notEpsilonh#3241
 epsilon: 0.15

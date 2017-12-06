@@ -93,7 +93,7 @@ bool ClosedLoopExtender::check(const VectorXd& x0, const VectorXd& xGoal)
     return valid;
 }
 
-bool ClosedLoopExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew)
+bool ClosedLoopExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew, double length)
 {
   controller.setGoal(xRand);
 

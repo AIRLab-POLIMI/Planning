@@ -59,7 +59,7 @@ bool MotionPrimitivesExtender::compute(const VectorXd& x0, const VectorXd& xRand
     return minDistance < std::numeric_limits<double>::infinity();
 }
 
-bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew)
+bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew, double length)
 {
     double minDistance = std::numeric_limits<double>::infinity();
     //double threshold = minDistance;
@@ -92,7 +92,7 @@ bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xRand, Ve
             }
         }*/
 
-      double currentDist = distance(xRand, x);
+      double currentDist = distance(xRand, x, length);
       if(currentDist < minDistance)
       {
           xNew = x;

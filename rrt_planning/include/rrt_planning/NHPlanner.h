@@ -24,8 +24,8 @@ struct CmpReached
 {
   bool operator()(const Eigen::VectorXd a, const Eigen::VectorXd b) const
   {
-    return ((a(0) < b(0)) ||(a(0) == b(0) && a(1) < b(1)) ||
-            (a(0) == b(0) && a(1) == b(1) && a(2) < b(2)));
+      return ((a(0) < b(0)) ||(a(0) == b(0) && a(1) < b(1)) ||
+               (a(0) == b(0) && a(1) == b(1) && a(2) < b(2)));
   }
 };
 
@@ -45,7 +45,7 @@ public:
 
 private:
     bool newState(const Eigen::VectorXd& xSample, const Eigen::VectorXd& xNear,
-                  Eigen::VectorXd& xNew);
+                  Eigen::VectorXd& xNew, double length);
 
     Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
 
@@ -56,7 +56,7 @@ private:
 
     void addSubgoal(Node* node, const Action& action, Distance& distance);
 
-    std::vector<Action> findAction(Node* node, const Action& action, Distance& distance);
+    std::vector<Action> findAction(Node* node, const Action& action, Distance& distance, std::vector<Triangle*>& triangles);
 
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
     void sampleCorner(const Eigen::VectorXd& current, const Action& corner, std::vector<Action>& actions);
@@ -67,15 +67,15 @@ private:
     Map* rosmap;
     SGMap* map;
     Distance* l2dis;
-	Distance* l2thetadis;
-	Distance* thetadis;
+    Distance* l2thetadis;
+    Distance* thetadis;
     OpenList open;
     Action target;
     std::map<Eigen::VectorXd, Node*, rrt_planning::CmpReached> reached;
     std::vector<Triangle> global_closed;
 
     double deltaX;
-	double deltaTheta;
+    double deltaTheta;
     int discretization;
     double ray;
     double threshold;
