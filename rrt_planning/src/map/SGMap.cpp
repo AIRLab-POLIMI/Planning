@@ -91,8 +91,17 @@ VectorXd SGMap::exitPoint(const VectorXd& current, const VectorXd& middle, bool 
 
     p = middle;
 
-    if(!map.insideBound(p)){
-        ROS_INFO("middle outside bounds");
+    //Middle point outside obstacle
+    if(map.isFree(middle))
+    {
+        p(0) += dx;
+        p(1) += dy;
+        if(map.isFree(p))
+        {
+            return p;
+        }
+
+        return map.getOutsidePoint();
     }
 
     while(map.insideBound(p))

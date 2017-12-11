@@ -73,14 +73,14 @@ bool ROSMap::insideBound(const Eigen::VectorXd& p)
   unsigned int my;
   bool result = costmap->worldToMap(wx, wy, mx, my);
 
-  if(!result){
-    //ROS_FATAL("MUDAMUDAMUDAMUDAMUDAMUDAMUDAMUDAMUDAMUDAMUDAMUDAMUDAMUDAMUDAMUDA");
-    //ROS_FATAL_STREAM("DiO bRaNdO said: " << p(0) << ", " << p(1));
-  }
-
   return result;
 }
 
+Eigen::VectorXd getOutsidePoint()
+{
+    Eigen::Vector3d p(bounds.maxX + 1.0, bounds.maxY + 1.0, 0);
+    return p;
+}
 ROSMap::~ROSMap()
 {
 

@@ -61,7 +61,7 @@ void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_r
     map = new SGMap(*rosmap, discretization, ray, threshold);
     l2dis = new L2Distance();
     thetadis = new ThetaDistance();
-    l2thetadis = new WeightedL2ThetaDistance();
+    l2thetadis = new L2ThetaDistance();
 
     extenderFactory.initialize(private_nh, *rosmap, *l2thetadis);
     visualizer.initialize(private_nh);
@@ -290,7 +290,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     for(auto n : reached)
     {
         double dis = l2dis(n.second->getState(), xGoal);
-        if( dis < min)
+        if( dis <= min)
         {
             min = dis;
             fml = n.second;
@@ -312,14 +312,6 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         is_valid = newState(xCurr, xGoal, xNew, length);
         if(!check.insert(xNew).second){
             is_valid = false;
-            ROS_FATAL_STREAM("loop: " << check.count(xNew));
-            ROS_FATAL_STREAM("goal: " << xGoal(0) << ", " << xGoal(1) << ", " <<xGoal(2));
-            ROS_FATAL_STREAM("xNew: " << xNew(0) << ", " << xNew(1) << ", " << xNew(2));
-            ROS_FATAL_STREAM("xCurr: " << xCurr(0) << ", " << xCurr(1) << ", " << xCurr(2));
-            double distance = l2dis(xCurr, xGoal);
-            double distance2 = sqrt(pow(xNew(0) - xGoal(0), 2.0) + pow(xNew(1) -xGoal(1), 2.0));
-            ROS_FATAL_STREAM("Magic: " << distance);
-            ROS_FATAL_STREAM("Magic is real 2: " << distance2);
         }
         if(is_valid)
             visualizer.addUpdate(xCurr, xNew);

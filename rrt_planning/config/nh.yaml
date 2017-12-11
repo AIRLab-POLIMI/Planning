@@ -2,7 +2,7 @@
 
 #Reached parameters
 deltaX: 0.3
-deltaTheta: 0.785398
+deltaTheta: 0.78
 
 #Corner parameters
 ray: 0.3

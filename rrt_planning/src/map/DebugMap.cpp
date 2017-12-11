@@ -46,6 +46,12 @@ bool DebugMap::insideBound(const Eigen::VectorXd& p)
   return false;
 }
 
+Eigen::VectorXd getOutsidePoint()
+{
+    Eigen::VectorXd p;
+    return p;
+}
+
 DebugMap::~DebugMap()
 {
 

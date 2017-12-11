@@ -50,7 +50,7 @@ public:
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, double length) override
     {
-        return length;
+        return (x1.head(2)-x2.head(2)).norm();
     }
 };
 
@@ -58,7 +58,7 @@ public:
 class L2ThetaDistance : public Distance
 {
 public:
-    L2ThetaDistance(double wt = 1.0, double wr = 0.05) : wt(wt), wr(wr){}
+    L2ThetaDistance(double wt = 1.0, double wr = 0.5) : wt(wt), wr(wr){}
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
     {
@@ -70,7 +70,10 @@ public:
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, double length) override
     {
-        return length;
+        double poseDistance = (x1.head(2)-x2.head(2)).squaredNorm();
+        double angleDistance = std::pow(1.0 - std::cos(x1(2) - x2(2)), 2);
+
+        return wt*poseDistance + wr*angleDistance;
     }
 
 private:
@@ -82,7 +85,7 @@ private:
 class WeightedL2ThetaDistance: public Distance
 {
 public:
-    WeightedL2ThetaDistance(double wt = 1.0, double r_min = 0.05, double r_max = 0.5): wt(wt), r_min(r_min), r_max(r_max) {}
+    WeightedL2ThetaDistance(double wt = 1.0, double r_min = 0.01, double r_max = 0.1): wt(wt), r_min(r_min), r_max(r_max) {}
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
     {

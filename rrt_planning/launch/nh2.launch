@@ -3,8 +3,8 @@
 	<env name="ROSCONSOLE_CONFIG_FILE"
 			value="$(find rrt_planning)/config/custom_rosconsole.conf"/>
 	<!-- arguments -->
-	<arg name="map_file" default="$(find rrt_planning)/maps/willowgarage_perfect.yaml"/>
-	<arg name="world_file" default="$(find rrt_planning)/maps/willowgarage_perfect.world"/>
+	<arg name="map_file" default="$(find rrt_planning)/maps/b-w-open.yaml"/>
+	<arg name="world_file" default="$(find rrt_planning)/maps/map.world"/>
 	<arg name="simulated" default="false" />
 	<arg name="differentialDrive" default="true" />
 
@@ -30,8 +30,7 @@
 		<!-- NH-Planner configuration -->
 		<param name="base_global_planner" value="rrt_planning/NHPlanner"/>
 		<rosparam file="$(find rrt_planning)/config/nh.yaml" command="load" ns="NHPlanner"/>
-		<rosparam file="$(find rrt_planning)/config/differentialDrive.yaml" command="load" ns="NHPlanner" if="$(arg differentialDrive)"/>
-		<!--<rosparam file="$(find rrt_planning)/config/posq_differentialDrive.yaml" command="load" ns="NHPlanner"/> -->
+		<rosparam file="$(find rrt_planning)/config/posq_differentialDrive.yaml" command="load" ns="NHPlanner"/>
 		<rosparam file="$(find rrt_planning)/config/bicycle.yaml" command="load" ns="NHPlanner" unless="$(arg differentialDrive)"/>
 
 		<!-- Visualization configuration -->

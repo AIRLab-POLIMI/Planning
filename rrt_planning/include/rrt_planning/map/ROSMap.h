@@ -39,7 +39,8 @@ public:
     virtual bool isFree(const Eigen::VectorXd& p) override;
     virtual unsigned char getCost(const Eigen::VectorXd& p) override;
     virtual bool insideBound(const Eigen::VectorXd& p) override;
-  
+    virtual Eigen::VectorXd getOutsidePoint() override;
+
     virtual ~ROSMap();
 
 

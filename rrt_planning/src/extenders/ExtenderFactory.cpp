@@ -61,7 +61,12 @@ void ExtenderFactory::initialize(ros::NodeHandle& nh, Map& map, Distance& distan
         if(controllerName == "POSQ")
         {
             //FIXME use parameters
-            controller = new POSQ(1.0, 1.0, 1.0, 1.0);
+            double k_rho, kv, k_alpha, k_phi;
+            nh.param("k_rho", k_rho, 1.0);
+            nh.param("kv", kv, 1.0);
+            nh.param("k_alpha", k_alpha, 1.0);
+            nh.param("k_phi", k_phi, 1.0);
+            controller = new POSQ(k_rho, kv, k_alpha, k_phi);
         }
         else if(controllerName == "Costant")
         {
@@ -115,4 +120,3 @@ ExtenderFactory::~ExtenderFactory()
 
 
 }
-

@@ -2,3 +2,10 @@
 extender: ClosedLoop
 controller: POSQ
 kinematicModel: DifferentialDrive
+loopN: 1
+
+# parameters
+k_rho: 1
+kv: 0.1
+k_alpha: 2
+k_phi: 0.1
