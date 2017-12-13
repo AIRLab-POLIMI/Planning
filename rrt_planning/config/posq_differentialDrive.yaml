@@ -4,7 +4,7 @@ controller: POSQ
 kinematicModel: DifferentialDrive
 loopN: 1
 
-# parameters
+# controller parameters
 k_rho: 1
 kv: 0.1
 k_alpha: 2

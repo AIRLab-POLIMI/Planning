@@ -12,7 +12,8 @@ namespace rrt_planning
 class SGMap
 {
 public:
-    SGMap(Map& map, int discretization, double ray, double threshold);
+    SGMap(Map& map);
+    void initialize(ros::NodeHandle& nh);
 
     bool collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions);
     Eigen::VectorXd exitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw);
@@ -22,8 +23,11 @@ public:
     bool isCorner(const Eigen::VectorXd& current, std::vector<Eigen::VectorXd>& points);
     bool isTrueCornerWOW(const Eigen::VectorXd& current);
     bool followObstacle(const Eigen::VectorXd& current, const Eigen::VectorXd& a, std::vector<Eigen::VectorXd>& actions);
-  
+
     virtual ~SGMap();
+
+public:
+    int count;
 
 
 private:
@@ -32,6 +36,12 @@ private:
   int discretization;
   double ray;
   double threshold;
+
+  //los parameters
+  double macro;
+  double micro;
+  double step;
+
 };
 
 }

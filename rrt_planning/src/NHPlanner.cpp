@@ -26,6 +26,7 @@ namespace rrt_planning
 NHPlanner::NHPlanner()
 {
     deltaX = 0;
+    deltaTheta = 0;
 
     rosmap = nullptr;
     map = nullptr;
@@ -46,23 +47,16 @@ void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_r
     //Get parameters from ros parameter server
     ros::NodeHandle private_nh("~/" + name);
 
-    double wt, r_min, r_max;
-
     private_nh.param("deltaX", deltaX, 0.5);
     private_nh.param("deltaTheta", deltaTheta, 0.5);
-    private_nh.param("ray", ray, 0.5);
-    private_nh.param("threshold", threshold, 0.35);
-    private_nh.param("discretization", discretization, 5);
-    private_nh.param("wt", wt, 1.0);
-    private_nh.param("r_min", r_min, 0.05);
-    private_nh.param("r_max", r_max, 0.5);
 
     rosmap = new ROSMap(costmap_ros);
-    map = new SGMap(*rosmap, discretization, ray, threshold);
+    map = new SGMap(*rosmap);
     l2dis = new L2Distance();
     thetadis = new ThetaDistance();
     l2thetadis = new L2ThetaDistance();
 
+    map->initialize(private_nh);
     extenderFactory.initialize(private_nh, *rosmap, *l2thetadis);
     visualizer.initialize(private_nh);
 }
@@ -72,7 +66,8 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                                    std::vector<geometry_msgs::PoseStamped>& plan)
 {
     visualizer.clean();
-
+    count = 0;
+    map->count = 0;
     Distance& l2thetadis = *this->l2thetadis;
     Distance& l2dis = *this->l2dis;
     Distance& thetadis = *this->thetadis;
@@ -109,7 +104,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     index.insert(xGoal);
 
     ROS_FATAL("Start Search: pick a god and pray");
-
+    ros::Time start_time = ros::Time::now();
     //Start search
     while(!open.empty())
     {
@@ -120,7 +115,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         bool improve = true;
 
         //Check if the goal is reached
-        if(l2dis(current->getState(), xGoal) < deltaX && thetadis(current->getState(), xGoal) < deltaTheta)
+        if(l2dis(current->getState(), xGoal) < deltaX)
         {
             auto&& path = retrievePath(current);
             publishPlan(path, plan, start_pose.header.stamp);
@@ -130,6 +125,12 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
             visualizer.displayPlan(plan);
             visualizer.flush();
+            ros::Time end = ros::Time::now();
+            ros::Duration ex_time = end - start_time;
+            ROS_FATAL("Plan found: simple geometry");
+            ROS_FATAL_STREAM("Action count: " << count);
+            ROS_FATAL_STREAM("Micro count: " << map->count);
+            ROS_FATAL_STREAM("Time: " << ex_time);
 
             ROS_FATAL("Plan found: simple geometry");
 
@@ -162,7 +163,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 cost += l2dis(xCurr, xNew);
                 xCurr = xNew;
                 parents.push_back(xCurr);
-             } while(is_valid && !(l2dis(xCurr, xCorner) < deltaX && thetadis(xCurr, xCorner) < deltaTheta));
+            } while(is_valid && !(l2dis(xCurr, xCorner) < deltaX));
 
             if(action.getState()!= xGoal && (!is_valid || !map->isTrueCornerWOW(xCurr)))
             {
@@ -186,7 +187,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                     cost += l2dis(xCurr, xNew);
                     xCurr = xNew;
                     parents.push_back(xCurr);
-                } while(is_valid && !(l2dis(xCurr, xCorner) < deltaX && thetadis(xCurr, xCorner) < deltaTheta));
+                } while(is_valid && !(l2dis(xCurr, xCorner) < deltaX ));
             }
 
             if(is_valid)
@@ -220,22 +221,6 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 current->addSubgoal(action.getState());
                 improve = false;
 
-                //Check if the goal is reached
-                if(l2dis(new_node->getState(), xGoal) < deltaX && thetadis(new_node->getState(), xGoal) < deltaTheta)
-                {
-                    auto&& path = retrievePath(new_node);
-                    publishPlan(path, plan, start_pose.header.stamp);
-                    open.clear();
-                    reached.clear();
-                    global_closed.clear();
-
-                    visualizer.displayPlan(plan);
-                    visualizer.flush();
-
-                    ROS_FATAL("Plan found: simple geometry");
-
-                    return true;
-                }
             }
         }
 
@@ -249,6 +234,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
                 if(fabs(current->getState()(2)) < 2*M_PI && a.getState() != action.getState())
                 {
+                    count++;
                     addOpen(current, a, l2dis);
 
                     if(a.isCorner())
@@ -296,10 +282,10 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             fml = n.second;
         }
     }
-    visualizer.flush();
+    /*visualizer.flush();
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     visualizer.clean();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));*/
 
     VectorXd xCurr = fml->getState();
     VectorXd xCorner = xGoal;
@@ -316,7 +302,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         if(is_valid)
             visualizer.addUpdate(xCurr, xNew);
         xCurr = xNew;
-    } while(is_valid && !(l2dis(xCurr, xGoal) < deltaX && thetadis(xCurr, xGoal) < deltaTheta));
+    } while(is_valid && !(l2dis(xCurr, xGoal) < deltaX));
 
 
 
@@ -406,17 +392,6 @@ void NHPlanner::addOpen(Node* node, const Action& action, Distance& distance)
     std::set<rrt_planning::CoorPair, rrt_planning::CoorCmp> closed = node->getClosed();
     VectorXd a = action.getState();
     VectorXd s = action.getSubgoal();
-    /*for(auto c : closed)
-    {
-        double bucket = 0.17;
-        double dist_a = distance(c.first, a);
-        double dist_s = distance(c.second, s);
-        if(dist_a < bucket && dist_s < bucket)
-        {
-          ROS_FATAL("You can't sit with us!");
-          return;
-        }
-    }*/
 
     if(insideGlobal(action.getState(), action.isSubgoal()))
     {
@@ -536,12 +511,7 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
         }
 
         actions.push_back(Action(new_state, sub, old, true, false, corner, p));
-          /*if(corner)
-          {
-            for(auto p : points)
-                visualizer.addPoint(p);
-          }*/
-       }
+        }
     }
 
     if(!action.isClockwise() || sample)
@@ -568,12 +538,7 @@ vector<Action> NHPlanner::findAction(Node* node, const Action& action, Distance&
                 //  t->changeCcw(new_state);
             }
             actions.push_back(Action(new_state, sub, old, false, false, corner, p));
-            /*if(corner)
-            {
-                for(auto p : points)
-                    visualizer.addPoint(p);
-            }*/
-       }
+        }
     }
 
     if(follow)
@@ -600,6 +565,7 @@ void NHPlanner::addGlobal(const VectorXd& node, const VectorXd& action, const Ve
 {
     Distance& distance= *this->l2dis;
     vector<VectorXd> collision;
+
     //check los(node, action)
     bool is_los = map->collisionPoints(node, action, collision);
     if(!is_los && distance(collision[1], action) > deltaX)

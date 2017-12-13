@@ -1,6 +1,6 @@
 # Configuration for bicycle planning
 kinematicModel: Bicycle
 motion_primitives:
-  minU: [0, -0.78539816339]
+  minU: [0.01, -0.78539816339]
   maxU: [1, 0.78539816339]
-  discretization: 20 
+  discretization: 20

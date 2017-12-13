@@ -51,6 +51,7 @@ void ExtenderFactory::initialize(ros::NodeHandle& nh, Map& map, Distance& distan
         initializeKinematic(nh);
 
         extender = new MotionPrimitivesExtender(*kinematicModel, *controller, map, distance);
+        ROS_FATAL("motion primiteves");
     }
     else if(extenderName == "ClosedLoop")
     {
@@ -67,6 +68,7 @@ void ExtenderFactory::initialize(ros::NodeHandle& nh, Map& map, Distance& distan
             nh.param("k_alpha", k_alpha, 1.0);
             nh.param("k_phi", k_phi, 1.0);
             controller = new POSQ(k_rho, kv, k_alpha, k_phi);
+            ROS_FATAL("controller");
         }
         else if(controllerName == "Costant")
         {
@@ -98,10 +100,12 @@ void ExtenderFactory::initializeKinematic(ros::NodeHandle& nh)
     if(kinematicModelName == "DifferentialDrive")
     {
         kinematicModel = new DifferentialDrive(*controller);
+        ROS_FATAL("DifferentialDrive");
     }
     else if(kinematicModelName == "Bicycle")
     {
         kinematicModel = new Bicycle(*controller);
+        ROS_FATAL("Bicycle");
     }
 
 }

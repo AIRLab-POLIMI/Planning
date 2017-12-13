@@ -6,18 +6,30 @@ using namespace Eigen;
 namespace rrt_planning
 {
 
-SGMap::SGMap(Map& map, int discretization, double ray, double threshold) : map(map),
-      discretization(discretization), ray(ray), threshold(threshold) {}
+SGMap::SGMap(Map& map) : map(map) {}
+
+void SGMap::initialize(ros::NodeHandle& nh)
+{
+    nh.param("macro", macro, 0.5);
+    nh.param("micro", micro, 0.3);
+    nh.param("step", step, 0.05);
+    nh.param("discretization", discretization, 360);
+    nh.param("threshold", threshold, 0.4);
+    nh.param("ray", ray, 0.3);
+
+    count = 0;
+}
 
 
 bool SGMap::collisionPoints(const VectorXd& a, const VectorXd& b, vector<VectorXd>& actions)
 {
     actions.clear();
+    vector<VectorXd> coll, micro_coll;
+    VectorXd entry_point, tmp, exit_point;
+    exit_point = b;
     double DX = b(0) - a(0);
     double DY = b(1) - a(1);
 
-    //FIXME use parameters
-    double step = 0.05;
 
     double norm = sqrt(pow(DX, 2) + pow(DY, 2));
     double dx = (DX / norm) * step;
@@ -38,16 +50,45 @@ bool SGMap::collisionPoints(const VectorXd& a, const VectorXd& b, vector<VectorX
 
         if(curr != prev)
         {
-            //Get collisions as points outside the obstacle
             if(actions.empty())
+            {
                 actions.push_back(old);
+                entry_point = old;
+                tmp = old;
+            }
             else
-                actions.push_back(p);
+            {
+                if(curr)
+                {
+                    exit_point = p;
+                    double distance = sqrt(pow(exit_point(0) - tmp(0), 2) + pow(exit_point(1) - tmp(1), 2));
+                    if(distance > micro)
+                    {
+                        actions.push_back(exit_point);
+                        return false;
+                    }
+                    count++;
+                }
+                else
+                {
+                    tmp = old;
+                    double distance = sqrt(pow(exit_point(0) - tmp(0), 2) + pow(exit_point(1) - tmp(1), 2));
+                    if(distance > macro)
+                    {
+                        actions.push_back(exit_point);
+                        return false;
+                    }
+                }
+            }
 
-            if(actions.size() == 2)
-                return false;
         }
         prev = curr;
+    }
+
+    if(actions.size() == 1)
+    {
+        actions.push_back(exit_point);
+        return false;
     }
 
     return true;
@@ -65,10 +106,7 @@ VectorXd SGMap::exitPoint(const VectorXd& current, const VectorXd& middle, bool 
     double DX = normal(1);
     double DY = -normal(0);
 
-    //FIXME use parameters
-    double step = 0.05;
     double norm = sqrt(pow(DX, 2) + pow(DY, 2));
-
     double dx = (DX / norm) * step;
     double dy = (DY / norm) * step;
     VectorXd p = middle;
@@ -125,9 +163,6 @@ bool SGMap::forcedUpdate(const VectorXd& a, const VectorXd& b, vector<VectorXd>&
     actions.clear();
     double DX = b(0) - a(0);
     double DY = b(1) - a(1);
-
-    //FIXME use parameters
-    double step = 0.05;
     double norm = sqrt(pow(DX, 2) + pow(DY, 2));
 
     double dx = (DX / norm) * step;
@@ -159,9 +194,6 @@ bool SGMap::followObstacle(const VectorXd& current, const VectorXd& a, vector<Ve
     actions.clear();
     double DX = a(0) - current(0);
     double DY = a(1) - current(1);
-
-    //FIXME use parameters
-    double step = 0.05;
     double norm = sqrt(pow(DX, 2) + pow(DY, 2));
     double dx = (DX / norm) * step;
     double dy = (DY / norm) * step;
@@ -194,9 +226,9 @@ bool SGMap::followObstacle(const VectorXd& current, const VectorXd& a, vector<Ve
 
 bool SGMap::isTrueCornerWOW(const VectorXd& current)
 {
-    double step = 0.3;
-    double x = current(0) + cos(current(2)) * step;
-    double y = current(1) + sin(current(2)) * step;
+    double true_step = 0.3;
+    double x = current(0) + cos(current(2)) * true_step;
+    double y = current(1) + sin(current(2)) * true_step;
 
     return map.isFree(Vector3d(x, y, current(2)));
 }
@@ -227,9 +259,9 @@ bool SGMap::isCorner(const VectorXd& current, vector<VectorXd>& points)
         {
             //Get collisions as points inside the obstacle
             if(curr)
-                points.push_back(p);
-            else
                 points.push_back(old);
+            else
+                points.push_back(p);
         }
 
         if(points.size() == 2)
@@ -253,10 +285,10 @@ bool SGMap::isCorner(const VectorXd& current, vector<VectorXd>& points)
 
     double DX = current(0) - middle(0);
     double DY = current(1) - middle(1);
-    double step = 0.1;
+    double ray_step = 0.1;
     double norm = sqrt(pow(DX, 2) + pow(DY, 2));
-    double dx = (DX / norm) * step;
-    double dy = (DY / norm) * step;
+    double dx = (DX / norm) * ray_step;
+    double dy = (DY / norm) * ray_step;
 
     middle(0) += dx;
     middle(1) += dy;

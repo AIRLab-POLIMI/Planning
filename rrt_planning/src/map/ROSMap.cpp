@@ -76,11 +76,12 @@ bool ROSMap::insideBound(const Eigen::VectorXd& p)
   return result;
 }
 
-Eigen::VectorXd getOutsidePoint()
+Eigen::VectorXd ROSMap::getOutsidePoint()
 {
     Eigen::Vector3d p(bounds.maxX + 1.0, bounds.maxY + 1.0, 0);
     return p;
 }
+
 ROSMap::~ROSMap()
 {
 

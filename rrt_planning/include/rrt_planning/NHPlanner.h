@@ -77,6 +77,7 @@ private:
     double deltaX;
     double deltaTheta;
     int discretization;
+    int count;
     double ray;
     double threshold;
 
