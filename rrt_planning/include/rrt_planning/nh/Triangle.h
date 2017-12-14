@@ -11,14 +11,9 @@ namespace rrt_planning
     inline Triangle(const Eigen::VectorXd& a, const Eigen::VectorXd& b,
       const Eigen::VectorXd& c): a(a), b(b), c(c)
     {
-        computeArea();
-    }
-
-	void computeArea()
-	{
-		double magics = (-b(1) * c(0) + a(1) * (-b(0) + c(0)) + a(0) * (b(1) - c(1)) + b(0) * c(1));
+        double magics = (-b(1) * c(0) + a(1) * (-b(0) + c(0)) + a(0) * (b(1) - c(1)) + b(0) * c(1));
         area = 0.5 * magics;
-	}
+    }
 
     bool contains(const Eigen::VectorXd& p)
     {
@@ -28,18 +23,6 @@ namespace rrt_planning
 
         return ((s > 0) && (t > 0) && ((s + t) < 2 * area * sign));
     }
-
-	void changeCw(const Eigen::VectorXd& cw)
-	{
-		b = cw;
-		computeArea();
-	}
-
-	void changeCcw(const Eigen::VectorXd& ccw)
-	{
-		c = ccw;
-		computeArea();
-	}
 
     Eigen::VectorXd a;
     Eigen::VectorXd b;

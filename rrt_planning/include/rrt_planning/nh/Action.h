@@ -1,9 +1,8 @@
-#ifndef ACTION_H
-#define ACTION_H
+#ifndef INCLUDE_RRT_PLANNING_NH_ACTION_H
+#define INCLUDE_RRT_PLANNING_NH_ACTION_H
 
 #include <memory>
 #include <Eigen/Dense>
-#include "rrt_planning/grid/Cell.h"
 
 namespace rrt_planning
 {
@@ -11,12 +10,10 @@ class Action
 {
 public:
     inline Action(){}
-    inline Action(const Eigen::VectorXd& state, const Eigen::VectorXd& subgoal, const Eigen::VectorXd& old, bool cw, bool sample, bool corner, std::shared_ptr<Action> parent):
-                  state(state), subgoal(subgoal), old(old), cw(cw), sample(sample), corner(corner), parent(parent) {}
+    inline Action(const Eigen::VectorXd& state, bool cw, bool sample, bool corner, std::shared_ptr<Action> parent):
+                  state(state), cw(cw), sample(sample), corner(corner), parent(parent) {}
 
     Eigen::VectorXd getState() const {return state;}
-    Eigen::VectorXd getSubgoal() const {return subgoal;}
-    Eigen::VectorXd getOld() const {return old;}
     bool isClockwise() const {return cw;}
     bool isSubgoal() const {return sample;}
     bool isCorner() const {return corner;}
@@ -28,8 +25,6 @@ public:
 
 private:
     Eigen::VectorXd state;
-    Eigen::VectorXd subgoal;
-    Eigen::VectorXd old;
     bool cw;
     bool sample;
     bool corner;
@@ -37,4 +32,4 @@ private:
 };
 }
 
-#endif // ACTION_H
+#endif // INCLUDE_RRT_PLANNING_NH_ACTION_H

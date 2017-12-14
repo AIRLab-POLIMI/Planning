@@ -56,7 +56,7 @@ private:
 
     void addSubgoal(Node* node, const Action& action, Distance& distance);
 
-    std::vector<Action> findAction(Node* node, const Action& action, Distance& distance, std::vector<Triangle*>& triangles);
+    std::vector<Action> findAction(Node* node, const Action& action, Distance& distance, std::vector<Triangle>& triangles);
 
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
     void sampleCorner(const Eigen::VectorXd& current, const Action& corner, std::vector<Action>& actions);

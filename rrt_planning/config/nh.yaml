@@ -8,6 +8,7 @@ deltaTheta: 0.78
 ray: 0.3
 threshold: 0.40
 discretization: 360
+corner_step: 0.1
 
 #los parameters
 step: 0.05
@@ -21,5 +22,5 @@ wt: 1.0
 
 
 
-# maybeEpsilonh?#3241
+# notEpsilonh
 epsilon: 0.3

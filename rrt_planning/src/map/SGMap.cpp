@@ -16,20 +16,18 @@ void SGMap::initialize(ros::NodeHandle& nh)
     nh.param("discretization", discretization, 360);
     nh.param("threshold", threshold, 0.4);
     nh.param("ray", ray, 0.3);
-
-    count = 0;
+    nh.param("corner_step", corner_step, 0.1);
 }
 
 
 bool SGMap::collisionPoints(const VectorXd& a, const VectorXd& b, vector<VectorXd>& actions)
 {
     actions.clear();
-    vector<VectorXd> coll, micro_coll;
-    VectorXd entry_point, tmp, exit_point;
+    VectorXd tmp, exit_point;
     exit_point = b;
+
     double DX = b(0) - a(0);
     double DY = b(1) - a(1);
-
 
     double norm = sqrt(pow(DX, 2) + pow(DY, 2));
     double dx = (DX / norm) * step;
@@ -53,7 +51,6 @@ bool SGMap::collisionPoints(const VectorXd& a, const VectorXd& b, vector<VectorX
             if(actions.empty())
             {
                 actions.push_back(old);
-                entry_point = old;
                 tmp = old;
             }
             else
@@ -67,7 +64,6 @@ bool SGMap::collisionPoints(const VectorXd& a, const VectorXd& b, vector<VectorX
                         actions.push_back(exit_point);
                         return false;
                     }
-                    count++;
                 }
                 else
                 {
@@ -158,7 +154,7 @@ VectorXd SGMap::exitPoint(const VectorXd& current, const VectorXd& middle, bool 
     return p;
 }
 
-bool SGMap::forcedUpdate(const VectorXd& a, const VectorXd& b, vector<VectorXd>& actions)
+void SGMap::forcedUpdate(const VectorXd& a, const VectorXd& b, vector<VectorXd>& actions)
 {
     actions.clear();
     double DX = b(0) - a(0);
@@ -180,13 +176,14 @@ bool SGMap::forcedUpdate(const VectorXd& a, const VectorXd& b, vector<VectorXd>&
         if(curr != prev)
         {
             actions.push_back(p);
-            if(actions.size() == 2) return false;
+            if(actions.size() == 2)
+                return;
         }
 
         prev = curr;
     }
 
-    return true;
+    return;
 }
 
 bool SGMap::followObstacle(const VectorXd& current, const VectorXd& a, vector<VectorXd>& actions)
@@ -202,41 +199,21 @@ bool SGMap::followObstacle(const VectorXd& current, const VectorXd& a, vector<Ve
 
     while(map.insideBound(p) && map.isFree(p))
     {
-        if(isCorner(p, dummy))
+        if(isCorner(p))
         {
             actions.push_back(p);
             return true;
         }
-        if(dummy.size() == 0)
-        {
-            //ROS_FATAL("sigsev indotto");
-            //VectorXd ayy_lmao = dummy[4];
-            actions.push_back(p);
-            return true;
-        }
-
         p(0) += dx;
         p(1) += dy;
     }
 
-    bool check = forcedUpdate(current, a, actions);
-
+    forcedUpdate(current, a, actions);
     return false;
 }
 
-bool SGMap::isTrueCornerWOW(const VectorXd& current)
+bool SGMap::isCorner(const VectorXd& current)
 {
-    double true_step = 0.3;
-    double x = current(0) + cos(current(2)) * true_step;
-    double y = current(1) + sin(current(2)) * true_step;
-
-    return map.isFree(Vector3d(x, y, current(2)));
-}
-
-bool SGMap::isCorner(const VectorXd& current, vector<VectorXd>& points)
-{
-    points.clear();
-
     double delta = 2*M_PI / discretization;
     double angle = current(2);
 
@@ -247,6 +224,7 @@ bool SGMap::isCorner(const VectorXd& current, vector<VectorXd>& points)
     bool curr, prev;
     curr = prev = map.isFree(p);
 
+    vector<VectorXd> points;
     for(uint i = 0; i < discretization; i++)
     {
         old = p;
@@ -270,10 +248,7 @@ bool SGMap::isCorner(const VectorXd& current, vector<VectorXd>& points)
         prev = curr;
     }
 
-    if(points.size() < 2)
-    {
-        return false;
-    }
+    if(points.empty()){return true;}
 
     //Check if it's a corner
     //middle point and traslated point must be inside obstacle
@@ -285,10 +260,9 @@ bool SGMap::isCorner(const VectorXd& current, vector<VectorXd>& points)
 
     double DX = current(0) - middle(0);
     double DY = current(1) - middle(1);
-    double ray_step = 0.1;
     double norm = sqrt(pow(DX, 2) + pow(DY, 2));
-    double dx = (DX / norm) * ray_step;
-    double dy = (DY / norm) * ray_step;
+    double dx = (DX / norm) * corner_step;
+    double dy = (DY / norm) * corner_step;
 
     middle(0) += dx;
     middle(1) += dy;
@@ -297,6 +271,16 @@ bool SGMap::isCorner(const VectorXd& current, vector<VectorXd>& points)
         return false;
 
     return true;
+}
+
+
+bool SGMap::isTrueCornerWOW(const VectorXd& current)
+{
+    double true_step = 0.3;
+    double x = current(0) + cos(current(2)) * true_step;
+    double y = current(1) + sin(current(2)) * true_step;
+
+    return map.isFree(Vector3d(x, y, 0));
 }
 
 VectorXd SGMap::computeMiddle(const VectorXd& a, const VectorXd& b)

@@ -17,25 +17,25 @@ public:
 
     bool collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions);
     Eigen::VectorXd exitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw);
-    bool forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions);
+    void forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions);
+
     Eigen::VectorXd computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b);
     bool clockwise(const Eigen::VectorXd& a, const Eigen::VectorXd& b);
-    bool isCorner(const Eigen::VectorXd& current, std::vector<Eigen::VectorXd>& points);
+    bool isCorner(const Eigen::VectorXd& current);
     bool isTrueCornerWOW(const Eigen::VectorXd& current);
     bool followObstacle(const Eigen::VectorXd& current, const Eigen::VectorXd& a, std::vector<Eigen::VectorXd>& actions);
 
     virtual ~SGMap();
 
-public:
-    int count;
-
 
 private:
   Map& map;
 
+  //corner parameters
   int discretization;
   double ray;
   double threshold;
+  double corner_step;
 
   //los parameters
   double macro;

@@ -1,5 +1,5 @@
-#ifndef OPENLIST_H
-#define OPENLIST_H
+#ifndef INCLUDE_RRT_PLANNING_NH_OPENLIST_H
+#define INCLUDE_RRT_PLANNING_NH_OPENLIST_H
 
 #include "rrt_planning/nh/Action.h"
 #include "rrt_planning/nh/Node.h"
@@ -62,4 +62,4 @@ private:
     std::set<rrt_planning::Tuple, rrt_planning::Cmp> open;
 };
 
-#endif // OPENLIST_H
+#endif // INCLUDE_RRT_PLANNING_NH_OPENLIST_H

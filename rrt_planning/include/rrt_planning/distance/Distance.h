@@ -85,7 +85,7 @@ private:
 class WeightedL2ThetaDistance: public Distance
 {
 public:
-    WeightedL2ThetaDistance(double wt = 1.0, double r_min = 0.01, double r_max = 0.1): wt(wt), r_min(r_min), r_max(r_max) {}
+    WeightedL2ThetaDistance(double wt = 1.0, double r_min = 0.01, double r_max = 0.5): wt(wt), r_min(r_min), r_max(r_max) {}
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
     {
