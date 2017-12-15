@@ -133,87 +133,62 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             return true;
         }
 
-        if(action.isCorner() || action.getState() == xGoal)
+        Node* new_node = nullptr;
+
+        if(action.getState() == xGoal)
         {
-            //Motion primitives
+            new_node = steer(current, xGoal, l2thetadis);
+        }
+
+        else if(action.isCorner())
+        {
             VectorXd xCurr = current->getState();
             VectorXd xCorner = action.getState();
-            VectorXd xNew = xCurr;
-            double theta;
+            double theta = xCorner(2);
             if(xCorner != xGoal)
             {
                 theta = atan2(xCorner(1) - xCurr(1), xCorner(0) - xCurr(0));
                 xCorner(2) = theta;
             }
-            bool is_valid = true;
-            vector<VectorXd> parents;
-            set<VectorXd, CmpReached> check;
-            double cost = current->getCost();
-            double length = l2dis(xCurr, xCorner);
+            new_node = steer(current, xCorner, l2thetadis);
 
-            do{
-                is_valid = newState(xCurr, xCorner, xNew, length);
-                if(!check.insert(xNew).second){
-                    is_valid = false;
-                }
-                cost += l2dis(xCurr, xNew);
-                xCurr = xNew;
-                parents.push_back(xCurr);
-            } while(is_valid && !(l2dis(xCurr, xCorner) < deltaX));
-
-            if(action.getState()!= xGoal && (!is_valid || !map->isTrueCornerWOW(xCurr)))
+            if(!new_node || !map->isTrueCornerWOW(new_node->getState()))
             {
                 vector<Action> actions;
-                xCurr = current->getState();
                 sampleCorner(xCurr, action, actions);
                 xCorner = actions[0].getState();
                 xCorner(2) = theta;
-                cost = current->getCost();
-                double length = l2dis(xCurr, xCorner);
-                parents.clear();
-                check.clear();
-                do {
-                    is_valid = newState(xCurr, xCorner, xNew, length);
-                    if(!check.insert(xNew).second){
-                        is_valid = false;
-                    }
-                    cost += l2dis(xCurr, xNew);
-                    xCurr = xNew;
-                    parents.push_back(xCurr);
-                } while(is_valid && !(l2dis(xCurr, xCorner) < deltaX ));
+                new_node = steer(current, xCorner, l2thetadis);
             }
 
-            if(is_valid)
+        }
+        if(new_node)
+        {
+            //If I can reach it, see if I already passed it or if it's the Goal
+            if(!reached.count(new_node->getState()))
             {
-                //If I can reach it, see if I already passed it or if it's the Goal
-                Node* new_node;
-                if(!reached.count(xCurr))
-                {
-                    parents.pop_back();
-                    new_node = new Node(xCurr, current, cost, parents);
-                    reached[xCurr] = new_node;
-                    addOpen(new_node, target, l2dis);
-                    new_node->addSubgoal(xGoal);
-                }
-                  else
-                {
-                    ROS_FATAL("Surprise bitch");
-                    new_node = reached.at(xCurr);
-                }
-
-                visualizer.addSegment(current->getState(), new_node->getState());
-                Action p = *action.getParent();
-                if(!new_node->contains(p.getState()))
-                {
-                    Action parent(p.getState(), p.isClockwise(), true,
-                                        p.isCorner(), p.getParent());
-                    addOpen(new_node, parent, l2dis);
-                    new_node->addSubgoal(parent.getState());
-                }
-                addGlobal(current->getState(), action.getState(), p.getState());
-                current->addSubgoal(action.getState());
-                improve = false;
+                reached[new_node->getState()] = new_node;
+                addOpen(new_node, target, l2dis);
+                new_node->addSubgoal(xGoal);
             }
+              else
+            {
+                ROS_FATAL("Surprise bitch");
+                new_node = reached.at(new_node->getState());
+            }
+
+            visualizer.addSegment(current->getState(), new_node->getState());
+            Action p = *action.getParent();
+            if(!new_node->contains(p.getState()))
+            {
+                Action parent(p.getState(), p.isClockwise(), true,
+                                    p.isCorner(), p.getParent());
+                addOpen(new_node, parent, l2dis);
+                new_node->addSubgoal(parent.getState());
+            }
+            addGlobal(current->getState(), action.getState(), p.getState());
+            current->addSubgoal(action.getState());
+            improve = false;
         }
 
         //Couldn't reach the corner or it is not valid, improve it
@@ -304,6 +279,37 @@ bool NHPlanner::newState(const VectorXd& xNear, const VectorXd& xSample, VectorX
 {
     return extenderFactory.getExtender().los(xNear, xSample, xNew, length);
 }
+
+Node* NHPlanner::steer(Node* current, const VectorXd& xCorner, Distance& distance)
+{
+    Distance& l2dis = *this->l2dis;
+    VectorXd xCurr = current->getState();
+    VectorXd xNew = xCurr;
+    bool is_valid = true;
+    vector<VectorXd> parents;
+    set<VectorXd, CmpReached> check;
+    double cost = current->getCost();
+    double length = l2dis(xCurr, xCorner);
+
+    do{
+        is_valid = newState(xCurr, xCorner, xNew, length);
+        if(!check.insert(xNew).second){
+            is_valid = false;
+        }
+        cost += l2dis(xCurr, xNew);
+        xCurr = xNew;
+        parents.push_back(xCurr);
+    } while(is_valid && !(distance(xCurr, xCorner) < deltaX));
+
+    Node* new_node = nullptr;
+    if(is_valid)
+    {
+        parents.pop_back();
+        new_node = new Node(xCurr, current, cost, parents);
+    }
+    return new_node;
+}
+
 
 VectorXd NHPlanner::convertPose(const geometry_msgs::PoseStamped& msg)
 {

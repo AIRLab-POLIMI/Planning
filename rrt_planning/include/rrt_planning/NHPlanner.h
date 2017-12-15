@@ -46,7 +46,8 @@ public:
 private:
     bool newState(const Eigen::VectorXd& xSample, const Eigen::VectorXd& xNear,
                   Eigen::VectorXd& xNew, double length);
-
+    Node* steer(Node* current, const Eigen::VectorXd& xCorner, Distance& distance);
+    
     Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
 
     void publishPlan(std::vector<Eigen::VectorXd>& path, std::vector<geometry_msgs::PoseStamped>& plan,
