@@ -115,7 +115,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
 
         //Check if the goal is reached
-        if(l2thetadis(current->getState(), xGoal) < deltaX)
+        if(l2dis(current->getState(), xGoal) < deltaX && thetadis(current->getState(), xGoal) < deltaTheta)
         {
             auto&& path = retrievePath(current);
             publishPlan(path, plan, start_pose.header.stamp);
@@ -247,7 +247,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     double length = l2dis(xCurr, xCorner);
 
     do{
-        is_valid = newState(xCurr, xGoal, xNew, length);
+        is_valid = newState(xCurr, xGoal, xNew, length, l2dis);
         if(!check.insert(xNew).second){
             is_valid = false;
             ROS_FATAL("Loop");
@@ -269,9 +269,16 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 }
 
 
-bool NHPlanner::newState(const VectorXd& xNear, const VectorXd& xSample, VectorXd& xNew, double length)
+bool NHPlanner::newState(const VectorXd& xNear, const VectorXd& xSample, VectorXd& xNew, double length, Distance& distance)
 {
-    return extenderFactory.getExtender().los(xNear, xSample, xNew, length);
+    VectorXd orientedSample = xSample;
+    if(distance(xNear, xSample) > 0.5)
+    {
+        double theta = atan2(xSample(1) - xNear(1), xSample(0) - xNear(0));
+        orientedSample(2) = theta;
+    }
+
+    return extenderFactory.getExtender().los(xNear, orientedSample, xNew, length);
 }
 
 Node* NHPlanner::steer(Node* current, const VectorXd& xCorner, Distance& distance)
@@ -286,7 +293,7 @@ Node* NHPlanner::steer(Node* current, const VectorXd& xCorner, Distance& distanc
     double length = l2dis(xCurr, xCorner);
 
     do{
-        is_valid = newState(xCurr, xCorner, xNew, length);
+        is_valid = newState(xCurr, xCorner, xNew, length, l2dis);
         if(!check.insert(xNew).second){
             is_valid = false;
         }

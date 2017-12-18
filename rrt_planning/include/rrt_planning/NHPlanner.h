@@ -45,7 +45,7 @@ public:
 
 private:
     bool newState(const Eigen::VectorXd& xSample, const Eigen::VectorXd& xNear,
-                  Eigen::VectorXd& xNew, double length);
+                  Eigen::VectorXd& xNew, double length, Distance& distance);
     Node* steer(Node* current, const Eigen::VectorXd& xCorner, Distance& distance);
     Node* park(Node* current, Distance& distance);
 
