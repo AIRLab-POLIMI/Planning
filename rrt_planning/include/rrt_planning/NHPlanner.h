@@ -47,7 +47,8 @@ private:
     bool newState(const Eigen::VectorXd& xSample, const Eigen::VectorXd& xNear,
                   Eigen::VectorXd& xNew, double length);
     Node* steer(Node* current, const Eigen::VectorXd& xCorner, Distance& distance);
-    
+    Node* park(Node* current, Distance& distance);
+
     Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
 
     void publishPlan(std::vector<Eigen::VectorXd>& path, std::vector<geometry_msgs::PoseStamped>& plan,
@@ -60,7 +61,7 @@ private:
     std::vector<Action> findAction(Node* node, const Action& action, Distance& distance, std::vector<Triangle>& triangles);
 
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
-    void sampleCorner(const Eigen::VectorXd& current, const Action& corner, std::vector<Action>& actions);
+    Eigen::VectorXd sampleCorner(const Eigen::VectorXd& corner, bool cw);
     void addGlobal(const Eigen::VectorXd& node, const Eigen::VectorXd& action, const Eigen::VectorXd& parent);
     bool insideGlobal(const Eigen::VectorXd& p, bool subgoal);
 
@@ -77,10 +78,9 @@ private:
 
     double deltaX;
     double deltaTheta;
-    int discretization;
     int count;
-    double ray;
-    double threshold;
+    int k;
+
 
     ExtenderFactory extenderFactory;
     Visualizer visualizer;

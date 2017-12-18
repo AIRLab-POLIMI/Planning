@@ -49,6 +49,7 @@ void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_r
 
     private_nh.param("deltaX", deltaX, 0.5);
     private_nh.param("deltaTheta", deltaTheta, 0.5);
+    private_nh.param("k", k, 3);
 
     rosmap = new ROSMap(costmap_ros);
     map = new SGMap(*rosmap);
@@ -112,8 +113,9 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         Action action = key.second;
         bool improve = true;
 
+
         //Check if the goal is reached
-        if(l2dis(current->getState(), xGoal) < deltaX)
+        if(l2thetadis(current->getState(), xGoal) < deltaX)
         {
             auto&& path = retrievePath(current);
             publishPlan(path, plan, start_pose.header.stamp);
@@ -139,28 +141,19 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         {
             new_node = steer(current, xGoal, l2thetadis);
         }
-
         else if(action.isCorner())
         {
             VectorXd xCurr = current->getState();
             VectorXd xCorner = action.getState();
-            double theta = xCorner(2);
-            if(xCorner != xGoal)
+            double theta = atan2(xCorner(1) - xCurr(1), xCorner(0) - xCurr(0));
+            xCorner(2) = theta;
+            for (uint i = 0; i < k; i++)
             {
-                theta = atan2(xCorner(1) - xCurr(1), xCorner(0) - xCurr(0));
-                xCorner(2) = theta;
+                VectorXd sample = sampleCorner(xCorner, action.isClockwise());
+                visualizer.addCorner(sample);
+                new_node = steer(current, sample, l2thetadis);
+                if(new_node) break;
             }
-            new_node = steer(current, xCorner, l2thetadis);
-
-            if(!new_node || !map->isTrueCornerWOW(new_node->getState()))
-            {
-                vector<Action> actions;
-                sampleCorner(xCurr, action, actions);
-                xCorner = actions[0].getState();
-                xCorner(2) = theta;
-                new_node = steer(current, xCorner, l2thetadis);
-            }
-
         }
         if(new_node)
         {
@@ -257,11 +250,12 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         is_valid = newState(xCurr, xGoal, xNew, length);
         if(!check.insert(xNew).second){
             is_valid = false;
+            ROS_FATAL("Loop");
         }
         if(is_valid)
             visualizer.addUpdate(xCurr, xNew);
         xCurr = xNew;
-    } while(is_valid && !(l2dis(xCurr, xGoal) < deltaX));
+    } while(is_valid && !(l2thetadis(xCurr, xGoal, length) < deltaX));
 
     visualizer.addCorner(fml->getState());
 
@@ -299,15 +293,31 @@ Node* NHPlanner::steer(Node* current, const VectorXd& xCorner, Distance& distanc
         cost += l2dis(xCurr, xNew);
         xCurr = xNew;
         parents.push_back(xCurr);
-    } while(is_valid && !(distance(xCurr, xCorner) < deltaX));
+     } while(is_valid && !(distance(xCurr, xCorner, length) < deltaX));
 
     Node* new_node = nullptr;
-    if(is_valid)
+    if(is_valid && map->isTrueCornerWOW(xCurr))
     {
         parents.pop_back();
         new_node = new Node(xCurr, current, cost, parents);
     }
     return new_node;
+}
+
+Node* NHPlanner::park(Node* current, Distance& distance)
+{
+    VectorXd xGoal = target.getState();
+    VectorXd xCurr = current->getState();
+    double theta = atan2(xGoal(1) - xCurr(1), xGoal(0) - xCurr(0));
+    xGoal(2) = theta;
+
+    Node* goal_node = steer(current, xGoal, distance);
+    if(goal_node)
+    {
+        goal_node = steer(goal_node, target.getState(), distance);
+    }
+
+    return goal_node;
 }
 
 
@@ -524,22 +534,18 @@ bool NHPlanner::insideGlobal(const Eigen::VectorXd& p, bool subgoal)
   return false;
 }
 
-void NHPlanner::sampleCorner(const VectorXd& current, const Action& action, vector<Action>& actions)
+VectorXd NHPlanner::sampleCorner(const VectorXd& corner, bool cw)
 {
-    double lambda = 1/0.25;
-    int samples = 1;
-    VectorXd a = action.getState();
-    VectorXd vec = a - current;
+    double lambda = 1/deltaX;
 
-    double theta = atan2(vec(1), vec(0));
-    double theta_new = action.isClockwise() ? theta - M_PI/2 : theta + M_PI/2;
+    double theta = cw ? corner(2) - M_PI/2 : corner(2) + M_PI/2;
+    double random = RandomGenerator::sampleAngle();
+    double direction = corner(2) + random;
+    double sample = RandomGenerator::sampleExponential(lambda);
 
-    for(int i = 0; i < samples; i++)
-    {
-        double sample = ray;
-        VectorXd new_state = Vector3d(a(0) + sample*cos(theta_new), a(1) + sample*sin(theta_new), a(2));
-        actions.push_back(Action(new_state, false, action.isClockwise(), true, action.getParent()));
-    }
+    VectorXd new_state = Vector3d(corner(0) + sample*cos(theta), corner(1) + sample*sin(theta), direction);
+
+    return new_state;
 }
 
 

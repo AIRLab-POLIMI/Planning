@@ -22,7 +22,7 @@
  */
 
 #include "rrt_planning/utils/RandomGenerator.h"
-
+#include <iostream>
 namespace rrt_planning
 {
 
@@ -47,7 +47,24 @@ double RandomGenerator::sampleExponential(double lambda)
 {
   std::exponential_distribution<double> d(lambda);
 
-  return d(gen);  
+  return d(gen);
+}
+
+double RandomGenerator::sampleAngle()
+{
+    std::normal_distribution<double> d_sample(0.0, 1.0);
+    double sample = d_sample(gen);
+    //std::cerr << "normal: " << sample << std::endl;
+
+    std::bernoulli_distribution d_sign(0.5);
+    bool positive = d_sign(gen);
+    int sign = (positive) ? 1 : -1;
+    double magics = (1 - exp(-fabs(sample)));
+
+    double direction = M_PI * magics ;
+   // std::cerr << "magics: " << magics << std::endl;
+
+    return sign * direction;
 }
 
 }

@@ -5,6 +5,7 @@ deltaX: 0.3
 deltaTheta: 0.78
 
 #Corner parameters
+k: 3
 ray: 0.3
 threshold: 0.40
 discretization: 360

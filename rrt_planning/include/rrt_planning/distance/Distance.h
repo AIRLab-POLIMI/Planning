@@ -25,6 +25,8 @@
 #define INCLUDE_RRT_PLANNING_DISTANCE_DISTANCE_H_
 
 #include <Eigen/Dense>
+#include "angles/angles.h"
+#include <iostream>
 
 namespace rrt_planning
 {
@@ -58,7 +60,7 @@ public:
 class L2ThetaDistance : public Distance
 {
 public:
-    L2ThetaDistance(double wt = 1.0, double wr = 0.05) : wt(wt), wr(wr){}
+    L2ThetaDistance(double wt = 1.0, double wr = 1.0) : wt(wt), wr(wr){}
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
     {
@@ -85,26 +87,40 @@ private:
 class WeightedL2ThetaDistance: public Distance
 {
 public:
-    WeightedL2ThetaDistance(double wt = 1.0, double r_min = 0.01, double r_max = 0.5): wt(wt), r_min(r_min), r_max(r_max) {}
+    WeightedL2ThetaDistance(double wt = 1.0, double wr_a = 0.5, double wr_p = 0.5): wt(wt), wr_a(wr_a), wr_p(wr_p) {}
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
     {
-        return 0;
+        double poseDistance = (x1.head(2)-x2.head(2)).squaredNorm();
+        double difference = angles::shortest_angular_distance(x1(2), x2(2));
+        double angleDistance = std::pow(1.0 - std::cos(difference), 2);
+
+        return wt*poseDistance + wr_p*angleDistance;
     }
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, double length)
     {
-        double poseDistance = (x1.head(2)-x2.head(2)).squaredNorm();
-        double angleDistance = std::pow(1.0 - std::cos(x1(2) - x2(2)), 2);
-        double t = (length -  poseDistance) / length;
-        double wr = (1 - t)* r_min + t * r_max;
+        double rho = (x1.head(2)-x2.head(2)).squaredNorm();
+        double alpha = atan2(x2(1) - x1(1), x2(0) - x1(0));
+        double phi = x2(2);
+        double theta = x1(2);
 
-        return wt * poseDistance + wr * angleDistance;
+        //double angleDistance = std::pow(1.0 - std::cos(x1(2) - x2(2)), 2);
+        double dalpha = angles::shortest_angular_distance(theta, alpha);
+        double deltaAlpha = std::pow(1.0 - std::cos(dalpha), 2);
+        double dphi = angles::shortest_angular_distance(theta, phi);
+        double deltaPhi = std::pow(1.0 - std::cos(dphi), 2);
+
+        //double deltaAlpha = fabs(alpha - theta);
+        //double deltaPhi = fabs(phi - theta);
+        double t = (length - rho) / length;
+
+        return wt*rho + wr_a*deltaAlpha*(1-t) + wr_p*deltaPhi*t;
     }
 private:
     const double wt;
-    const double r_min;
-    const double r_max;
+    const double wr_a;
+    const double wr_p;
 
 };
 

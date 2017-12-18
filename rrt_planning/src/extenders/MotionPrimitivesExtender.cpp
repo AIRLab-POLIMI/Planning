@@ -64,7 +64,7 @@ bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xRand, Ve
     double minDistance = std::numeric_limits<double>::infinity();
     //double threshold = minDistance;
     //bool reachable = false;
-
+    
     for(auto& mp : motionPrimitives)
     {
         VectorXd x = model.applyTransform(x0, mp);
@@ -92,12 +92,13 @@ bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xRand, Ve
             }
         }*/
 
-      double currentDist = distance(xRand, x, length);
+      double currentDist = distance(x, xRand, length);
       if(currentDist < minDistance)
       {
           xNew = x;
           minDistance = currentDist;
       }
+
     }
 
     return ((minDistance < std::numeric_limits<double>::infinity()) && map.isFree(xNew));
