@@ -140,6 +140,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         if(action.getState() == xGoal)
         {
             new_node = steer(current, xGoal, l2thetadis);
+
         }
         else if(action.isCorner())
         {
@@ -152,7 +153,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 VectorXd sample = sampleCorner(xCorner, action.isClockwise());
                 visualizer.addCorner(sample);
                 new_node = steer(current, sample, l2thetadis);
-                if(new_node) break;
+
             }
         }
         if(new_node)
@@ -183,6 +184,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             current->addSubgoal(action.getState());
             improve = false;
         }
+
 
         //Couldn't reach the corner or it is not valid, improve it
         if(improve)
@@ -255,7 +257,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         if(is_valid)
             visualizer.addUpdate(xCurr, xNew);
         xCurr = xNew;
-    } while(is_valid && !(l2thetadis(xCurr, xGoal, length) < deltaX));
+    } while(is_valid && !(l2dis(xCurr, xGoal) < deltaX) && !(thetadis(xCurr, xGoal) < deltaTheta));
 
     visualizer.addCorner(fml->getState());
 
@@ -284,6 +286,7 @@ bool NHPlanner::newState(const VectorXd& xNear, const VectorXd& xSample, VectorX
 Node* NHPlanner::steer(Node* current, const VectorXd& xCorner, Distance& distance)
 {
     Distance& l2dis = *this->l2dis;
+    Distance& thetadis = *this->thetadis;
     VectorXd xCurr = current->getState();
     VectorXd xNew = xCurr;
     bool is_valid = true;
@@ -300,7 +303,7 @@ Node* NHPlanner::steer(Node* current, const VectorXd& xCorner, Distance& distanc
         cost += l2dis(xCurr, xNew);
         xCurr = xNew;
         parents.push_back(xCurr);
-     } while(is_valid && !(distance(xCurr, xCorner, length) < deltaX));
+     } while(is_valid && !((l2dis(xCurr, xCorner) < deltaX) && (thetadis(xCurr, xCorner) < deltaTheta)));
 
     Node* new_node = nullptr;
     if(is_valid && map->isTrueCornerWOW(xCurr))

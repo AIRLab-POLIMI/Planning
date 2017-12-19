@@ -47,7 +47,7 @@ VectorXd POSQ::operator()(const Eigen::VectorXd& x) const
     double rho = (x.head(2) - goal.head(2)).norm();
     double alphaGoal = (rho==0) ? (0) : (atan2(goal(1) - x(1), goal(0) - x(0)));
     double alpha = (rho==0) ? (0) : (angles::shortest_angular_distance(alphaGoal, x(2)));
-    double phi = angles::shortest_angular_distance(goal(2), x(2));
+    double phi = angles::shortest_angular_distance (x(2), goal(2));
 
     u(0) = Krho*tanh(Kv*rho);
     u(1) = -Kalpha*alpha-Kphi*phi;

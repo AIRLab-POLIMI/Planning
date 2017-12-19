@@ -59,12 +59,13 @@ double RandomGenerator::sampleAngle()
     std::bernoulli_distribution d_sign(0.5);
     bool positive = d_sign(gen);
     int sign = (positive) ? 1 : -1;
-    double magics = (1 - exp(-fabs(sample)));
+    //double magics = (1 - exp(-fabs(sample)));
+    double magics = atan(sample);
 
-    double direction = M_PI * magics ;
+    double direction = 2 * magics ;
    // std::cerr << "magics: " << magics << std::endl;
 
-    return sign * direction;
+    return direction;
 }
 
 }
