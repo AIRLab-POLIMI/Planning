@@ -12,6 +12,8 @@
 #include "rrt_planning/distance/Distance.h"
 #include "rrt_planning/extenders/ExtenderFactory.h"
 #include "rrt_planning/visualization/Visualizer.h"
+#include "rrt_planning/sampling/position/SamplingPositionFactory.h"
+#include "rrt_planning/sampling/angle/SamplingAngleFactory.h"
 #include "rrt_planning/nh/CornerIndex.h"
 #include "rrt_planning/nh/OpenList.h"
 #include "rrt_planning/map/SGMap.h"
@@ -84,6 +86,8 @@ private:
 
     ExtenderFactory extenderFactory;
     Visualizer visualizer;
+    SamplingAngleFactory angleFactory;
+    SamplingPositionFactory positionFactory;
 
 };
 

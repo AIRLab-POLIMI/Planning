@@ -52,7 +52,7 @@ double RandomGenerator::sampleExponential(double lambda)
 
 double RandomGenerator::sampleAngle()
 {
-    std::normal_distribution<double> d_sample(0.0, 1.0);
+    std::normal_distribution<double> d_sample(0.0, 0.1);
     double sample = d_sample(gen);
     //std::cerr << "normal: " << sample << std::endl;
 

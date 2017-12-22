@@ -60,6 +60,8 @@ void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_r
     map->initialize(private_nh);
     extenderFactory.initialize(private_nh, *rosmap, *l2thetadis);
     visualizer.initialize(private_nh);
+    angleFactory.initialize(private_nh);
+    positionFactory.initialize(private_nh);
 }
 
 bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
@@ -140,6 +142,34 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         if(action.getState() == xGoal)
         {
             new_node = steer(current, xGoal, l2thetadis);
+            if(new_node)
+            {
+                //If I can reach it, see if I already passed it or if it's the Goal
+                if(!reached.count(new_node->getState()))
+                {
+                    reached[new_node->getState()] = new_node;
+                    addOpen(new_node, target, l2dis);
+                    new_node->addSubgoal(xGoal);
+                }
+                  else
+                {
+                    ROS_FATAL("Surprise bitch");
+                    new_node = reached.at(new_node->getState());
+                }
+
+                visualizer.addSegment(current->getState(), new_node->getState());
+                Action p = *action.getParent();
+                if(!new_node->contains(p.getState()))
+                {
+                    Action parent(p.getState(), p.isClockwise(), true,
+                                        p.isCorner(), p.getParent());
+                    addOpen(new_node, parent, l2dis);
+                    new_node->addSubgoal(parent.getState());
+                }
+                addGlobal(current->getState(), action.getState(), p.getState());
+                current->addSubgoal(action.getState());
+                improve = false;
+            }
 
         }
         else if(action.isCorner())
@@ -153,36 +183,36 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 VectorXd sample = sampleCorner(xCorner, action.isClockwise());
                 visualizer.addCorner(sample);
                 new_node = steer(current, sample, l2thetadis);
+                if(new_node)
+                {
+                    //If I can reach it, see if I already passed it or if it's the Goal
+                    if(!reached.count(new_node->getState()))
+                    {
+                        reached[new_node->getState()] = new_node;
+                        addOpen(new_node, target, l2dis);
+                        new_node->addSubgoal(xGoal);
+                    }
+                      else
+                    {
+                        ROS_FATAL("Surprise bitch");
+                        new_node = reached.at(new_node->getState());
+                    }
+
+                    visualizer.addSegment(current->getState(), new_node->getState());
+                    Action p = *action.getParent();
+                    if(!new_node->contains(p.getState()))
+                    {
+                        Action parent(p.getState(), p.isClockwise(), true,
+                                            p.isCorner(), p.getParent());
+                        addOpen(new_node, parent, l2dis);
+                        new_node->addSubgoal(parent.getState());
+                    }
+                    addGlobal(current->getState(), action.getState(), p.getState());
+                    current->addSubgoal(action.getState());
+                    improve = false;
+                }
 
             }
-        }
-        if(new_node)
-        {
-            //If I can reach it, see if I already passed it or if it's the Goal
-            if(!reached.count(new_node->getState()))
-            {
-                reached[new_node->getState()] = new_node;
-                addOpen(new_node, target, l2dis);
-                new_node->addSubgoal(xGoal);
-            }
-              else
-            {
-                ROS_FATAL("Surprise bitch");
-                new_node = reached.at(new_node->getState());
-            }
-
-            visualizer.addSegment(current->getState(), new_node->getState());
-            Action p = *action.getParent();
-            if(!new_node->contains(p.getState()))
-            {
-                Action parent(p.getState(), p.isClockwise(), true,
-                                    p.isCorner(), p.getParent());
-                addOpen(new_node, parent, l2dis);
-                new_node->addSubgoal(parent.getState());
-            }
-            addGlobal(current->getState(), action.getState(), p.getState());
-            current->addSubgoal(action.getState());
-            improve = false;
         }
 
 
@@ -265,8 +295,8 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     visualizer.flush();
 
     ROS_FATAL("Failed to find plan: omae wa mou shindeiru");
-    exit(0);
-    return false;
+    //FIXME i did not find plan
+    return true;
 
 }
 

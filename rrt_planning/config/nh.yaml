@@ -21,6 +21,9 @@ r_min: 0.05
 r_max: 0.5
 wt: 1.0
 
+#Samplers parameters
+position_sampler: LineGaussian
+angle_sampler:  Atan
 
 
 # notEpsilonh
