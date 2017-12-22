@@ -22,7 +22,7 @@ r_max: 0.5
 wt: 1.0
 
 #Samplers parameters
-position_sampler: LineGaussian
+position_sampler: Uniform2D
 angle_sampler:  Atan
 
 
