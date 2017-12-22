@@ -124,6 +124,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             open.clear();
             reached.clear();
             global_closed.clear();
+            corner_samples.clear();
 
             visualizer.displayPlan(plan);
             visualizer.flush();
@@ -176,12 +177,22 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         {
             VectorXd xCurr = current->getState();
             VectorXd xCorner = action.getState();
-            double theta = atan2(xCorner(1) - xCurr(1), xCorner(0) - xCurr(0));
-            xCorner(2) = theta;
-            for (uint i = 0; i < k; i++)
+            Vector2d corner_key(xCorner(0), xCorner(1));
+            vector<VectorXd> samples;
+            if(corner_samples.count(corner_key))
             {
-                VectorXd sample = sampleCorner(xCorner, action.isClockwise());
-                visualizer.addCorner(sample);
+                samples = corner_samples.at(corner_key);
+            } else
+            {
+                samples.push_back(xCorner);
+            }
+
+            double theta = atan2(xCorner(1) - xCurr(1), xCorner(0) - xCurr(0));
+
+            for(auto c : samples)
+            {
+                VectorXd sample = c;
+                sample(2) = sampleAngle(theta);
                 new_node = steer(current, sample, l2thetadis);
                 if(new_node)
                 {
@@ -241,6 +252,10 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                         else
                         {
                             index.insert(curr);
+                            VectorXd n = current->getState();
+                            double theta = atan2(curr(1)- n(1), curr(0) - n(0));
+                            curr(2) = theta;
+                            sampleCorner(curr, a.isClockwise());
                         }
 
                         addSubgoal(current, copy, l2dis);
@@ -574,18 +589,27 @@ bool NHPlanner::insideGlobal(const Eigen::VectorXd& p, bool subgoal)
   return false;
 }
 
-VectorXd NHPlanner::sampleCorner(const VectorXd& corner, bool cw)
+void NHPlanner::sampleCorner(const VectorXd& corner, bool cw)
 {
-    double lambda = 1/deltaX;
+    vector<VectorXd> samples;
+    while(samples.size() < k)
+    {
+        VectorXd sample = positionFactory.getSampling().sample(corner, cw);
+        if(rosmap->isFree(sample))
+        {
+            samples.push_back(sample);
+            visualizer.addCorner(sample);
+        }
+    }
 
-    double theta = cw ? corner(2) - M_PI/2 : corner(2) + M_PI/2;
-    double random = RandomGenerator::sampleAngle();
-    double direction = corner(2) + random;
-    double sample = RandomGenerator::sampleExponential(lambda);
+    corner_samples[Vector2d(corner(0), corner(1))] = samples;
 
-    VectorXd new_state = Vector3d(corner(0) + sample*cos(theta), corner(1) + sample*sin(theta), direction);
+    return;
+}
 
-    return new_state;
+double NHPlanner::sampleAngle(double theta)
+{
+    return (angleFactory.getSampling().sample() + theta);
 }
 
 

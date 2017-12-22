@@ -29,7 +29,13 @@ struct CmpReached
       return ((a(0) < b(0)) ||(a(0) == b(0) && a(1) < b(1)) ||
                (a(0) == b(0) && a(1) == b(1) && a(2) < b(2)));
   }
+
+  bool operator()(const Eigen::Vector2d a, const Eigen::Vector2d b) const
+  {
+      return ((a(0) < b(0)) ||(a(0) == b(0) && a(1) < b(1)));
+  }
 };
+
 
 class NHPlanner : public nav_core::BaseGlobalPlanner
 {
@@ -63,7 +69,8 @@ private:
     std::vector<Action> findAction(Node* node, const Action& action, Distance& distance, std::vector<Triangle>& triangles);
 
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
-    Eigen::VectorXd sampleCorner(const Eigen::VectorXd& corner, bool cw);
+    void sampleCorner(const Eigen::VectorXd& corner, bool cw);
+    double sampleAngle(double theta);
     void addGlobal(const Eigen::VectorXd& node, const Eigen::VectorXd& action, const Eigen::VectorXd& parent);
     bool insideGlobal(const Eigen::VectorXd& p, bool subgoal);
 
@@ -76,6 +83,7 @@ private:
     OpenList open;
     Action target;
     std::map<Eigen::VectorXd, Node*, rrt_planning::CmpReached> reached;
+    std::map<Eigen::Vector2d, std::vector<Eigen::VectorXd>, CmpReached> corner_samples;
     std::vector<Triangle> global_closed;
 
     double deltaX;

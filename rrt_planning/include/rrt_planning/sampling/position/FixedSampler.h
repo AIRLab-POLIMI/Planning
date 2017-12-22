@@ -10,7 +10,7 @@ class FixedSampler : public SamplingPosition
     public:
         FixedSampler() {}
         FixedSampler(double deltaX) : deltaX(deltaX) {}
-        virtual double sample() override;
+        virtual Eigen::VectorXd sample(const Eigen::VectorXd& corner, bool cw) override;
         virtual ~FixedSampler() {}
     private:
         double deltaX;
