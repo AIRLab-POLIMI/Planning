@@ -2,6 +2,7 @@
 #include "rrt_planning/sampling/position/LineGaussianSampler.h"
 #include "rrt_planning/sampling/position/FixedSampler.h"
 #include "rrt_planning/sampling/position/Uniform2DSampler.h"
+#include "rrt_planning/sampling/position/Gaussian2DSampler.h"
 
 #include <stdexcept>
 
@@ -42,6 +43,16 @@ void SamplingPositionFactory::initialize(ros::NodeHandle& nh)
         this->sampling = sampling;
 
         ROS_FATAL("Uniform2D position sampler");
+    }
+    else if(samplingPositionName == "Gaussian2D")
+    {
+        double deltaX;
+        nh.param("deltaX", deltaX, 0.3);
+        SamplingPosition* sampling = new Gaussian2DSampler(deltaX);
+
+        this->sampling = sampling;
+
+        ROS_FATAL("Gaussian 2D position sampler");
     }
     else
     {
