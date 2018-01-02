@@ -23,7 +23,7 @@ wt: 1.0
 
 #Samplers parameters
 position_sampler: Gaussian2D
-angle_sampler:  Atan
+angle_sampler: Atan
 
 
 # notEpsilonh

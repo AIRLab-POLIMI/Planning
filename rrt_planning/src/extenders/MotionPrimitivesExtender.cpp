@@ -24,6 +24,7 @@
 #include "rrt_planning/extenders/MotionPrimitivesExtender.h"
 
 using namespace Eigen;
+using namespace std;
 
 namespace rrt_planning
 {
@@ -59,49 +60,67 @@ bool MotionPrimitivesExtender::compute(const VectorXd& x0, const VectorXd& xRand
     return minDistance < std::numeric_limits<double>::infinity();
 }
 
-bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew, double length)
+bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xSample, VectorXd& xNew, double length)
 {
+    VectorXd xRand = xSample;
+    if(diffDrive)
+    {
+        double dis = sqrt(pow((x0(0) - xSample(0)),2) + pow((x0(1) - xSample(1)), 2));
+        if(dis > 0.5)
+        {
+            double theta = atan2(xSample(1) - x0(1), xSample(0) - x0(0));
+            xRand(2) = theta;
+        }
+    }
+
     double minDistance = std::numeric_limits<double>::infinity();
-    //double threshold = minDistance;
-    //bool reachable = false;
     
     for(auto& mp : motionPrimitives)
     {
         VectorXd x = model.applyTransform(x0, mp);
 
-        /*double currentDist = distance(xRand, x);
-
-        if(!reachable && map.isFree(x))
+        double currentDist = distance(x, xRand, length);
+        if(currentDist < minDistance)
         {
-            xNew = x;
-            minDistance = currentDist;
-            reachable = true;
-        }
-        else if(currentDist < minDistance)
-        {
-            if(map.isFree(x))
-            {
-                xNew = x;
-                minDistance = currentDist;
-                reachable = true;
-            }
-            else if(!reachable)
-            {
-                xNew = x;
-                minDistance = currentDist;
-            }
-        }*/
-
-      double currentDist = distance(x, xRand, length);
-      if(currentDist < minDistance)
-      {
           xNew = x;
           minDistance = currentDist;
-      }
+        }
 
     }
 
     return ((minDistance < std::numeric_limits<double>::infinity()) && map.isFree(xNew));
+}
+
+bool MotionPrimitivesExtender::steer(const VectorXd& xStart, const VectorXd& xCorner, VectorXd& xNew, vector<VectorXd>& parents, double& cost)
+{
+    //Separates the length check from the angle check
+    Distance* l2distance = new L2Distance();
+    Distance* thetadistance = new ThetaDistance();
+    Distance& l2dis = *l2distance;
+    Distance& thetadis = *thetadistance;
+
+    VectorXd xCurr = xStart;
+    double meters = l2dis(xCurr, xCorner);
+    double angles = thetadis(xCurr, xCorner);
+
+    bool is_valid = true;
+    set<VectorXd, CmpReached> check;
+
+    double length = l2dis(xCurr, xCorner);
+
+    do{
+        is_valid = los(xCurr, xCorner, xNew, length);
+        if(!check.insert(xNew).second){
+            is_valid = false;
+        }
+        cost += l2dis(xCurr, xNew);
+        xCurr = xNew;
+        parents.push_back(xCurr);
+        meters = l2dis(xCurr, xCorner);
+        angles = thetadis(xCurr, xCorner);
+     } while(is_valid && !((meters < deltaX) && (angles < deltaTheta)));
+
+    return is_valid;
 }
 
 bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)
@@ -143,6 +162,22 @@ void MotionPrimitivesExtender::initialize(ros::NodeHandle& nh)
     }
 
     generateMotionPrimitives();
+
+
+    std::string plannerNamespace = nh.getNamespace();
+    if(plannerNamespace == std::string("/move_base/NHPlanner"))
+    {
+        std::string kinematicModelName;
+        nh.param("kinematicModel", kinematicModelName, std::string("DifferentialDrive"));
+        if(kinematicModelName == "DifferentialDrive")
+        {
+            distance = L2ThetaDistance();
+            diffDrive = true;
+        }
+
+        nh.param("deltaX", deltaX, 0.5);
+        nh.param("deltaTheta", deltaTheta, 1.86);
+    }
 }
 
 void MotionPrimitivesExtender::generateMotionPrimitives()

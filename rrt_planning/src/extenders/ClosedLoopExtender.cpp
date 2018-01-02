@@ -24,6 +24,7 @@
 #include "rrt_planning/extenders/ClosedLoopExtender.h"
 
 using namespace Eigen;
+using namespace std;
 
 namespace rrt_planning
 {
@@ -121,11 +122,48 @@ bool ClosedLoopExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd
 
 }
 
+bool ClosedLoopExtender::steer(const VectorXd& xStart, const VectorXd& xCorner, VectorXd& xNew, vector<VectorXd>& parents, double& cost)
+{
+
+    ROS_FATAL("starting steer");
+    //Separates the length check from the angle check
+    Distance* l2distance = new L2Distance();
+    Distance* thetadistance = new ThetaDistance();
+    Distance& l2dis = *l2distance;
+    Distance& thetadis = *thetadistance;
+
+    VectorXd xCurr = xStart;
+
+    bool is_valid = true;
+    set<VectorXd, CmpReached> check;
+
+    double length = l2dis(xCurr, xCorner);
+
+    do{
+        is_valid = los(xCurr, xCorner, xNew, length);
+        if(!check.insert(xNew).second){
+            is_valid = false;
+        }
+        cost += l2dis(xCurr, xNew);
+        xCurr = xNew;
+        parents.push_back(xCurr);
+     } while(is_valid && !((l2dis(xCurr, xCorner) < deltaX) && (thetadis(xCurr, xCorner) < deltaTheta)));
+
+    return is_valid;
+}
+
 
 void ClosedLoopExtender::initialize(ros::NodeHandle& nh)
 {
     nh.param("deltaT", deltaT, 0.5);
     nh.param("loopN", loopN, 3);
+
+    std::string plannerNamespace = nh.getNamespace();
+    if(plannerNamespace == std::string("/move_base/NHPlanner"))
+    {
+        nh.param("deltaX", deltaX, 0.5);
+        nh.param("deltaTheta", deltaTheta, 1.86);
+    }
 }
 
 

@@ -31,6 +31,19 @@
 
 namespace rrt_planning
 {
+struct CmpReached
+{
+  bool operator()(const Eigen::VectorXd a, const Eigen::VectorXd b) const
+  {
+      return ((a(0) < b(0)) ||(a(0) == b(0) && a(1) < b(1)) ||
+               (a(0) == b(0) && a(1) == b(1) && a(2) < b(2)));
+  }
+
+  bool operator()(const Eigen::Vector2d a, const Eigen::Vector2d b) const
+  {
+      return ((a(0) < b(0)) ||(a(0) == b(0) && a(1) < b(1)));
+  }
+};
 
 class Extender
 {
@@ -44,7 +57,7 @@ public:
     virtual bool los(const Eigen::VectorXd& x0, const Eigen::VectorXd& xRand, Eigen::VectorXd& xNew, double length) = 0;
     virtual bool check(const Eigen::VectorXd& x0, const Eigen::VectorXd& xGoal) = 0;
     virtual void initialize(ros::NodeHandle& nh) = 0;
-
+    virtual bool steer(const Eigen::VectorXd& xCurr, const Eigen::VectorXd& xCorner, Eigen::VectorXd& xNew, std::vector<Eigen::VectorXd>& parents, double& cost) = 0;
     virtual ~Extender()
     {
 

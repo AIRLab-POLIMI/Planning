@@ -139,10 +139,37 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         }
 
         Node* new_node = nullptr;
-
+        vector<VectorXd> samples;
+        double theta = action.getState()(2);
         if(action.getState() == xGoal)
         {
-            new_node = steer(current, xGoal, l2thetadis);
+            samples.push_back(xGoal);
+        }
+        else if(action.isCorner())
+        {
+            VectorXd xCurr = current->getState();
+            VectorXd xCorner = action.getState();
+            Vector2d corner_key(xCorner(0), xCorner(1));
+
+            if(corner_samples.count(corner_key))
+            {
+                samples = corner_samples.at(corner_key);
+            } else
+            {
+                samples.push_back(xCorner);
+            }
+
+            theta = atan2(xCorner(1) - xCurr(1), xCorner(0) - xCurr(0));
+        }
+
+        for(auto c : samples)
+        {
+            VectorXd sample = c;
+            if(sample != xGoal)
+            {
+                sample(2) = sampleAngle(theta);
+            }
+            new_node = reach(current, sample);
             if(new_node)
             {
                 //If I can reach it, see if I already passed it or if it's the Goal
@@ -154,7 +181,6 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 }
                   else
                 {
-                    ROS_FATAL("Surprise bitch");
                     new_node = reached.at(new_node->getState());
                 }
 
@@ -173,59 +199,6 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             }
 
         }
-        else if(action.isCorner())
-        {
-            VectorXd xCurr = current->getState();
-            VectorXd xCorner = action.getState();
-            Vector2d corner_key(xCorner(0), xCorner(1));
-            vector<VectorXd> samples;
-            if(corner_samples.count(corner_key))
-            {
-                samples = corner_samples.at(corner_key);
-            } else
-            {
-                samples.push_back(xCorner);
-            }
-
-            double theta = atan2(xCorner(1) - xCurr(1), xCorner(0) - xCurr(0));
-
-            for(auto c : samples)
-            {
-                VectorXd sample = c;
-                sample(2) = sampleAngle(theta);
-                new_node = steer(current, sample, l2thetadis);
-                if(new_node)
-                {
-                    //If I can reach it, see if I already passed it or if it's the Goal
-                    if(!reached.count(new_node->getState()))
-                    {
-                        reached[new_node->getState()] = new_node;
-                        addOpen(new_node, target, l2dis);
-                        new_node->addSubgoal(xGoal);
-                    }
-                      else
-                    {
-                        ROS_FATAL("Surprise bitch");
-                        new_node = reached.at(new_node->getState());
-                    }
-
-                    visualizer.addSegment(current->getState(), new_node->getState());
-                    Action p = *action.getParent();
-                    if(!new_node->contains(p.getState()))
-                    {
-                        Action parent(p.getState(), p.isClockwise(), true,
-                                            p.isCorner(), p.getParent());
-                        addOpen(new_node, parent, l2dis);
-                        new_node->addSubgoal(parent.getState());
-                    }
-                    addGlobal(current->getState(), action.getState(), p.getState());
-                    current->addSubgoal(action.getState());
-                    improve = false;
-                }
-
-            }
-        }
-
 
         //Couldn't reach the corner or it is not valid, improve it
         if(improve)
@@ -274,107 +247,37 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         }
     }
 
-    double min = l2dis(x0, xGoal);
-    Node* fml;
-    for(auto n : reached)
-    {
-        double dis = l2dis(n.second->getState(), xGoal);
-        if( dis <= min)
-        {
-            min = dis;
-            fml = n.second;
-        }
-    }
-
-    VectorXd xCurr = fml->getState();
-    VectorXd xCorner = xGoal;
-    VectorXd xNew = xCurr;
-    bool is_valid = true;
-    set<VectorXd, CmpReached> check;
-    double length = l2dis(xCurr, xCorner);
-
-    do{
-        is_valid = newState(xCurr, xGoal, xNew, length, l2dis);
-        if(!check.insert(xNew).second){
-            is_valid = false;
-            ROS_FATAL("Loop");
-        }
-        if(is_valid)
-            visualizer.addUpdate(xCurr, xNew);
-        xCurr = xNew;
-    } while(is_valid && !(l2dis(xCurr, xGoal) < deltaX) && !(thetadis(xCurr, xGoal) < deltaTheta));
-
-    visualizer.addCorner(fml->getState());
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     visualizer.flush();
 
     ROS_FATAL("Failed to find plan: omae wa mou shindeiru");
+
+    open.clear();
+    reached.clear();
+    global_closed.clear();
+    corner_samples.clear();
     //FIXME i did not find plan
     return true;
 
 }
 
-
-bool NHPlanner::newState(const VectorXd& xNear, const VectorXd& xSample, VectorXd& xNew, double length, Distance& distance)
+Node* NHPlanner::reach(Node* current, const VectorXd& xCorner)
 {
-    VectorXd orientedSample = xSample;
-    if(distance(xNear, xSample) > 0.5)
-    {
-        double theta = atan2(xSample(1) - xNear(1), xSample(0) - xNear(0));
-        orientedSample(2) = theta;
-    }
-
-    return extenderFactory.getExtender().los(xNear, orientedSample, xNew, length);
-}
-
-Node* NHPlanner::steer(Node* current, const VectorXd& xCorner, Distance& distance)
-{
-    Distance& l2dis = *this->l2dis;
-    Distance& thetadis = *this->thetadis;
     VectorXd xCurr = current->getState();
     VectorXd xNew = xCurr;
-    bool is_valid = true;
     vector<VectorXd> parents;
-    set<VectorXd, CmpReached> check;
+    bool is_valid = false;
     double cost = current->getCost();
-    double length = l2dis(xCurr, xCorner);
 
-    do{
-        is_valid = newState(xCurr, xCorner, xNew, length, l2dis);
-        if(!check.insert(xNew).second){
-            is_valid = false;
-        }
-        cost += l2dis(xCurr, xNew);
-        xCurr = xNew;
-        parents.push_back(xCurr);
-     } while(is_valid && !((l2dis(xCurr, xCorner) < deltaX) && (thetadis(xCurr, xCorner) < deltaTheta)));
+    is_valid = extenderFactory.getExtender().steer(xCurr, xCorner, xNew, parents, cost);
 
     Node* new_node = nullptr;
-    if(is_valid && map->isTrueCornerWOW(xCurr))
+    if(is_valid && map->isTrueCornerWOW(xNew))
     {
         parents.pop_back();
-        new_node = new Node(xCurr, current, cost, parents);
+        new_node = new Node(xNew, current, cost, parents);
     }
     return new_node;
 }
-
-Node* NHPlanner::park(Node* current, Distance& distance)
-{
-    VectorXd xGoal = target.getState();
-    VectorXd xCurr = current->getState();
-    double theta = atan2(xGoal(1) - xCurr(1), xGoal(0) - xCurr(0));
-    xGoal(2) = theta;
-
-    Node* goal_node = steer(current, xGoal, distance);
-    if(goal_node)
-    {
-        goal_node = steer(goal_node, target.getState(), distance);
-    }
-
-    return goal_node;
-}
-
 
 VectorXd NHPlanner::convertPose(const geometry_msgs::PoseStamped& msg)
 {

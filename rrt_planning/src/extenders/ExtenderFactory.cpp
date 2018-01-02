@@ -29,8 +29,8 @@
 #include "rrt_planning/kinematics_models/controllers/ConstantController.h"
 #include "rrt_planning/kinematics_models/controllers/POSQ.h"
 
-#include "rrt_planning/extenders/MotionPrimitivesExtender.h"
 #include "rrt_planning/extenders/ClosedLoopExtender.h"
+#include "rrt_planning/extenders/MotionPrimitivesExtender.h"
 
 #include <stdexcept>
 
@@ -51,7 +51,7 @@ void ExtenderFactory::initialize(ros::NodeHandle& nh, Map& map, Distance& distan
         initializeKinematic(nh);
 
         extender = new MotionPrimitivesExtender(*kinematicModel, *controller, map, distance);
-        ROS_FATAL("motion primiteves");
+        ROS_FATAL("motion primitives");
     }
     else if(extenderName == "ClosedLoop")
     {

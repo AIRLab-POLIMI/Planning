@@ -22,25 +22,9 @@
 namespace rrt_planning
 {
 
-struct CmpReached
-{
-  bool operator()(const Eigen::VectorXd a, const Eigen::VectorXd b) const
-  {
-      return ((a(0) < b(0)) ||(a(0) == b(0) && a(1) < b(1)) ||
-               (a(0) == b(0) && a(1) == b(1) && a(2) < b(2)));
-  }
-
-  bool operator()(const Eigen::Vector2d a, const Eigen::Vector2d b) const
-  {
-      return ((a(0) < b(0)) ||(a(0) == b(0) && a(1) < b(1)));
-  }
-};
-
-
 class NHPlanner : public nav_core::BaseGlobalPlanner
 {
 public:
-
     NHPlanner();
     NHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
 
@@ -51,11 +35,8 @@ public:
 
     virtual ~NHPlanner();
 
-private:
-    bool newState(const Eigen::VectorXd& xSample, const Eigen::VectorXd& xNear,
-                  Eigen::VectorXd& xNew, double length, Distance& distance);
-    Node* steer(Node* current, const Eigen::VectorXd& xCorner, Distance& distance);
-    Node* park(Node* current, Distance& distance);
+private:    
+    Node* reach(Node* current, const Eigen::VectorXd& xCorner);
 
     Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
 
