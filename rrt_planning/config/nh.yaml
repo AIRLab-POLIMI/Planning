@@ -1,9 +1,5 @@
 # Configuration of NH Planner
 
-#Reached parameters
-deltaX: 0.3
-deltaTheta: 0.78
-
 #Corner parameters
 k: 3
 ray: 0.3
@@ -23,7 +19,7 @@ wt: 1.0
 
 #Samplers parameters
 position_sampler: Gaussian2D
-angle_sampler: Atan
+angle_sampler: Beta
 
 
 # notEpsilonh

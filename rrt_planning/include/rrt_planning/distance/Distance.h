@@ -106,7 +106,7 @@ public:
         double theta = x1(2);
 
         //double angleDistance = std::pow(1.0 - std::cos(x1(2) - x2(2)), 2);
-        double dalpha = angles::shortest_angular_distance(theta, alpha);
+        double dalpha = angles::shortest_angular_distance(alpha, phi);
         double deltaAlpha = std::pow(1.0 - std::cos(dalpha), 2);
         double dphi = angles::shortest_angular_distance(theta, phi);
         double deltaPhi = std::pow(1.0 - std::cos(dphi), 2);

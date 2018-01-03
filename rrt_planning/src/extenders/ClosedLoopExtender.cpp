@@ -124,8 +124,6 @@ bool ClosedLoopExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd
 
 bool ClosedLoopExtender::steer(const VectorXd& xStart, const VectorXd& xCorner, VectorXd& xNew, vector<VectorXd>& parents, double& cost)
 {
-
-    ROS_FATAL("starting steer");
     //Separates the length check from the angle check
     Distance* l2distance = new L2Distance();
     Distance* thetadistance = new ThetaDistance();

@@ -106,7 +106,7 @@ bool MotionPrimitivesExtender::steer(const VectorXd& xStart, const VectorXd& xCo
     bool is_valid = true;
     set<VectorXd, CmpReached> check;
 
-    double length = l2dis(xCurr, xCorner);
+    double length = l2dis(xStart, xCorner);
 
     do{
         is_valid = los(xCurr, xCorner, xNew, length);
@@ -173,6 +173,11 @@ void MotionPrimitivesExtender::initialize(ros::NodeHandle& nh)
         {
             distance = L2ThetaDistance();
             diffDrive = true;
+        }
+        else if(kinematicModelName == "Bicycle")
+        {
+            distance = L2ThetaDistance();
+            diffDrive = false;
         }
 
         nh.param("deltaX", deltaX, 0.5);

@@ -1,6 +1,11 @@
 # Configuration for differential drive kinematic planning
 extender: MotionPrimitives
 kinematicModel: DifferentialDrive
+
+#Reached parameters
+deltaX: 0.3
+deltaTheta: 0.78
+
 motion_primitives:
   minU: [0, -0.78539816339]
   maxU: [1, 0.78539816339]

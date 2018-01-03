@@ -9,9 +9,6 @@ namespace rrt_planning
     {
         std::normal_distribution<double> d_sample(0.0, 0.1);
         double sample = d_sample(gen);
-
-        std::bernoulli_distribution d_sign(0.5);
-        bool positive = d_sign(gen);
         double magics = atan(sample);
 
         double direction = 2 * magics ;
