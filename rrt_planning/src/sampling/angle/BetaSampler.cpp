@@ -1,6 +1,5 @@
 #include "rrt_planning/sampling/angle/BetaSampler.h"
 #include <boost/math/distributions/beta.hpp>
-#include <ros/ros.h>
 
 namespace rrt_planning
 {
@@ -14,10 +13,6 @@ namespace rrt_planning
         double u_sample = u_dist(gen);
 
         double sample = quantile(b_dist, u_sample);
-
-        ROS_FATAL_STREAM("sample: " << sample);
-
-        ROS_FATAL_STREAM("sample multiplied: " << 2*sample*M_PI);
 
         std::bernoulli_distribution d_sign(0.5);
         bool positive = d_sign(gen);

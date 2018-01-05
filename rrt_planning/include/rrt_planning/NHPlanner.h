@@ -37,6 +37,7 @@ public:
 
 private:    
     Node* reach(Node* current, const Eigen::VectorXd& xCorner);
+    bool isReached(const Eigen::VectorXd& x0, const Eigen::VectorXd& xTarget);
 
     Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
 
@@ -44,16 +45,16 @@ private:
                      const ros::Time& stamp);
 
     void addOpen(Node* node, const Action& action, Distance& distance);
-
     void addSubgoal(Node* node, const Action& action, Distance& distance);
-
     std::vector<Action> findAction(Node* node, const Action& action, Distance& distance, std::vector<Triangle>& triangles);
-
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
+    
     void sampleCorner(const Eigen::VectorXd& corner, bool cw);
     double sampleAngle(double theta);
+    
     void addGlobal(const Eigen::VectorXd& node, const Eigen::VectorXd& action, const Eigen::VectorXd& parent);
     bool insideGlobal(const Eigen::VectorXd& p, bool subgoal);
+    Triangle createTriangle(const Action& a, const Eigen::VectorXd& n);
 
 private:
     Map* rosmap;
@@ -61,8 +62,9 @@ private:
     Distance* l2dis;
     Distance* l2thetadis;
     Distance* thetadis;
-    OpenList open;
+    
     Action target;
+    OpenList open;
     std::map<Eigen::VectorXd, Node*, rrt_planning::CmpReached> reached;
     std::map<Eigen::Vector2d, std::vector<Eigen::VectorXd>, CmpReached> corner_samples;
     std::vector<Triangle> global_closed;
@@ -71,7 +73,6 @@ private:
     double deltaTheta;
     int count;
     int k;
-
 
     ExtenderFactory extenderFactory;
     Visualizer visualizer;
