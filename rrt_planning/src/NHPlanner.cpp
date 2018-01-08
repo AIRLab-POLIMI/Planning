@@ -139,6 +139,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         Node* new_node = nullptr;
         vector<VectorXd> samples;
         double theta = action.getState()(2);
+        bool improve = true;
 
         if(action.getState() == xGoal)
         {
@@ -192,14 +193,13 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                     addOpen(new_node, parent, l2dis);
                     new_node->addSubgoal(parent.getState());
                 }
-                addGlobal(current->getState(), action.getState(), p.getState());
-                current->addSubgoal(action.getState());
+                improve = false;
             }
 
         }
 
         //Couldn't reach the corner or it is not valid, improve it
-        if(!new_node)
+        if(improve)
         {
             vector<Triangle> triangles;
             vector<Action> new_actions = findAction(current, action, l2dis, triangles);
@@ -242,6 +242,12 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             {
                 current->addTriangle(t);
             }
+        }
+        else
+        {
+            Action p = *action.getParent();
+            addGlobal(current->getState(), action.getState(), p.getState());
+            current->addSubgoal(action.getState());
         }
     }
 
