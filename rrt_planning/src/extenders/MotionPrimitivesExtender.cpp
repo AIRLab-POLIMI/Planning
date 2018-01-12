@@ -165,9 +165,10 @@ void MotionPrimitivesExtender::initialize(ros::NodeHandle& nh)
 
     generateMotionPrimitives();
 
+    std::string planner_name;
+    nh.param("planner_name", planner_name, std::string("unspecified"));
 
-    std::string plannerNamespace = nh.getNamespace();
-    if(plannerNamespace == std::string("/move_base/NHPlanner"))
+    if(planner_name == std::string("NHPlanner"))
     {
         std::string kinematicModelName;
         nh.param("kinematicModel", kinematicModelName, std::string("DifferentialDrive"));
