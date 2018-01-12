@@ -39,6 +39,7 @@ NHPlanner::NHPlanner()
 NHPlanner::NHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
     initialize(name, costmap_ros);
+    ROS_INFO("NH Planner is ready!");
 }
 
 

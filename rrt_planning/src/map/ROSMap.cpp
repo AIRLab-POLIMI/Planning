@@ -37,6 +37,11 @@ ROSMap::ROSMap(costmap_2d::Costmap2DROS* costmap_ros) : costmap_ros(costmap_ros)
     bounds.maxX = bounds.minX + costmap->getSizeInMetersX();
     bounds.maxY = bounds.minY + costmap->getSizeInMetersY();
 
+    ROS_FATAL_STREAM("minX: " << bounds.minX);
+    ROS_FATAL_STREAM("maxX: " << bounds.maxX);
+    ROS_FATAL_STREAM("minY: " << bounds.minY);
+    ROS_FATAL_STREAM("maxY: " << bounds.maxY);
+
     bounds.minZ = 0;
     bounds.maxZ = 0;
 }

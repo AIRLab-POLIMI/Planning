@@ -39,11 +39,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11")
 # ------------------------ BUILD -------------------------------
 
 file(GLOB_RECURSE rrt_SOURCE src/*.cpp)
+list(REMOVE_ITEM rrt_SOURCE "src/Experiment.cpp")
 
+add_library(rrt_planner ${rrt_SOURCE})                        
+target_link_libraries(rrt_planner ${catkin_LIBRARIES})    
 
-add_library(rrt_planner ${rrt_SOURCE})
-                        
-target_link_libraries(rrt_planner ${catkin_LIBRARIES})                        
+add_executable(experiment "src/Experiment.cpp") 
+target_link_libraries(experiment rrt_planner ${catkin_LIBRARIES})
                         
                         
 # ------------------------ TESTS -------------------------------  
