@@ -5,23 +5,23 @@
 
 	<!-- Nodes -->
 	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
-	<node name="experiment" pkg="rrt_planning" type="experiment" output="screen">
-	
+	<node name="experiment" pkg="rrt_planning" type="experiment" output="screen" required="true">
+
 	    <!-- Costmap parameters -->
-	    
+
 		<rosparam file="$(find rrt_planning)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
 		<rosparam file="$(find rrt_planning)/config/global_costmap_params.yaml" command="load"/>
-		
+
         <!-- Planner parameters -->
-        
-		<rosparam file="$(find rrt_planning)/config/nh.yaml" command="load" />
+
+		<rosparam file="$(find rrt_planning)/config/nh.yaml" command="load"/>
 		<rosparam file="$(find rrt_planning)/config/differentialDrive.yaml" command="load" />
 	</node>
 	<node name="link1_broadcaster" pkg="tf" type="static_transform_publisher" args="1 0 0 0 0 0 1 base_link map 100" />
 
-	
 
-	
-	
+
+
+
 
 </launch>
