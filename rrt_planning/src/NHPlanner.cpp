@@ -42,6 +42,11 @@ NHPlanner::NHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
     ROS_INFO("NH Planner is ready!");
 }
 
+NHPlanner::NHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t)
+{
+    initialize(name, costmap_ros);
+    Tmax = t;
+}
 
 void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
@@ -63,6 +68,8 @@ void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_r
     visualizer.initialize(private_nh);
     angleFactory.initialize(private_nh);
     positionFactory.initialize(private_nh);
+
+    Tmax = chrono::duration<double>(50.0);
 }
 
 bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
@@ -91,6 +98,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     //Initialization
     Node* start_node = new Node(x0, nullptr, 0);
     start_node->setParent(start_node);
+    length = 0;
 
     target = Action(xGoal, true, true, false, nullptr);
     shared_ptr<Action> goal_action = make_shared<Action>(target);
@@ -106,9 +114,10 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
     ROS_FATAL("Start Search: pick a god and pray");
     ros::Time start_time = ros::Time::now();
+    t0 = chrono::steady_clock::now();
 
     //Start search
-    while(!open.empty())
+    while(!open.empty() && !timeOut())
     {
         Key key = open.pop();
         Node* current = key.first;
@@ -124,10 +133,13 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             visualizer.flush();
             ros::Time end = ros::Time::now();
             ros::Duration ex_time = end - start_time;
+            Tcurrent = chrono::steady_clock::now() - t0;
 
             ROS_FATAL("Plan found: simple geometry");
             ROS_FATAL_STREAM("Action count: " << count);
             ROS_FATAL_STREAM("Time: " << ex_time);
+            ROS_FATAL_STREAM("New time: " << Tcurrent.count());
+            ROS_FATAL_STREAM("Path lenght: " << getPathLength());
 
             open.clear();
             reached.clear();
@@ -536,6 +548,7 @@ vector<VectorXd> NHPlanner::retrievePath(Node* node)
 {
     std::vector<Eigen::VectorXd> path, mp;
     Node* current = node;
+    length = current->getCost();
 
     while(current->getCost() != 0)
     {

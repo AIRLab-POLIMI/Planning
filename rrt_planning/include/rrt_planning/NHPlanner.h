@@ -17,16 +17,18 @@
 #include "rrt_planning/nh/CornerIndex.h"
 #include "rrt_planning/nh/OpenList.h"
 #include "rrt_planning/map/SGMap.h"
+#include "rrt_planning/AbstractPlanner.h"
 
 
 namespace rrt_planning
 {
 
-class NHPlanner : public nav_core::BaseGlobalPlanner
+class NHPlanner : public AbstractPlanner
 {
 public:
     NHPlanner();
     NHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
+    NHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t);
 
     void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros) override;
     bool makePlan(const geometry_msgs::PoseStamped& start,
@@ -35,7 +37,7 @@ public:
 
     virtual ~NHPlanner();
 
-private:    
+private:
     Node* reach(Node* current, const Eigen::VectorXd& xCorner);
     bool isReached(const Eigen::VectorXd& x0, const Eigen::VectorXd& xTarget);
 
@@ -48,10 +50,10 @@ private:
     void addSubgoal(Node* node, const Action& action, Distance& distance);
     std::vector<Action> findAction(Node* node, const Action& action, Distance& distance, std::vector<Triangle>& triangles);
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
-    
+
     void sampleCorner(const Eigen::VectorXd& corner, bool cw);
     double sampleAngle(double theta);
-    
+
     void addGlobal(const Eigen::VectorXd& node, const Eigen::VectorXd& action, const Eigen::VectorXd& parent);
     bool insideGlobal(const Eigen::VectorXd& p, bool subgoal);
     Triangle createTriangle(const Action& a, const Eigen::VectorXd& n);
@@ -62,7 +64,7 @@ private:
     Distance* l2dis;
     Distance* l2thetadis;
     Distance* thetadis;
-    
+
     Action target;
     OpenList open;
     std::map<Eigen::VectorXd, Node*, rrt_planning::CmpReached> reached;
