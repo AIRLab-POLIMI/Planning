@@ -154,6 +154,60 @@ VectorXd SGMap::exitPoint(const VectorXd& current, const VectorXd& middle, bool 
     return p;
 }
 
+vector<VectorXd> SGMap::infiniteExitPoint(const VectorXd& current, const VectorXd& middle, bool cw)
+{
+    Vector3d c_point(current(0), current(1), 1);
+    Vector3d m_point(middle(0), middle(1), 1);
+    Vector3d line = c_point.cross(m_point);
+    double c = (-middle(0) * -line(1)) + (-middle(1) * line(0));
+    Vector3d normal(-line(1), line(0), c);
+    normal /= normal(2);
+
+    double DX = normal(1);
+    double DY = -normal(0);
+
+    double norm = sqrt(pow(DX, 2) + pow(DY, 2));
+    double dx = (DX / norm) * step;
+    double dy = (DY / norm) * step;
+    VectorXd p = middle;
+    p(2) = 0;
+    bool curr, prev;
+    prev = false;
+
+    vector<VectorXd> samples;
+
+    //Check direction
+    p(0) += (5*dx);
+    p(1) += (5*dy);
+    VectorXd a = Vector2d(middle(0)- current(0), middle(1) - current(1));
+    VectorXd b = Vector2d(p(0) - current(0), p(1) - current(1));
+    bool dir = clockwise(a, b);
+
+    if(dir != cw)
+    {
+        dx = -dx;
+        dy = -dy;
+    }
+
+    p = middle;
+
+    while(map.insideBound(p))
+    {
+        curr = map.isFree(p);
+        if(curr != prev)
+        {
+            if(curr)
+                samples.push_back(p);
+        }
+        prev = curr;
+
+        p(0) += dx;
+        p(1) += dy;
+    }
+
+    return samples;
+}
+
 void SGMap::forcedUpdate(const VectorXd& a, const VectorXd& b, vector<VectorXd>& actions)
 {
     actions.clear();

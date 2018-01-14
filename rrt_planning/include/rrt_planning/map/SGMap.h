@@ -17,6 +17,7 @@ public:
 
     bool collisionPoints(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions);
     Eigen::VectorXd exitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw);
+    std::vector<Eigen::VectorXd> infiniteExitPoint(const Eigen::VectorXd& current, const Eigen::VectorXd& middle, bool cw);
     void forcedUpdate(const Eigen::VectorXd& a, const Eigen::VectorXd& b, std::vector<Eigen::VectorXd>& actions);
 
     Eigen::VectorXd computeMiddle(const Eigen::VectorXd& a, const Eigen::VectorXd& b);

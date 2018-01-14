@@ -27,6 +27,7 @@
 	<nav_core plugin="${prefix}/plugins/voronoi_rrt_planner_plugin.xml" />
 	<nav_core plugin="${prefix}/plugins/rrt_star_planner_plugin.xml" />
 	<nav_core plugin="${prefix}/plugins/nh_planner_plugin.xml"/>
+	<nav_core plugin="${prefix}/plugins/forward_nh_planner_plugin.xml"/>
   </export>
 
 </package>
