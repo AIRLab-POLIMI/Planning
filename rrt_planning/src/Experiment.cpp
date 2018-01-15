@@ -144,7 +144,7 @@ void save(const std::string& filename, const std::string& conf, double t, double
 AbstractPlanner* getPlanner(const string& name, costmap_2d::Costmap2DROS* costmap_ros, const string& t)
 {
 	chrono::duration<double> Tmax(stod(t));
-	if(name == "NHPlanner")
+	if(name == "nh")
 	{
 		NHPlanner* planner = new NHPlanner(string(""), costmap_ros);
 		return planner;

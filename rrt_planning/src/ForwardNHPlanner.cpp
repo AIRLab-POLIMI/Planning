@@ -101,7 +101,7 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     start_node->setParent(start_node);
     length = 0;
 
-    target = Action(xGoal, true, true, false, nullptr);
+    target = Action(xGoal, xGoal, true, true, false, nullptr);
     shared_ptr<Action> goal_action = make_shared<Action>(target);
     goal_action->setParent(goal_action);
     target = *goal_action;
@@ -202,8 +202,8 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 Action p = *action.getParent();
                 if(!new_node->contains(p.getState()))
                 {
-                    Action parent(p.getState(), p.isClockwise(), true,
-                                        p.isCorner(), p.getParent());
+                    Action parent(p.getState(), p.getState(), p.isClockwise(),
+                                    true, p.isCorner(), p.getParent());
                     addOpen(new_node, parent, l2dis);
                     new_node->addSubgoal(parent.getState());
                 }
@@ -224,6 +224,7 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 {
                     count++;
                     addOpen(current, a, l2dis);
+                    visualizer.addCorner(current->getState());
 
                     if(a.isCorner())
                     {
@@ -244,7 +245,7 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                         }
 
                         addSubgoal(current, copy, l2dis);
-                        visualizer.addCorner(copy.getState());
+                        //visualizer.addCorner(copy.getState());
                     }
                     else
                         visualizer.addPoint(a.getState());
@@ -372,7 +373,7 @@ void ForwardNHPlanner::addOpen(Node* node, const Action& action, Distance& dista
 void ForwardNHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
 {
 
-    Action subgoal(action.getState(), action.isClockwise(), true, action.isCorner(), action.getParent());
+    Action subgoal(action.getState(), action.getState(), action.isClockwise(), true, action.isCorner(), action.getParent());
     Node* parent = node->getParent();
     if(insideGlobal(action.getState(), action.isSubgoal()))
     {
@@ -409,7 +410,7 @@ void ForwardNHPlanner::infiniteSample(Node* node, const Action& action, vector<A
     for(auto cw : cw_actions)
     {
         bool corner = map->isCorner(cw);
-        actions.push_back(Action(cw, true, false, corner, action.getParent()));
+        actions.push_back(Action(cw, cw, true, false, corner, action.getParent()));
     }
 
     //ccw
@@ -417,7 +418,7 @@ void ForwardNHPlanner::infiniteSample(Node* node, const Action& action, vector<A
     for(auto ccw : ccw_actions)
     {
         bool corner = map->isCorner(ccw);
-        actions.push_back(Action(ccw, false, false, corner, action.getParent()));
+        actions.push_back(Action(ccw, ccw, false, false, corner, action.getParent()));
     }
 
     return;
@@ -445,11 +446,12 @@ vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Di
 
     if(is_los)
     {
-        triangles.push_back(createTriangle(action, n));
+        //triangles.push_back(createTriangle(action, n));
+        triangles.push_back(Triangle(n, a, action.getMiddle()));
 
         is_los = map->followObstacle(n, a, collision);
         if(is_los){
-            actions.push_back(Action(collision[0], action.isClockwise(), false, true, action.getParent()));
+            actions.push_back(Action(collision[0], action.getMiddle(), action.isClockwise(), false, true, action.getParent()));
             return actions;
         }
         follow = true;
@@ -463,6 +465,7 @@ vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Di
     if(!follow && c1 > step && c2 > step) {sample = true;}
 
     VectorXd middle = map->computeMiddle(collision[0], collision[1]);
+    VectorXd exit_point = collision[1];
 
     if(action.isClockwise() || sample)
     {
@@ -477,7 +480,7 @@ vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Di
                 p = make_shared<Action>(action);
             }
 
-            actions.push_back(Action(new_state, true, false, corner, p));
+            actions.push_back(Action(new_state, middle, true, false, corner, p));
         }
     }
 
@@ -493,14 +496,14 @@ vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Di
             {
                 p = make_shared<Action>(action);
             }
-            actions.push_back(Action(new_state, false, false, corner, p));
+            actions.push_back(Action(new_state, middle, false, false, corner, p));
         }
     }
 
 
-    if(sample && vertices.size() == 2 && vertices[0] != vertices[1])
+    if(sample && vertices[0] != vertices[1])
     {
-        Triangle t(a, vertices[0], vertices[1]);
+        Triangle t(exit_point, vertices[0], vertices[1]);
         triangles.push_back(t);
     }
 
@@ -566,7 +569,7 @@ void ForwardNHPlanner::sampleCorner(const VectorXd& corner, bool cw)
         if(rosmap->isFree(sample))
         {
             samples.push_back(sample);
-            visualizer.addCorner(sample);
+            //visualizer.addCorner(sample);
         }
     }
 

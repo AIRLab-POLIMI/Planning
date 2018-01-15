@@ -12,8 +12,12 @@ public:
     inline Action(){}
     inline Action(const Eigen::VectorXd& state, bool cw, bool sample, bool corner, std::shared_ptr<Action> parent):
                   state(state), cw(cw), sample(sample), corner(corner), parent(parent) {}
+    inline Action(const Eigen::VectorXd& state, const Eigen::VectorXd& middle, bool cw,
+                  bool sample, bool corner, std::shared_ptr<Action> parent):
+                  state(state), middle(middle), cw(cw), sample(sample), corner(corner), parent(parent) {}
 
     Eigen::VectorXd getState() const {return state;}
+    Eigen::VectorXd getMiddle() const {return middle;}
     bool isClockwise() const {return cw;}
     bool isSubgoal() const {return sample;}
     bool isCorner() const {return corner;}
@@ -25,6 +29,7 @@ public:
 
 private:
     Eigen::VectorXd state;
+    Eigen::VectorXd middle;
     bool cw;
     bool sample;
     bool corner;

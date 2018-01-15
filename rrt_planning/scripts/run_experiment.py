@@ -62,3 +62,4 @@ if __name__ == '__main__':
     subprocess.Popen.kill(map_server)
     subprocess.Popen.kill(tf)
     subprocess.Popen.kill(roscore)
+    os.system('killall -9 rosmaster')

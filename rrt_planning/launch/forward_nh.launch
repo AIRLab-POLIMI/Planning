@@ -14,7 +14,7 @@
 	<!-- Nodes -->
 	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
-	<node name="rviz" pkg="rviz" type="rviz" respawn="false"
+	<node name="rviz" pkg="rviz" type="rviz" respawn="true"
 	args="-d $(find rrt_planning)/rviz_config/rviz.rviz" />
 
 	<!-- launch-prefix="gdbserver localhost:10000" -->
