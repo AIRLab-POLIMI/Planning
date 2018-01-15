@@ -1,0 +1,4 @@
+# Configuration of rrt planner
+iterations: 100000
+deltaX: 0.5
+greedy: 0.1

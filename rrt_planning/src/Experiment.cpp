@@ -115,6 +115,9 @@ bool parse(const string& conf, geometry_msgs::PoseStamped& start_pose, geometry_
 	goal_pose.pose.orientation.z = stod(seglist[6]);
 	goal_pose.pose.orientation.w = stod(seglist[7]);
 
+        start_pose.header.frame_id = std::string("/map");
+        goal_pose.header.frame_id = std::string("/map");
+
         return true;
 }
 
