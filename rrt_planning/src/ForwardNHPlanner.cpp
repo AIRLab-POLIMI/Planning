@@ -223,7 +223,6 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 {
                     count++;
                     addOpen(current, a, l2dis);
-                    visualizer.addCorner(current->getState());
 
                     if(a.isCorner())
                     {
@@ -244,7 +243,7 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                         }
 
                         addSubgoal(current, copy, l2dis);
-                        //visualizer.addCorner(copy.getState());
+                        visualizer.addCorner(copy.getState());
                     }
                     else
                         visualizer.addPoint(a.getState());
@@ -502,7 +501,7 @@ vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Di
 
     if(sample && vertices[0] != vertices[1])
     {
-        Triangle t(exit_point, vertices[0], vertices[1]);
+        Triangle t(a, vertices[0], vertices[1]);
         triangles.push_back(t);
     }
 
@@ -528,8 +527,6 @@ void ForwardNHPlanner::addGlobal(const VectorXd& node, const VectorXd& action, c
     {
         p = map->computeMiddle(collision[0], collision[1]);
     }
-
-    //TODO check los(action, parent)
 
     Triangle t(node, action, p);
     global_closed.push_back(t);
@@ -568,7 +565,7 @@ void ForwardNHPlanner::sampleCorner(const VectorXd& corner, bool cw)
         if(rosmap->isFree(sample))
         {
             samples.push_back(sample);
-            //visualizer.addCorner(sample);
+            visualizer.addCorner(sample);
         }
     }
 

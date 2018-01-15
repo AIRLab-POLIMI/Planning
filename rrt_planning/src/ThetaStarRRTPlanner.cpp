@@ -65,13 +65,16 @@ ThetaStarRRTPlanner::ThetaStarRRTPlanner(std::string name, costmap_2d::Costmap2D
 
 ThetaStarRRTPlanner::ThetaStarRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t)
 {
+    thetaStarPlanner = new ThetaStarPlanner();
     initialize(name, costmap_ros);
+    ROS_FATAL_STREAM("Name of theta_star_rrt: " << name);
     Tmax = t;
 }
 
 
 void ThetaStarRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
+    ROS_FATAL("inizialization call");
     thetaStarPlanner->initialize(name, costmap_ros);
 
     map = new ROSMap(costmap_ros);
@@ -237,4 +240,3 @@ ThetaStarRRTPlanner::~ThetaStarRRTPlanner()
 
 
 };
-

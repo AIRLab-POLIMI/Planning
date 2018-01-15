@@ -1,5 +1,5 @@
-#ifndef INCLUDE_NHPLANNER_H_
-#define INCLUDE_NHPLANNER_H_
+#ifndef INCLUDE_FORWARDNHPLANNER_H_
+#define INCLUDE_FORWARDNHPLANNER_H_
 
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
@@ -88,4 +88,4 @@ private:
 
 
 
-#endif /* INCLUDE_NHPLANNER_H_ */
+#endif /* INCLUDE_FORWARDNHPLANNER_H_ */

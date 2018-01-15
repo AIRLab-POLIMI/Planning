@@ -53,6 +53,7 @@ ThetaStarPlanner::ThetaStarPlanner(std::string name, costmap_2d::Costmap2DROS* c
 
 void ThetaStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
+    ROS_FATAL_STREAM("Name of node: " << name);
     double discretization;
 
     //Get parameters from ros parameter server
