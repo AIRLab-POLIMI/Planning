@@ -34,14 +34,15 @@ VoronoiRRTPlanner::VoronoiRRTPlanner(){
 
 }
 
-VoronoiRRTPlanner::VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
-
-    initialize(name, costmap_ros);
+VoronoiRRTPlanner::VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
+{
     voronoiPlanner = new VoronoiPlanner();
+    initialize(name, costmap_ros);
 }
 
 VoronoiRRTPlanner::VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t)
 {
+    voronoiPlanner = new VoronoiPlanner();
     initialize(name, costmap_ros);
     Tmax = t;
 }

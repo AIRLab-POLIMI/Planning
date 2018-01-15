@@ -21,7 +21,7 @@ using namespace rrt_planning;
 using namespace std;
 
 AbstractPlanner* getPlanner(const string& name, costmap_2d::Costmap2DROS* costmap_ros, const string& t);
-void parse(const std::string& conf, geometry_msgs::PoseStamped& start_pose,
+bool parse(const std::string& conf, geometry_msgs::PoseStamped& start_pose,
 				 geometry_msgs::PoseStamped& goal_pose);
 void save(const std::string& filename, const std::string& conf, double t,
 				double l, std::vector<geometry_msgs::PoseStamped>& plan);
@@ -43,16 +43,25 @@ int main(int argc, char** argv)
 	ros::NodeHandle private_nh("~/");
 
 	//Costmap inizialization magics
-    tf::TransformListener tf_(ros::Duration(10));
-    costmap_2d::Costmap2DROS* costmap_ros = new costmap_2d::Costmap2DROS("global_costmap", tf_);
-    costmap_ros->pause();
+        tf::TransformListener tf_(ros::Duration(10));
+        costmap_2d::Costmap2DROS* costmap_ros = new costmap_2d::Costmap2DROS("global_costmap", tf_);
+        costmap_ros->pause();
 
 	ROS_FATAL_STREAM("Costmap loaded");
 
 	//Convert start and goal
 	geometry_msgs::PoseStamped start_pose, goal_pose;
 	std::vector<geometry_msgs::PoseStamped> plan;
-	parse(conf, start_pose, goal_pose);
+        bool valid = parse(conf, start_pose, goal_pose);
+
+        if(!valid)
+        {
+            std::ofstream f;
+            f.open(dir+node_name + string(".log"));
+            f << "INVALID CONFIGURATION: " << conf << "\n";
+            f.close();
+            return 0;
+        }
 
 	//Launch planner
 	AbstractPlanner* planner = getPlanner(planner_name, costmap_ros, deadline);
@@ -77,7 +86,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void parse(const string& conf, geometry_msgs::PoseStamped& start_pose, geometry_msgs::PoseStamped& goal_pose)
+bool parse(const string& conf, geometry_msgs::PoseStamped& start_pose, geometry_msgs::PoseStamped& goal_pose)
 {
 	stringstream s(conf);
 	string segment;
@@ -86,6 +95,9 @@ void parse(const string& conf, geometry_msgs::PoseStamped& start_pose, geometry_
 	{
 	   seglist.push_back(segment);
 	}
+
+        if(seglist.size() != 8)
+            return false;
 
 	start_pose.pose.position.x = stod(seglist[0]);
 	start_pose.pose.position.y = stod(seglist[1]);
@@ -102,6 +114,8 @@ void parse(const string& conf, geometry_msgs::PoseStamped& start_pose, geometry_
 	goal_pose.pose.orientation.y = 0;
 	goal_pose.pose.orientation.z = stod(seglist[6]);
 	goal_pose.pose.orientation.w = stod(seglist[7]);
+
+        return true;
 }
 
 void save(const std::string& filename, const std::string& conf, double t, double l, std::vector<geometry_msgs::PoseStamped>& plan)

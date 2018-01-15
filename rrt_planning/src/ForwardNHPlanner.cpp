@@ -139,7 +139,7 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             ROS_FATAL("Plan found: simple geometry");
             ROS_FATAL_STREAM("Action count: " << count);
             ROS_FATAL_STREAM("New time: " << Tcurrent.count());
-            ROS_FATAL_STREAM("Path lenght: " << getPathLength());
+            ROS_FATAL_STREAM("Path length: " << getPathLength());
 
             open.clear();
             reached.clear();

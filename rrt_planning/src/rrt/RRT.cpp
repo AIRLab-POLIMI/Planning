@@ -115,7 +115,7 @@ double RRT::computeCost(RRTNode* node)
     while(current != root)
     {
         RRTNode* parent = current->father;
-        cost = cost + distance(current->x, parent->x);
+        cost = cost + sqrt(pow(current->x(0) - parent->x(0),2) + pow(current->x(1) - parent->x(1),2));
         current = parent;
     }
 

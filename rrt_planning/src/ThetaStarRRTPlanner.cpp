@@ -157,6 +157,8 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                 visualizer.flush();
 
                 ROS_INFO("Plan found");
+                ROS_FATAL_STREAM("New time: " << Tcurrent.count());
+                ROS_FATAL_STREAM("Path length: " << getPathLength());
 
                 return true;
             }
