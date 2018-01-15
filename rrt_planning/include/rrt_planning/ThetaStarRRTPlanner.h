@@ -37,17 +37,19 @@
 #include "rrt_planning/visualization/Visualizer.h"
 
 #include "rrt_planning/ThetaStarPlanner.h"
+#include "rrt_planning/AbstractPlanner.h"
 
 
 namespace rrt_planning
 {
 
-class ThetaStarRRTPlanner : public nav_core::BaseGlobalPlanner
+class ThetaStarRRTPlanner : public AbstractPlanner
 {
 public:
 
     ThetaStarRRTPlanner();
     ThetaStarRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
+    ThetaStarRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t);
 
     void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros) override;
     bool makePlan(const geometry_msgs::PoseStamped& start,

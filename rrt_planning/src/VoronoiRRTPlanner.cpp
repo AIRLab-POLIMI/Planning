@@ -19,184 +19,200 @@ using namespace std;
 
 namespace rrt_planning
 {
-    VoronoiRRTPlanner::VoronoiRRTPlanner(){
+VoronoiRRTPlanner::VoronoiRRTPlanner(){
 
-        K = 0;
-        deltaX = 0;
-        laneWidth = 0;
-        greedy = 0;
-        deltaTheta = 0;
+    K = 0;
+    deltaX = 0;
+    laneWidth = 0;
+    greedy = 0;
+    deltaTheta = 0;
 
-        map = nullptr;
-        distance = nullptr;
+    map = nullptr;
+    distance = nullptr;
 
-        voronoiPlanner = new VoronoiPlanner();
+    voronoiPlanner = new VoronoiPlanner();
 
-    }
+}
 
-    VoronoiRRTPlanner::VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
+VoronoiRRTPlanner::VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
 
-        initialize(name, costmap_ros);
-        voronoiPlanner = new VoronoiPlanner();
-    }
+    initialize(name, costmap_ros);
+    voronoiPlanner = new VoronoiPlanner();
+}
 
-    void VoronoiRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
-
-        voronoiPlanner->initialize(name, costmap_ros);
-
-        map = new ROSMap(costmap_ros);
-        distance = new L2ThetaDistance();
-
-        //Parameters from ros parameters server
-        ros::NodeHandle private_nh("~/" + name);
-
-        private_nh.param("iterations", K, 30000);
-        private_nh.param("deltaX", deltaX, 0.5);
-        private_nh.param("laneWidth", laneWidth, 2.0);
-        private_nh.param("greedy", greedy, 0.1);
-        private_nh.param("deltaTheta", deltaTheta, M_PI/4);
-
-        extenderFactory.initialize(private_nh, *map, *distance);
-        visualizer.initialize(private_nh);
-    }
-
-    bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
-                                const geometry_msgs::PoseStamped& goal,
-                                std::vector<geometry_msgs::PoseStamped>& plan){
-
-        visualizer.clean();
-
-        //Retrieve Voronoi plan
-        vector<geometry_msgs::PoseStamped> voronoiPlan;
-
-        if(!voronoiPlanner->makePlan(start, goal, voronoiPlan)){
-            ROS_INFO("Impossible to compute the Voronoi plan");
-            return false;
-        }
-
-        visualizer.displayPlan(voronoiPlan);
-
-        //Compute VoronoiRRT plan
-        Distance& distance = *this->distance;
-
-        VectorXd&& x0 = convertPose(start);
-        VectorXd&& xGoal = convertPose(goal);
-
-        RRT rrt(distance, x0);
-
-        ROS_INFO("Voronoi-RRT started");
+VoronoiRRTPlanner::VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t)
+{
+    initialize(name, costmap_ros);
+    Tmax = t;
+}
 
 
-        for(unsigned int i = 0; i < K; i++){
+void VoronoiRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
 
-            VectorXd xRand;
+    voronoiPlanner->initialize(name, costmap_ros);
 
-            if(RandomGenerator::sampleEvent(greedy)){
-                xRand = xGoal;
-            }
-            else{
-                xRand = extenderFactory.getKinematicModel().sampleOnLane(voronoiPlan,
-                                                                         laneWidth,
-                                                                         deltaTheta);
-            }
+    map = new ROSMap(costmap_ros);
+    distance = new L2ThetaDistance();
 
-            visualizer.addPoint(xRand);
+    //Parameters from ros parameters server
+    ros::NodeHandle private_nh("~/" + name);
 
-            auto* node = rrt.searchNearestNode(xRand);
+    private_nh.param("iterations", K, 30000);
+    private_nh.param("deltaX", deltaX, 0.5);
+    private_nh.param("laneWidth", laneWidth, 2.0);
+    private_nh.param("greedy", greedy, 0.1);
+    private_nh.param("deltaTheta", deltaTheta, M_PI/4);
 
-            VectorXd xNew;
+    extenderFactory.initialize(private_nh, *map, *distance);
+    visualizer.initialize(private_nh);
 
-            if(newState(xRand, node->x, xNew)){
-                rrt.addNode(node, xNew);
+    double t;
+    private_nh.param("Tmax", t, 300.0);
+    Tmax = std::chrono::duration<double>(t);
+}
 
-                visualizer.addSegment(node->x, xNew);
+bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
+                            const geometry_msgs::PoseStamped& goal,
+                            std::vector<geometry_msgs::PoseStamped>& plan){
 
-                if(distance(xNew, xGoal) < deltaX){
-                    auto&& path = rrt.getPathToLastNode();
-                    publishPlan(path, plan, start.header.stamp);
+    visualizer.clean();
 
-                    visualizer.displayPlan(plan);
-                    visualizer.flush();
+    //Retrieve Voronoi plan
+    vector<geometry_msgs::PoseStamped> voronoiPlan;
 
-                    ROS_INFO("Plan found");
-
-                    return true;
-                }
-            }
-
-        }
-
-        visualizer.flush();
-
-        ROS_WARN_STREAM("Failed to found a plan in " << K << " RRT iterations");
+    if(!voronoiPlanner->makePlan(start, goal, voronoiPlan)){
+        ROS_INFO("Impossible to compute the Voronoi plan");
         return false;
     }
 
-    bool VoronoiRRTPlanner::newState(const Eigen::VectorXd& xRand,
-                                     const Eigen::VectorXd& xNear,
-                                     Eigen::VectorXd& xNew){
+    visualizer.displayPlan(voronoiPlan);
 
-        return extenderFactory.getExtender().compute(xNear, xRand,
-                                                     xNew);
-    }
+    //Compute VoronoiRRT plan
+    Distance& distance = *this->distance;
 
-    VectorXd VoronoiRRTPlanner::convertPose(const geometry_msgs::PoseStamped& msg){
+    VectorXd&& x0 = convertPose(start);
+    VectorXd&& xGoal = convertPose(goal);
 
-        auto& q_ros = msg.pose.orientation;
-        auto& t_ros = msg.pose.position;
+    RRT rrt(distance, x0);
 
-        Quaterniond q(q_ros.w, q_ros.x, q_ros.y, q_ros.z);
+    t0 = chrono::steady_clock::now();
 
-        Vector3d theta = q.matrix().eulerAngles(0, 1, 2);
+    ROS_INFO("Voronoi-RRT started");
 
-        VectorXd x(3);
-        x << t_ros.x, t_ros.y, theta(2);
 
-        return x;
-    }
+    for(unsigned int i = 0; i < K && !timeOut(); i++){
 
-    void VoronoiRRTPlanner::publishPlan(std::vector<Eigen::VectorXd>& path,
-                                        std::vector<geometry_msgs::PoseStamped>& plan,
-                                        const ros::Time& stamp){
+        VectorXd xRand;
 
-        for(auto x : path){
-            geometry_msgs::PoseStamped msg;
-
-            msg.header.stamp = stamp;
-            msg.header.frame_id = "map";
-
-            msg.pose.position.x = x(0);
-            msg.pose.position.y = x(1);
-            msg.pose.position.z = 0;
-
-            Matrix3d m;
-            m = AngleAxisd(x(2), Vector3d::UnitZ())
-                * AngleAxisd(0, Vector3d::UnitY())
-                * AngleAxisd(0, Vector3d::UnitX());
-
-            Quaterniond q(m);
-
-            msg.pose.orientation.x = q.x();
-            msg.pose.orientation.y = q.y();
-            msg.pose.orientation.z = q.z();
-            msg.pose.orientation.w = q.w();
-
-            plan.push_back(msg);
+        if(RandomGenerator::sampleEvent(greedy)){
+            xRand = xGoal;
         }
-    }
-
-    VoronoiRRTPlanner::~VoronoiRRTPlanner(){
-
-        if(distance){
-            delete distance;
+        else{
+            xRand = extenderFactory.getKinematicModel().sampleOnLane(voronoiPlan,
+                                                                     laneWidth,
+                                                                     deltaTheta);
         }
 
-        if(map){
-            delete map;
+        visualizer.addPoint(xRand);
+
+        auto* node = rrt.searchNearestNode(xRand);
+
+        VectorXd xNew;
+
+        if(newState(xRand, node->x, xNew)){
+            rrt.addNode(node, xNew);
+
+            visualizer.addSegment(node->x, xNew);
+
+            if(distance(xNew, xGoal) < deltaX)
+            {
+                Tcurrent = chrono::steady_clock::now() - t0;
+                length = rrt.computeCost(node);
+                auto&& path = rrt.getPathToLastNode();
+                publishPlan(path, plan, start.header.stamp);
+
+                visualizer.displayPlan(plan);
+                visualizer.flush();
+
+                ROS_INFO("Plan found");
+
+                return true;
+            }
         }
 
-        if(voronoiPlanner){
-            delete voronoiPlanner;
-        }
     }
+
+    visualizer.flush();
+
+    ROS_WARN_STREAM("Failed to found a plan in " << K << " RRT iterations");
+    return false;
+}
+
+bool VoronoiRRTPlanner::newState(const Eigen::VectorXd& xRand,
+                                 const Eigen::VectorXd& xNear,
+                                 Eigen::VectorXd& xNew){
+
+    return extenderFactory.getExtender().compute(xNear, xRand,
+                                                 xNew);
+}
+
+VectorXd VoronoiRRTPlanner::convertPose(const geometry_msgs::PoseStamped& msg){
+
+    auto& q_ros = msg.pose.orientation;
+    auto& t_ros = msg.pose.position;
+
+    Quaterniond q(q_ros.w, q_ros.x, q_ros.y, q_ros.z);
+
+    Vector3d theta = q.matrix().eulerAngles(0, 1, 2);
+
+    VectorXd x(3);
+    x << t_ros.x, t_ros.y, theta(2);
+
+    return x;
+}
+
+void VoronoiRRTPlanner::publishPlan(std::vector<Eigen::VectorXd>& path,
+                                    std::vector<geometry_msgs::PoseStamped>& plan,
+                                    const ros::Time& stamp){
+
+    for(auto x : path){
+        geometry_msgs::PoseStamped msg;
+
+        msg.header.stamp = stamp;
+        msg.header.frame_id = "map";
+
+        msg.pose.position.x = x(0);
+        msg.pose.position.y = x(1);
+        msg.pose.position.z = 0;
+
+        Matrix3d m;
+        m = AngleAxisd(x(2), Vector3d::UnitZ())
+            * AngleAxisd(0, Vector3d::UnitY())
+            * AngleAxisd(0, Vector3d::UnitX());
+
+        Quaterniond q(m);
+
+        msg.pose.orientation.x = q.x();
+        msg.pose.orientation.y = q.y();
+        msg.pose.orientation.z = q.z();
+        msg.pose.orientation.w = q.w();
+
+        plan.push_back(msg);
+    }
+}
+
+VoronoiRRTPlanner::~VoronoiRRTPlanner(){
+
+    if(distance){
+        delete distance;
+    }
+
+    if(map){
+        delete map;
+    }
+
+    if(voronoiPlanner){
+        delete voronoiPlanner;
+    }
+}
 }

@@ -63,6 +63,12 @@ ThetaStarRRTPlanner::ThetaStarRRTPlanner(std::string name, costmap_2d::Costmap2D
     thetaStarPlanner = new ThetaStarPlanner(name, costmap_ros);
 }
 
+ThetaStarRRTPlanner::ThetaStarRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t)
+{
+    initialize(name, costmap_ros);
+    Tmax = t;
+}
+
 
 void ThetaStarRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
@@ -82,6 +88,10 @@ void ThetaStarRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS*
 
     extenderFactory.initialize(private_nh, *map, *distance);
     visualizer.initialize(private_nh);
+
+    double t;
+    private_nh.param("Tmax", t, 300.0);
+    Tmax = std::chrono::duration<double>(t);
 }
 
 bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
@@ -107,9 +117,11 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
     RRT rrt(distance, x0);
 
+    t0 = chrono::steady_clock::now();
+
     ROS_INFO("Theta*-RRT started");
 
-    for(unsigned int i = 0; i < K; i++)
+    for(unsigned int i = 0; i < K && !timeOut(); i++)
     {
 
         VectorXd xRand;
@@ -133,6 +145,8 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
             if(distance(xNew, xGoal) < deltaX)
             {
+                Tcurrent = chrono::steady_clock::now() - t0;
+                length = rrt.computeCost(node);
                 auto&& path = rrt.getPathToLastNode();
                 publishPlan(path, plan, start.header.stamp);
 

@@ -37,6 +37,12 @@ RRTStarPlanner::RRTStarPlanner(std::string name, costmap_2d::Costmap2DROS* costm
     initialize(name, costmap_ros);
 }
 
+RRTStarPlanner::RRTStarPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t)
+{
+    initialize(name, costmap_ros);
+    Tmax = t;
+}
+
 
 void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
@@ -55,6 +61,10 @@ void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
 
     extenderFactory.initialize(private_nh, *map, *distance);
     visualizer.initialize(private_nh);
+
+    double t;
+    private_nh.param("Tmax", t, 300.0);
+    Tmax = std::chrono::duration<double>(t);
 }
 
 bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
@@ -74,8 +84,9 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
     visualizer.clean();
 
+    t0 = chrono::steady_clock::now();
 
-    for(unsigned int i = 0; i < K || (i >= K && !plan_found); i++)
+    for(unsigned int i = 0; (i < K || (i >= K && !plan_found)) && !timeOut(); i++)
     {
         ROS_WARN_STREAM("K: " << i);
         VectorXd xRand;
@@ -152,7 +163,8 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
     if(plan_found)
     {
-
+        Tcurrent = chrono::steady_clock::now() - t0;
+        length = rrt.computeCost(last);
         auto&& path = rrt.getPathToLastNode(last);
         publishPlan(path, plan, start.header.stamp);
 

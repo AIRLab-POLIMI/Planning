@@ -69,7 +69,9 @@ void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_r
     angleFactory.initialize(private_nh);
     positionFactory.initialize(private_nh);
 
-    Tmax = chrono::duration<double>(50.0);
+    double t;
+    private_nh.param("Tmax", t, 300.0);
+    Tmax = std::chrono::duration<double>(t);
 }
 
 bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
@@ -131,13 +133,10 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
             visualizer.displayPlan(plan);
             visualizer.flush();
-            ros::Time end = ros::Time::now();
-            ros::Duration ex_time = end - start_time;
             Tcurrent = chrono::steady_clock::now() - t0;
 
             ROS_FATAL("Plan found: simple geometry");
             ROS_FATAL_STREAM("Action count: " << count);
-            ROS_FATAL_STREAM("Time: " << ex_time);
             ROS_FATAL_STREAM("New time: " << Tcurrent.count());
             ROS_FATAL_STREAM("Path lenght: " << getPathLength());
 

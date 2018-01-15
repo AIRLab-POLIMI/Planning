@@ -35,16 +35,18 @@
 #include "rrt_planning/distance/Distance.h"
 #include "rrt_planning/extenders/ExtenderFactory.h"
 #include "rrt_planning/visualization/Visualizer.h"
+#include "rrt_planning/AbstractPlanner.h"
 
 namespace rrt_planning
 {
 
-class RRTPlanner : public nav_core::BaseGlobalPlanner
+class RRTPlanner : public AbstractPlanner
 {
 public:
 
     RRTPlanner();
     RRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
+    RRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t);
 
     void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros) override;
     bool makePlan(const geometry_msgs::PoseStamped& start,

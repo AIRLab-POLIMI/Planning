@@ -15,46 +15,49 @@
 #include "rrt_planning/visualization/Visualizer.h"
 
 #include <voronoi_planner/planner_core.h>
+#include "rrt_planning/AbstractPlanner.h"
 
 namespace rrt_planning{
 
-    class VoronoiRRTPlanner : public nav_core::BaseGlobalPlanner{
-        public:
+class VoronoiRRTPlanner : public AbstractPlanner
+{
+    public:
 
-            VoronoiRRTPlanner();
-            VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
-            virtual ~VoronoiRRTPlanner();
+        VoronoiRRTPlanner();
+        VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
+        VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t);
+        virtual ~VoronoiRRTPlanner();
 
-            void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros) override;
-            bool makePlan(const geometry_msgs::PoseStamped& start,
-                          const geometry_msgs::PoseStamped& goal,
-                          std::vector<geometry_msgs::PoseStamped>& plan) override;
+        void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros) override;
+        bool makePlan(const geometry_msgs::PoseStamped& start,
+                      const geometry_msgs::PoseStamped& goal,
+                      std::vector<geometry_msgs::PoseStamped>& plan) override;
 
-        private:
+    private:
 
-            bool newState(const Eigen::VectorXd& xRand,
-                          const Eigen::VectorXd& xNear,
-                          Eigen::VectorXd& xNew);
-            Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
-            void publishPlan(std::vector<Eigen::VectorXd>& path,
-                             std::vector<geometry_msgs::PoseStamped>& plan,
-                             const ros::Time& stamp);
+        bool newState(const Eigen::VectorXd& xRand,
+                      const Eigen::VectorXd& xNear,
+                      Eigen::VectorXd& xNew);
+        Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
+        void publishPlan(std::vector<Eigen::VectorXd>& path,
+                         std::vector<geometry_msgs::PoseStamped>& plan,
+                         const ros::Time& stamp);
 
-            Map* map;
-            Distance* distance;
+        Map* map;
+        Distance* distance;
 
-            int K;
-            double deltaX;
-            double laneWidth;
-            double greedy;
-            double deltaTheta;
+        int K;
+        double deltaX;
+        double laneWidth;
+        double greedy;
+        double deltaTheta;
 
-            voronoi_planner::VoronoiPlanner* voronoiPlanner;
+        voronoi_planner::VoronoiPlanner* voronoiPlanner;
 
-            ExtenderFactory extenderFactory;
+        ExtenderFactory extenderFactory;
 
-            Visualizer visualizer;
-    };
+        Visualizer visualizer;
+};
 }
 
 #endif /* INCLUDE_RRT_PLANNING_VORONOIRRTPLANNER_H_ */
