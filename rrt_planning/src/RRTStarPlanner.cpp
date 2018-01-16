@@ -9,6 +9,9 @@
 #include "rrt_planning/utils/RandomGenerator.h"
 #include "rrt_planning/rrt/RRT.h"
 
+//#define VIS_CONF
+#define PRINT_CONF
+
 using namespace Eigen;
 
 //register this planner as a BaseGlobalPlanner plugin
@@ -79,25 +82,25 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     bool plan_found = false;
 
     RRT rrt(distance, x0);
-
+#ifdef PRINT_CONF
     ROS_INFO("Planner started");
-
+#endif
+#ifdef VIS_CONF
     visualizer.clean();
-
+#endif
     t0 = chrono::steady_clock::now();
 
     for(unsigned int i = 0; (i < K || (i >= K && !plan_found)) && !timeOut(); i++)
     {
-        ROS_WARN_STREAM("K: " << i);
         VectorXd xRand;
 
         if(RandomGenerator::sampleEvent(greedy))
             xRand = xGoal;
         else
             xRand = extenderFactory.getKinematicModel().sampleOnBox(map->getBounds());
-
+#ifdef VIS_CONF
         visualizer.addPoint(xRand);
-
+#endif
         auto* node = rrt.searchNearestNode(xRand);
         VectorXd xNew;
 
@@ -131,8 +134,9 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
              }
 
             rrt.addNode(father, xNew);
+#ifdef VIS_CONF
             visualizer.addSegment(father->x, xNew);
-
+#endif
             //Rewire tree
             RRTNode* newNode = rrt.getPointer();
             double cost = rrt.computeCost(newNode);
@@ -145,8 +149,9 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                     if(newCost < rrt.computeCost(n))
                     {
                         n->father = newNode;
+#ifdef VIS_CONF
                         visualizer.addSegment(xNew, n->x);
-                        ROS_INFO("rewiring");
+#endif
                     }
                 }
             }
@@ -155,7 +160,6 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             {
                 last = rrt.getPointer();
                 plan_found = true;
-                ROS_INFO("AT LAST");
             }
         }
 
@@ -167,18 +171,22 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         length = rrt.computeCost(last);
         auto&& path = rrt.getPathToLastNode(last);
         publishPlan(path, plan, start.header.stamp);
-
+#ifdef VIS_CONF
         visualizer.displayPlan(plan);
         visualizer.flush();
-
+#endif
+#ifdef PRINT_CONF
         ROS_INFO("Plan found");
+#endif
 
         return true;
     }
-
+#ifdef VIS_CONF
     visualizer.flush();
-
+#endif
+#ifdef PRINT_CONF
     ROS_WARN_STREAM("Failed to find a plan in " << K << " RRT Star iterations");
+#endif
     return false;
 
 }

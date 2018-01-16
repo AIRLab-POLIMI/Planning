@@ -34,6 +34,8 @@
 
 #include <stdexcept>
 
+//#define DEBUG_CONF
+
 namespace rrt_planning
 {
 
@@ -51,7 +53,9 @@ void ExtenderFactory::initialize(ros::NodeHandle& nh, Map& map, Distance& distan
         initializeKinematic(nh);
 
         extender = new MotionPrimitivesExtender(*kinematicModel, *controller, map, distance);
+#ifdef DEBUG_CONF
         ROS_FATAL("motion primitives");
+#endif
     }
     else if(extenderName == "ClosedLoop")
     {
@@ -68,7 +72,9 @@ void ExtenderFactory::initialize(ros::NodeHandle& nh, Map& map, Distance& distan
             nh.param("k_alpha", k_alpha, 1.0);
             nh.param("k_phi", k_phi, 1.0);
             controller = new POSQ(k_rho, kv, k_alpha, k_phi);
+#ifdef DEBUG_CONF
             ROS_FATAL("controller");
+#endif
         }
         else if(controllerName == "Costant")
         {
@@ -100,12 +106,16 @@ void ExtenderFactory::initializeKinematic(ros::NodeHandle& nh)
     if(kinematicModelName == "DifferentialDrive")
     {
         kinematicModel = new DifferentialDrive(*controller);
+#ifdef DEBUG_CONF
         ROS_FATAL("DifferentialDrive");
+#endif
     }
     else if(kinematicModelName == "Bicycle")
     {
         kinematicModel = new Bicycle(*controller);
+#ifdef DEBUG_CONF
         ROS_FATAL("Bicycle");
+#endif
     }
 
 }

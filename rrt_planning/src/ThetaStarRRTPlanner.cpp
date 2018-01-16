@@ -32,6 +32,9 @@
 #include "rrt_planning/utils/RandomGenerator.h"
 #include "rrt_planning/rrt/RRT.h"
 
+//#define VIS_CONF
+#define PRINT_CONF
+
 using namespace Eigen;
 
 //register this planner as a BaseGlobalPlanner plugin
@@ -67,14 +70,12 @@ ThetaStarRRTPlanner::ThetaStarRRTPlanner(std::string name, costmap_2d::Costmap2D
 {
     thetaStarPlanner = new ThetaStarPlanner();
     initialize(name, costmap_ros);
-    ROS_FATAL_STREAM("Name of theta_star_rrt: " << name);
     Tmax = t;
 }
 
 
 void ThetaStarRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
-    ROS_FATAL("inizialization call");
     thetaStarPlanner->initialize(name, costmap_ros);
 
     map = new ROSMap(costmap_ros);
@@ -101,14 +102,18 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                                    const geometry_msgs::PoseStamped& goal,
                                    std::vector<geometry_msgs::PoseStamped>& plan)
 {
+#ifdef VIS_CONF
     visualizer.clean();
+#endif
 
     // Retrive Theta* plan
     vector<geometry_msgs::PoseStamped> thetaStarPlan;
 
     if(!thetaStarPlanner->makePlan(start, goal, thetaStarPlan))
     {
+#ifdef PRINT_CONF
         ROS_INFO("Impossible to compute the Theta* plan");
+#endif
         return false;
     }
 
@@ -121,9 +126,9 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     RRT rrt(distance, x0);
 
     t0 = chrono::steady_clock::now();
-
+#ifdef PRINT_CONF
     ROS_INFO("Theta*-RRT started");
-
+#endif
     for(unsigned int i = 0; i < K && !timeOut(); i++)
     {
 
@@ -133,9 +138,9 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             xRand = xGoal;
         else
             xRand = extenderFactory.getKinematicModel().sampleOnLane(thetaStarPlan, laneWidth, deltaTheta);
-
+#ifdef VIS_CONF
         visualizer.addPoint(xRand);
-
+#endif
         auto* node = rrt.searchNearestNode(xRand);
 
         VectorXd xNew;
@@ -143,32 +148,33 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         if(newState(xRand, node->x, xNew))
         {
             rrt.addNode(node, xNew);
-
+#ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
-
+#endif
             if(distance(xNew, xGoal) < deltaX)
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
                 length = rrt.computeCost(node);
                 auto&& path = rrt.getPathToLastNode();
                 publishPlan(path, plan, start.header.stamp);
-
+#ifdef VIS_CONF
                 visualizer.displayPlan(plan);
                 visualizer.flush();
-
+#endif
+#ifdef PRINT_CONF
                 ROS_INFO("Plan found");
-                ROS_FATAL_STREAM("New time: " << Tcurrent.count());
-                ROS_FATAL_STREAM("Path length: " << getPathLength());
-
+#endif
                 return true;
             }
         }
 
     }
-
+#ifdef VIS_CONF
     visualizer.flush();
-
+#endif
+#ifdef PRINT_CONF
     ROS_WARN_STREAM("Failed to found a plan in " << K << " RRT iterations");
+#endif
     return false;
 
 }

@@ -26,6 +26,8 @@
 #include <pluginlib/class_list_macros.h>
 #include <visualization_msgs/Marker.h>
 
+//#define VIS_CONF
+#define PRINT_CONF
 
 //register this planner as a BaseGlobalPlanner plugin
 PLUGINLIB_EXPORT_CLASS(rrt_planning::ThetaStarPlanner, nav_core::BaseGlobalPlanner)
@@ -53,7 +55,6 @@ ThetaStarPlanner::ThetaStarPlanner(std::string name, costmap_2d::Costmap2DROS* c
 
 void ThetaStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
-    ROS_FATAL_STREAM("Name of node: " << name);
     double discretization;
 
     //Get parameters from ros parameter server
@@ -72,8 +73,9 @@ bool ThetaStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                                 std::vector<geometry_msgs::PoseStamped>& plan)
 {
     clearInstance();
+#ifdef VIS_CONF
     visualizer.clean();
-
+#endif
     //Init the position of the special states
     s_start = grid->convertPose(start);
     s_goal = grid->convertPose(goal);
@@ -81,14 +83,18 @@ bool ThetaStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     //Test starting position
     if(!grid->isFree(s_start))
     {
+#ifdef PRINT_CONF
         ROS_INFO("Invalid starting position");
+#endif
         return false;
     }
 
     //Test target position
     if(!grid->isFree(s_goal))
     {
+#ifdef PRINT_CONF
         ROS_INFO("Invalid target position");
+#endif
         return false;
     }
 
@@ -97,9 +103,9 @@ bool ThetaStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     parent[s_start] = s_start;
     open.insert(s_start, grid->heuristic(s_start, s_goal));
     parent[s_goal] = S_NULL;
-
+#ifdef PRINT_CONF
     ROS_INFO("Planner started");
-
+#endif
     //Compute plan
     while(!open.empty())
     {
@@ -133,7 +139,9 @@ bool ThetaStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
         if(state == S_NULL)
         {
+#ifdef PRINT_CONF
             ROS_INFO("Invalid plan");
+#endif
             return false;
         }
 
@@ -143,8 +151,9 @@ bool ThetaStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
     reverse(path.begin(), path.end());
     publishPlan(path, plan, start.header.stamp, start, goal);
+#ifdef VIS_CONF
     visualizer.displayPlan(plan);
-
+#endif
     return true;
 }
 

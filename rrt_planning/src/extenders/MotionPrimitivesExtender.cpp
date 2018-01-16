@@ -144,8 +144,6 @@ void MotionPrimitivesExtender::initialize(ros::NodeHandle& nh)
 {
     nh.param("deltaT", deltaT, 0.5);
     nh.param("motion_primitives/discretization", discretization, 5);
-    ROS_FATAL_STREAM("discretization: " << discretization);
-    ROS_FATAL_STREAM("nh: " << nh.getNamespace());
 
     std::vector<double> minU_vec;
     std::vector<double> maxU_vec;

@@ -32,6 +32,9 @@
 #include "rrt_planning/utils/RandomGenerator.h"
 #include "rrt_planning/rrt/RRT.h"
 
+//#define VIS_CONF
+#define PRINT_CONF
+
 using namespace Eigen;
 
 //register this planner as a BaseGlobalPlanner plugin
@@ -96,10 +99,12 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     VectorXd&& xGoal = convertPose(goal);
 
     RRT rrt(distance, x0);
-
+#ifdef PRINT_CONF
     ROS_INFO("Planner started");
-
+#endif
+#ifdef VIS_CONF
     visualizer.clean();
+#endif
 
     t0 = chrono::steady_clock::now();
 
@@ -112,9 +117,9 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             xRand = xGoal;
         else
             xRand = extenderFactory.getKinematicModel().sampleOnBox(map->getBounds());
-
+#ifdef VIS_CONF
         visualizer.addPoint(xRand);
-
+#endif
         auto* node = rrt.searchNearestNode(xRand);
 
         VectorXd xNew;
@@ -122,30 +127,33 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         if(newState(xRand, node->x, xNew))
         {
             rrt.addNode(node, xNew);
-
+#ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
-
+#endif
             if(distance(xNew, xGoal) < deltaX)
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
                 length = rrt.computeCost(node);
                 auto&& path = rrt.getPathToLastNode();
                 publishPlan(path, plan, start.header.stamp);
-
+#ifdef VIS_CONF
                 visualizer.displayPlan(plan);
                 visualizer.flush();
-
+#endif
+#ifdef PRINT_CONF
                 ROS_INFO("Plan found");
-
+#endif
                 return true;
             }
         }
 
     }
-
+#ifdef VIS_CONF
     visualizer.flush();
-
+#endif
+#ifdef PRINT_CONF
     ROS_WARN_STREAM("Failed to found a plan in " << K << " RRT iterations");
+#endif
     return false;
 
 }

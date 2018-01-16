@@ -12,6 +12,10 @@
 #include "rrt_planning/kinematics_models/DifferentialDrive.h"
 #include "rrt_planning/utils/RandomGenerator.h"
 
+//#define DEBUG_CONF
+#define PRINT_CONF
+//#define VIS_CONF
+
 
 using namespace Eigen;
 
@@ -40,7 +44,6 @@ ForwardNHPlanner::ForwardNHPlanner()
 ForwardNHPlanner::ForwardNHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
     initialize(name, costmap_ros);
-    ROS_INFO("NH Planner is ready!");
 }
 
 ForwardNHPlanner::ForwardNHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t)
@@ -81,7 +84,9 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 {
     count = 0;
     dead = 0;
+#ifdef VIS_CONF
     visualizer.clean();
+#endif
     Distance& l2dis = *this->l2dis;
 
     VectorXd&& x0 = convertPose(start_pose);
@@ -89,13 +94,17 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
     if(!rosmap->isFree(x0))
     {
+#ifdef PRINT_CONF
       ROS_FATAL("Invalid starting position");
+#endif
       return false;
     }
 
     if(!rosmap->isFree(xGoal))
     {
+#ifdef PRINT_CONF
       ROS_FATAL("Invalid goal position");
+#endif
       return false;
     }
 
@@ -115,8 +124,9 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
     CornerIndex index(l2dis);
     index.insert(xGoal);
-
+#ifdef PRINT_CONF
     ROS_FATAL("Start Search: pick a god and pray");
+#endif
     ros::Time start_time = ros::Time::now();
     t0 = chrono::steady_clock::now();
 
@@ -132,16 +142,19 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         {
             auto&& path = retrievePath(current);
             publishPlan(path, plan, start_pose.header.stamp);
-
+#ifdef VIS_CONF
             visualizer.displayPlan(plan);
             visualizer.flush();
+#endif
             Tcurrent = chrono::steady_clock::now() - t0;
-
+#ifdef PRINT_CONF
             ROS_FATAL("Plan found: simple geometry");
+#endif
+#ifdef DEBUG_CONF
             ROS_FATAL_STREAM("Action count: " << count);
             ROS_FATAL_STREAM("New time: " << Tcurrent.count());
             ROS_FATAL_STREAM("Path length: " << getPathLength());
-
+#endif
             open.clear();
             reached.clear();
             global_closed.clear();
@@ -197,8 +210,9 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 {
                     new_node = reached.at(new_node->getState());
                 }
-
+#ifdef VIS_CONF
                 visualizer.addSegment(current->getState(), new_node->getState());
+#endif
                 Action p = *action.getParent();
                 if(!new_node->contains(p.getState()))
                 {
@@ -244,12 +258,14 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                         }
 
                         addSubgoal(current, copy, l2dis);
+#ifdef VIS_CONF
                         visualizer.addCorner(copy.getState());
+#endif
                     }
+#ifdef VIS_CONF
                     else
-                    {
                         visualizer.addPoint(a.getState());
-                    }
+#endif
 
                 }
             }
@@ -266,11 +282,12 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             current->addSubgoal(action.getState());
         }
     }
-
+#ifdef VIS_CONF
     visualizer.flush();
-
+#endif
+#ifdef PRINT_CONF
     ROS_FATAL("Failed to find plan: omae wa mou shindeiru");
-
+#endif
     open.clear();
     reached.clear();
     global_closed.clear();
@@ -370,8 +387,6 @@ void ForwardNHPlanner::addOpen(Node* node, const Action& action, Distance& dista
     Key key(node, action);
     double h = distance(node->getState(), action.getState()) + distance(action.getState(), target.getState());
     open.insert(key, h + node->getCost());
-    if(action.isCorner())
-        node->addSubgoal(action.getState());
 
 }
 
@@ -577,7 +592,9 @@ void ForwardNHPlanner::sampleCorner(const VectorXd& corner, bool cw)
         if(rosmap->isFree(sample))
         {
             samples.push_back(sample);
+#ifdef VIS_CONF
             visualizer.addCorner(sample);
+#endif
         }
     }
 
@@ -600,7 +617,9 @@ vector<VectorXd> ForwardNHPlanner::retrievePath(Node* node)
 
     while(current->getCost() != 0)
     {
+#ifdef VIS_CONF
         visualizer.addPathPoint(current->getState());
+#endif
         path.push_back(current->getState());
         mp = current->getMotionPrimitives();
         std::reverse(mp.begin(), mp.end());

@@ -6,6 +6,8 @@
 
 #include <stdexcept>
 
+//#define DEBUG_CONF
+
 namespace rrt_planning
 {
 
@@ -19,32 +21,36 @@ void SamplingAngleFactory::initialize(ros::NodeHandle& nh)
         SamplingAngle* sampling = new AtanSampler();
 
         this->sampling = sampling;
-
+#ifdef DEBUG_CONF
         ROS_FATAL("Atan angle sampler");
+#endif
     }
     else if(samplingAngleName == "BernoulliExponential")
     {
         SamplingAngle* sampling = new BernoulliExponentialSampler();
 
         this->sampling = sampling;
-
+#ifdef DEBUG_CONF
         ROS_FATAL("Bernoulli Exponential angle sampler");
+#endif
     }
     else if(samplingAngleName == "Beta")
     {
         SamplingAngle* sampling = new BetaSampler();
 
         this->sampling = sampling;
-
+#ifdef DEBUG_CONF
         ROS_FATAL("Beta angle sampler");
+#endif
     }
     else if(samplingAngleName == "Fixed")
     {
         SamplingAngle* sampling = new FixedAngleSampler();
 
         this->sampling = sampling;
-
+#ifdef DEBUG_CONF
         ROS_FATAL("Fixed angle sample");
+#endif
     }
     else
     {

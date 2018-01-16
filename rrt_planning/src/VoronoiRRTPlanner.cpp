@@ -9,6 +9,9 @@
 #include "rrt_planning/utils/RandomGenerator.h"
 #include "rrt_planning/rrt/RRT.h"
 
+//#define VIS_CONF
+#define PRINT_CONF
+
 using namespace Eigen;
 using namespace voronoi_planner;
 
@@ -19,8 +22,8 @@ using namespace std;
 
 namespace rrt_planning
 {
-VoronoiRRTPlanner::VoronoiRRTPlanner(){
-
+VoronoiRRTPlanner::VoronoiRRTPlanner()
+{
     K = 0;
     deltaX = 0;
     laneWidth = 0;
@@ -48,8 +51,8 @@ VoronoiRRTPlanner::VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS*
 }
 
 
-void VoronoiRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
-
+void VoronoiRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
+{
     voronoiPlanner->initialize(name, costmap_ros);
 
     map = new ROSMap(costmap_ros);
@@ -74,20 +77,24 @@ void VoronoiRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* c
 
 bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                             const geometry_msgs::PoseStamped& goal,
-                            std::vector<geometry_msgs::PoseStamped>& plan){
-
+                            std::vector<geometry_msgs::PoseStamped>& plan)
+{
+#ifdef VIS_CONF
     visualizer.clean();
-
+#endif
     //Retrieve Voronoi plan
     vector<geometry_msgs::PoseStamped> voronoiPlan;
 
-    if(!voronoiPlanner->makePlan(start, goal, voronoiPlan)){
+    if(!voronoiPlanner->makePlan(start, goal, voronoiPlan))
+    {
+#ifdef PRINT_CONF
         ROS_INFO("Impossible to compute the Voronoi plan");
+#endif
         return false;
     }
-
+#ifdef VIS_CONF
     visualizer.displayPlan(voronoiPlan);
-
+#endif
     //Compute VoronoiRRT plan
     Distance& distance = *this->distance;
 
@@ -97,68 +104,74 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     RRT rrt(distance, x0);
 
     t0 = chrono::steady_clock::now();
-
+#ifdef PRINT_CONF
     ROS_INFO("Voronoi-RRT started");
+#endif
 
-
-    for(unsigned int i = 0; i < K && !timeOut(); i++){
-
+    for(unsigned int i = 0; i < K && !timeOut(); i++)
+    {
         VectorXd xRand;
 
-        if(RandomGenerator::sampleEvent(greedy)){
+        if(RandomGenerator::sampleEvent(greedy))
+        {
             xRand = xGoal;
         }
-        else{
+        else
+        {
             xRand = extenderFactory.getKinematicModel().sampleOnLane(voronoiPlan,
                                                                      laneWidth,
                                                                      deltaTheta);
         }
-
+#ifdef VIS_CONF
         visualizer.addPoint(xRand);
-
+#endif
         auto* node = rrt.searchNearestNode(xRand);
 
         VectorXd xNew;
 
-        if(newState(xRand, node->x, xNew)){
+        if(newState(xRand, node->x, xNew))
+        {
             rrt.addNode(node, xNew);
-
+#ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
-
+#endif
             if(distance(xNew, xGoal) < deltaX)
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
                 length = rrt.computeCost(node);
                 auto&& path = rrt.getPathToLastNode();
                 publishPlan(path, plan, start.header.stamp);
-
+#ifdef VIS_CONF
                 visualizer.displayPlan(plan);
                 visualizer.flush();
-
+#endif
+#ifdef PRINT_CONF
                 ROS_INFO("Plan found");
-
+#endif
                 return true;
             }
         }
 
     }
-
+#ifdef VIS_CONF
     visualizer.flush();
-
+#endif
+#ifdef PRINT_CONF
     ROS_WARN_STREAM("Failed to found a plan in " << K << " RRT iterations");
+#endif
     return false;
 }
 
 bool VoronoiRRTPlanner::newState(const Eigen::VectorXd& xRand,
                                  const Eigen::VectorXd& xNear,
-                                 Eigen::VectorXd& xNew){
-
+                                 Eigen::VectorXd& xNew)
+{
     return extenderFactory.getExtender().compute(xNear, xRand,
                                                  xNew);
 }
 
-VectorXd VoronoiRRTPlanner::convertPose(const geometry_msgs::PoseStamped& msg){
-
+VectorXd VoronoiRRTPlanner::convertPose(const geometry_msgs::PoseStamped& msg)
+{
     auto& q_ros = msg.pose.orientation;
     auto& t_ros = msg.pose.position;
 
@@ -174,8 +187,8 @@ VectorXd VoronoiRRTPlanner::convertPose(const geometry_msgs::PoseStamped& msg){
 
 void VoronoiRRTPlanner::publishPlan(std::vector<Eigen::VectorXd>& path,
                                     std::vector<geometry_msgs::PoseStamped>& plan,
-                                    const ros::Time& stamp){
-
+                                    const ros::Time& stamp)
+{
     for(auto x : path){
         geometry_msgs::PoseStamped msg;
 
@@ -202,8 +215,8 @@ void VoronoiRRTPlanner::publishPlan(std::vector<Eigen::VectorXd>& path,
     }
 }
 
-VoronoiRRTPlanner::~VoronoiRRTPlanner(){
-
+VoronoiRRTPlanner::~VoronoiRRTPlanner()
+{
     if(distance){
         delete distance;
     }

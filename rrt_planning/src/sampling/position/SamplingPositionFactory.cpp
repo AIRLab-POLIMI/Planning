@@ -6,6 +6,8 @@
 
 #include <stdexcept>
 
+//#define DEBUG_CONF
+
 namespace rrt_planning
 {
 
@@ -21,8 +23,9 @@ void SamplingPositionFactory::initialize(ros::NodeHandle& nh)
         SamplingPosition* sampling = new LineGaussianSampler((1.0)/deltaX);
 
         this->sampling = sampling;
-
+#ifdef DEBUG_CONF
         ROS_FATAL("Gaussian on line position sampler");
+#endif
     }
     else if(samplingPositionName == "Fixed")
     {
@@ -31,8 +34,9 @@ void SamplingPositionFactory::initialize(ros::NodeHandle& nh)
         SamplingPosition* sampling = new FixedSampler(deltaX);
 
         this->sampling = sampling;
-
+#ifdef DEBUG_CONF
         ROS_FATAL("Fixed position sampler");
+#endif
     }
     else if(samplingPositionName == "Uniform2D")
     {
@@ -41,8 +45,9 @@ void SamplingPositionFactory::initialize(ros::NodeHandle& nh)
         SamplingPosition* sampling = new Uniform2DSampler(deltaX);
 
         this->sampling = sampling;
-
+#ifdef DEBUG_CONF
         ROS_FATAL("Uniform2D position sampler");
+#endif
     }
     else if(samplingPositionName == "Gaussian2D")
     {
@@ -51,8 +56,9 @@ void SamplingPositionFactory::initialize(ros::NodeHandle& nh)
         SamplingPosition* sampling = new Gaussian2DSampler(deltaX);
 
         this->sampling = sampling;
-
+#ifdef DEBUG_CONF
         ROS_FATAL("Gaussian 2D position sampler");
+#endif
     }
     else
     {

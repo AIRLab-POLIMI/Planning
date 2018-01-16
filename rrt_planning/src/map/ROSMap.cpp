@@ -25,6 +25,7 @@
 
 #include <costmap_2d/cost_values.h>
 
+//#define DEBUG_CONF
 
 namespace rrt_planning
 {
@@ -36,12 +37,12 @@ ROSMap::ROSMap(costmap_2d::Costmap2DROS* costmap_ros) : costmap_ros(costmap_ros)
     bounds.minY = costmap->getOriginY();
     bounds.maxX = bounds.minX + costmap->getSizeInMetersX();
     bounds.maxY = bounds.minY + costmap->getSizeInMetersY();
-
+#ifdef DEBUG_CONF
     ROS_FATAL_STREAM("minX: " << bounds.minX);
     ROS_FATAL_STREAM("maxX: " << bounds.maxX);
     ROS_FATAL_STREAM("minY: " << bounds.minY);
     ROS_FATAL_STREAM("maxY: " << bounds.maxY);
-
+#endif
     bounds.minZ = 0;
     bounds.maxZ = 0;
 }
@@ -63,7 +64,9 @@ unsigned char ROSMap::getCost(const Eigen::VectorXd& p)
         return costmap->getCost(mx, my);
     else
     {
+#ifdef DEBUG_CONF
         std::cerr << "out of map" << std::endl;
+#endif
         return costmap_2d::NO_INFORMATION;
     }
 
