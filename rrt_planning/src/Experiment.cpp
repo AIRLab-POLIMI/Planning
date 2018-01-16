@@ -30,39 +30,38 @@ void saveNH(const std::string& filename, const std::string& conf, double t, doub
 
 int main(int argc, char** argv)
 {
-	ROS_FATAL_STREAM("Starting");
-	string planner_name = argv[1];
-	string map = argv[2];
-	string conf = argv[3];
-	string row = argv[4];
-	string deadline = argv[5];
-	string dir = argv[6];
-	string node_name = planner_name + "_" + map + "_" + row;
-	ROS_FATAL_STREAM("node_name: " << node_name);
+        ROS_FATAL_STREAM("Starting");
+        string planner_name = argv[1];
+        string map = argv[2];
+        string conf = argv[3];
+        string row = argv[4];
+        string deadline = argv[5];
+        string dir = argv[6];
+        string node_name = planner_name + "_" + map + "_" + row;
+        ROS_FATAL_STREAM("node_name: " << node_name);
 
-	ros::init(argc, argv, node_name);
-	ros::NodeHandle private_nh("~/");
+        ros::init(argc, argv, node_name);
+        ros::NodeHandle private_nh("~/");
 
-	//Costmap inizialization magics
+        //Costmap inizialization magics
         tf::TransformListener tf_(ros::Duration(10));
         costmap_2d::Costmap2DROS* costmap_ros = new costmap_2d::Costmap2DROS("global_costmap", tf_);
-        costmap_ros->pause();
 
-	ROS_FATAL_STREAM("Costmap loaded");
+        ROS_FATAL_STREAM("Costmap loaded");
 
-	//Convert start and goal
-	geometry_msgs::PoseStamped start_pose, goal_pose;
-	std::vector<geometry_msgs::PoseStamped> plan;
-    bool valid = parse(conf, start_pose, goal_pose);
+        //Convert start and goal
+        geometry_msgs::PoseStamped start_pose, goal_pose;
+        std::vector<geometry_msgs::PoseStamped> plan;
+        bool valid = parse(conf, start_pose, goal_pose);
 
-    if(!valid)
-    {
-        std::ofstream f;
-        f.open(dir+node_name + string(".log"));
-        f << "INVALID CONFIGURATION: " << conf << "\n";
-        f.close();
-        return 0;
-    }
+        if(!valid)
+        {
+            std::ofstream f;
+            f.open(dir+node_name + string(".log"));
+            f << "INVALID CONFIGURATION: " << conf << "\n";
+            f.close();
+            return 0;
+        }
 
 	//Launch planner
 	AbstractPlanner* planner = getPlanner(planner_name, costmap_ros, deadline);
@@ -85,6 +84,10 @@ int main(int argc, char** argv)
 	private_nh.deleteParam("");
 	ROS_FATAL_STREAM("Plan found: " << result);
 
+        if(planner)
+            delete planner;
+        if(costmap_ros)
+            delete costmap_ros;
 	return 0;
 }
 
@@ -165,6 +168,7 @@ void saveNH(const std::string& filename, const std::string& conf, double t, doub
 
 	f << "kills " << kills << "\n";
 
+        f.close();
 }
 
 

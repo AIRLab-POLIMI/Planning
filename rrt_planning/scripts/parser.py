@@ -5,7 +5,7 @@ def parse():
     wd = os.getcwd()
     compare = open(wd + '/logs/compare.csv', 'w')
     compare.writelines('NH_l,NH_t,FNH_t,FH_l' + '\n')
-    for i in range(0,100):
+    for i in range(0,49):
         nh = open(wd + '/logs/nh_map_' + str(i) + '.log', 'r')
         nh_lines = nh.readlines()[1:]
         results = ['0', '0', '0', '0']

@@ -2,7 +2,7 @@
 planner_name: NHPlanner
 
 #Corner parameters
-k: 1
+k: 3
 ray: 0.3
 threshold: 0.40
 discretization: 360
@@ -17,9 +17,9 @@ k_los: 2
 
 #Samplers parameters
 #options: Gaussian2D, LineGaussian, Fixed, Uniform2D
-position_sampler: Fixed
+position_sampler: Gaussian2D
 #options: Fixed, Beta, BernoulliExponential, Atan
-angle_sampler: Fixed
+angle_sampler: Beta
 
 
 # notEpsilonh

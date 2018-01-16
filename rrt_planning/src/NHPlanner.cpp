@@ -544,7 +544,7 @@ Triangle NHPlanner::createTriangle(const Action& action, const Eigen::VectorXd& 
     return Triangle(a, n, p);
 }
 
-void NHPlanner::sampleCorner(const VectorXd& corner, bool cw)
+/*void NHPlanner::sampleCorner(const VectorXd& corner, bool cw)
 {
     vector<VectorXd> samples;
     VectorXd sample = positionFactory.getSampling().sample(corner, cw);
@@ -574,12 +574,12 @@ void NHPlanner::sampleCorner(const VectorXd& corner, bool cw)
             samples.push_back(sample);
             visualizer.addCorner(sample);
         }
-    }*/
+    }
 
     return;
-}
+}*/
 
-/*void NHPlanner::sampleCorner(const VectorXd& corner, bool cw)
+void NHPlanner::sampleCorner(const VectorXd& corner, bool cw)
 {
     vector<VectorXd> samples;
     while(samples.size() < k)
@@ -597,7 +597,7 @@ void NHPlanner::sampleCorner(const VectorXd& corner, bool cw)
     corner_samples[Vector2d(corner(0), corner(1))] = samples;
 
     return;
-}*/
+}
 
 double NHPlanner::sampleAngle(double theta)
 {
