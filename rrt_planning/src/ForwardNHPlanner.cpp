@@ -586,6 +586,41 @@ Triangle ForwardNHPlanner::createTriangle(const Action& action, const Eigen::Vec
 void ForwardNHPlanner::sampleCorner(const VectorXd& corner, bool cw)
 {
     vector<VectorXd> samples;
+    VectorXd sample = positionFactory.getSampling().sample(corner, cw);
+    if(rosmap->isFree(sample))
+    {
+        samples.push_back(sample);
+        //visualizer.addCorner(sample);
+        corner_samples[Vector2d(corner(0), corner(1))] = samples;
+        return;
+    }
+
+    sample = positionFactory.getSampling().sample(corner, !cw);
+    if(rosmap->isFree(sample))
+    {
+        samples.push_back(sample);
+        //visualizer.addCorner(sample);
+        corner_samples[Vector2d(corner(0), corner(1))] = samples;
+        return;
+    }
+    corner_samples[Vector2d(corner(0), corner(1))] = samples;
+    samples.push_back(corner);
+    /*while(samples.size() < k)
+    {
+        VectorXd sample = positionFactory.getSampling().sample(corner, cw);
+        if(rosmap->isFree(sample))
+        {
+            samples.push_back(sample);
+            visualizer.addCorner(sample);
+        }
+    }*/
+
+    return;
+}
+
+/*void ForwardNHPlanner::sampleCorner(const VectorXd& corner, bool cw)
+{
+    vector<VectorXd> samples;
     while(samples.size() < k)
     {
         VectorXd sample = positionFactory.getSampling().sample(corner, cw);
@@ -601,7 +636,7 @@ void ForwardNHPlanner::sampleCorner(const VectorXd& corner, bool cw)
     corner_samples[Vector2d(corner(0), corner(1))] = samples;
 
     return;
-}
+}*/
 
 double ForwardNHPlanner::sampleAngle(double theta)
 {

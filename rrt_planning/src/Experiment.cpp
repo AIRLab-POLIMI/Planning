@@ -77,8 +77,8 @@ int main(int argc, char** argv)
 	{
 		std::ofstream f;
 		f.open(dir+node_name + string(".log"));
-		f << "configuration: " << conf << "\n";
-		f << "NO_PATH_FOUND_WITHIN_DEADLINE(" << deadline << "s)" << "\n";
+		f << "configuration " << conf << "\n";
+		f << "NO_PATH_FOUND_WITHIN_DEADLINE" << "\n";
 		f.close();
 	}
 
@@ -130,13 +130,13 @@ void save(const std::string& filename, const std::string& conf, double t, double
 	std::string d = string("_");
 
 	//Write configuration
-	f << "configuration: "<< conf << "\n";
+	f << "configuration "<< conf << "\n";
 
 	//Write path length
-	f << "length: " << l << "\n";
+	f << "length " << l << "\n";
 
 	//Write execution Time
-	f << "time: "<<t << "\n";
+	f << "time "<<t << "\n";
 
 	//Write path points
 	for(auto p : plan)
@@ -155,15 +155,15 @@ void saveNH(const std::string& filename, const std::string& conf, double t, doub
 	std::string d = string("_");
 
 	//Write configuration
-	f << "configuration: "<< conf << "\n";
+	f << "configuration "<< conf << "\n";
 
 	//Write path length
-	f << "length: " << l << "\n";
+	f << "length " << l << "\n";
 
 	//Write execution Time
-	f << "time: "<< t << "\n";
+	f << "time "<< t << "\n";
 
-	f << "kills: " << kills << "\n";
+	f << "kills " << kills << "\n";
 
 }
 
