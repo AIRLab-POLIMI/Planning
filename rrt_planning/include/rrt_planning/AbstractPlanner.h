@@ -25,6 +25,7 @@ public:
 
 	double getElapsedTime();
 	double getPathLength();
+    int getDeadActions();
 
     virtual ~AbstractPlanner();
 
@@ -37,6 +38,7 @@ protected:
 	std::chrono::duration<double> Tmax;
 	std::chrono::duration<double> Tcurrent;
 	double length;
+    int dead;
 
 };
 

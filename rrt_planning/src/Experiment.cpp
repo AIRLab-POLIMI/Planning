@@ -23,9 +23,10 @@ using namespace std;
 AbstractPlanner* getPlanner(const string& name, costmap_2d::Costmap2DROS* costmap_ros, const string& t);
 bool parse(const std::string& conf, geometry_msgs::PoseStamped& start_pose,
 				 geometry_msgs::PoseStamped& goal_pose);
-void save(const std::string& filename, const std::string& conf, double t,
-				double l, std::vector<geometry_msgs::PoseStamped>& plan);
+void save(const std::string& filename, const std::string& conf, double t, double l,
+				std::vector<geometry_msgs::PoseStamped>& plan);
 
+void saveNH(const std::string& filename, const std::string& conf, double t, double l, int kills);
 
 int main(int argc, char** argv)
 {
@@ -52,16 +53,16 @@ int main(int argc, char** argv)
 	//Convert start and goal
 	geometry_msgs::PoseStamped start_pose, goal_pose;
 	std::vector<geometry_msgs::PoseStamped> plan;
-        bool valid = parse(conf, start_pose, goal_pose);
+    bool valid = parse(conf, start_pose, goal_pose);
 
-        if(!valid)
-        {
-            std::ofstream f;
-            f.open(dir+node_name + string(".log"));
-            f << "INVALID CONFIGURATION: " << conf << "\n";
-            f.close();
-            return 0;
-        }
+    if(!valid)
+    {
+        std::ofstream f;
+        f.open(dir+node_name + string(".log"));
+        f << "INVALID CONFIGURATION: " << conf << "\n";
+        f.close();
+        return 0;
+    }
 
 	//Launch planner
 	AbstractPlanner* planner = getPlanner(planner_name, costmap_ros, deadline);
@@ -69,7 +70,8 @@ int main(int argc, char** argv)
 	bool result = planner->makePlan(start_pose, goal_pose, plan);
 	if(result)
 	{
-		save(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), plan);
+		//save(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), plan);
+		saveNH(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getDeadActions());
 	}
 	else
 	{
@@ -145,6 +147,26 @@ void save(const std::string& filename, const std::string& conf, double t, double
 
 	f.close();
 }
+
+void saveNH(const std::string& filename, const std::string& conf, double t, double l, int kills)
+{
+	std::ofstream f;
+	f.open(filename + string(".log"));
+	std::string d = string("_");
+
+	//Write configuration
+	f << "configuration: "<< conf << "\n";
+
+	//Write path length
+	f << "length: " << l << "\n";
+
+	//Write execution Time
+	f << "time: "<< t << "\n";
+
+	f << "kills: " << kills << "\n";
+
+}
+
 
 
 AbstractPlanner* getPlanner(const string& name, costmap_2d::Costmap2DROS* costmap_ros, const string& t)

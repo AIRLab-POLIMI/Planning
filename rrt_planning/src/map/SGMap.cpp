@@ -17,6 +17,7 @@ void SGMap::initialize(ros::NodeHandle& nh)
     nh.param("threshold", threshold, 0.4);
     nh.param("ray", ray, 0.3);
     nh.param("corner_step", corner_step, 0.1);
+    nh.param("k_los", k_los, 2);
 }
 
 
@@ -197,7 +198,11 @@ vector<VectorXd> SGMap::infiniteExitPoint(const VectorXd& current, const VectorX
         if(curr != prev)
         {
             if(curr)
+            {
                 samples.push_back(p);
+                if(samples.size() == k_los)
+                    return samples;
+            }
         }
         prev = curr;
 

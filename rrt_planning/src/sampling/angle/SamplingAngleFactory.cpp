@@ -2,6 +2,7 @@
 #include "rrt_planning/sampling/angle/AtanSampler.h"
 #include "rrt_planning/sampling/angle/BernoulliExponentialSampler.h"
 #include "rrt_planning/sampling/angle/BetaSampler.h"
+#include "rrt_planning/sampling/angle/FixedAngleSampler.h"
 
 #include <stdexcept>
 
@@ -21,13 +22,13 @@ void SamplingAngleFactory::initialize(ros::NodeHandle& nh)
 
         ROS_FATAL("Atan angle sampler");
     }
-    else if(samplingAngleName == "notAlecsh" || samplingAngleName == "BernoulliExponential")
+    else if(samplingAngleName == "BernoulliExponential")
     {
         SamplingAngle* sampling = new BernoulliExponentialSampler();
 
         this->sampling = sampling;
 
-        ROS_FATAL("notAlecsh's proposal angle sampler");
+        ROS_FATAL("Bernoulli Exponential angle sampler");
     }
     else if(samplingAngleName == "Beta")
     {
@@ -36,6 +37,14 @@ void SamplingAngleFactory::initialize(ros::NodeHandle& nh)
         this->sampling = sampling;
 
         ROS_FATAL("Beta angle sampler");
+    }
+    else if(samplingAngleName == "Fixed")
+    {
+        SamplingAngle* sampling = new FixedAngleSampler();
+
+        this->sampling = sampling;
+
+        ROS_FATAL("Fixed angle sample");
     }
     else
     {

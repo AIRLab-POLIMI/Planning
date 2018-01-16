@@ -28,6 +28,11 @@ double AbstractPlanner::getElapsedTime()
     return Tcurrent.count();
 }
 
+int AbstractPlanner::getDeadActions()
+{
+    return dead;
+}
+
 AbstractPlanner::~AbstractPlanner()
 {
 

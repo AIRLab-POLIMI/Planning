@@ -80,6 +80,7 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                                    std::vector<geometry_msgs::PoseStamped>& plan)
 {
     count = 0;
+    dead = 0;
     visualizer.clean();
     Distance& l2dis = *this->l2dis;
 
@@ -246,7 +247,9 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                         visualizer.addCorner(copy.getState());
                     }
                     else
+                    {
                         visualizer.addPoint(a.getState());
+                    }
 
                 }
             }
@@ -354,17 +357,21 @@ void ForwardNHPlanner::addOpen(Node* node, const Action& action, Distance& dista
 
     if(insideGlobal(action.getState(), action.isSubgoal()))
     {
+        dead++;
         return;
     }
 
    if(node->insideArea(action.getState()))
     {
+        dead++;
         return;
     }
 
     Key key(node, action);
     double h = distance(node->getState(), action.getState()) + distance(action.getState(), target.getState());
     open.insert(key, h + node->getCost());
+    if(action.isCorner())
+        node->addSubgoal(action.getState());
 
 }
 
@@ -375,6 +382,7 @@ void ForwardNHPlanner::addSubgoal(Node* node, const Action& action, Distance& di
     Node* parent = node->getParent();
     if(insideGlobal(action.getState(), action.isSubgoal()))
     {
+        dead++;
         return;
     }
 
@@ -385,6 +393,10 @@ void ForwardNHPlanner::addSubgoal(Node* node, const Action& action, Distance& di
             Key key(parent, subgoal);
             double h = distance(parent->getState(), subgoal.getState()) + distance(subgoal.getState(), target.getState());
             open.insert(key, h + parent->getCost());
+        }
+        else
+        {
+            dead++;
         }
         parent->addSubgoal(subgoal.getState());
         parent = parent->getParent();

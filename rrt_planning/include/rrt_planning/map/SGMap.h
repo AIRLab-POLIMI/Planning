@@ -34,6 +34,7 @@ private:
 
   //corner parameters
   int discretization;
+  int k_los;
   double ray;
   double threshold;
   double corner_step;
