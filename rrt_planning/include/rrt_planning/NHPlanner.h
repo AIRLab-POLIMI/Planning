@@ -75,6 +75,7 @@ private:
     double deltaTheta;
     int count;
     int k;
+    int k_ancestors;
 
     ExtenderFactory extenderFactory;
     Visualizer visualizer;

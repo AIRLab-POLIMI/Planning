@@ -135,6 +135,7 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                 Tcurrent = chrono::steady_clock::now() - t0;
                 length = rrt.computeCost(node);
                 auto&& path = rrt.getPathToLastNode();
+                computeRoughness(path);
                 publishPlan(path, plan, start.header.stamp);
 #ifdef VIS_CONF
                 visualizer.displayPlan(plan);

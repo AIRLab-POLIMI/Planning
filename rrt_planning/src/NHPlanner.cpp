@@ -58,6 +58,7 @@ void NHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_r
     private_nh.param("deltaX", deltaX, 0.5);
     private_nh.param("deltaTheta", deltaTheta, 0.5);
     private_nh.param("k", k, 3);
+    private_nh.param("k_ancestors", k_ancestors, 1);
 
     rosmap = new ROSMap(costmap_ros);
     map = new SGMap(*rosmap);
@@ -110,6 +111,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     Node* start_node = new Node(x0, nullptr, 0);
     start_node->setParent(start_node);
     length = 0;
+    roughness = 0;
 
     target = Action(xGoal, true, true, false, nullptr);
     shared_ptr<Action> goal_action = make_shared<Action>(target);
@@ -145,6 +147,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             visualizer.flush();
 #endif
             Tcurrent = chrono::steady_clock::now() - t0;
+            computeRoughness(path);
 #ifdef PRINT_CONF
             ROS_FATAL("Plan found: simple geometry");
 #endif
@@ -152,6 +155,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
             ROS_FATAL_STREAM("Action count: " << count);
             ROS_FATAL_STREAM("New time: " << Tcurrent.count());
             ROS_FATAL_STREAM("Path length: " << getPathLength());
+            ROS_FATAL_STREAM("Roughness: " << getRoughness());
 #endif
             open.clear();
             reached.clear();
@@ -286,6 +290,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 #ifdef PRINT_CONF
     ROS_FATAL("Failed to find plan: omae wa mou shindeiru");
 #endif
+    Tcurrent = chrono::steady_clock::now() - t0;
     open.clear();
     reached.clear();
     global_closed.clear();
@@ -370,7 +375,7 @@ void NHPlanner::publishPlan(std::vector<VectorXd>& path,
 void NHPlanner::addOpen(Node* node, const Action& action, Distance& distance)
 {
 
-    if(insideGlobal(action.getState(), action.isSubgoal()))
+    if((action.getState() !=  target.getState()) && insideGlobal(action.getState(), action.isSubgoal()))
     {
         dead++;
     	return;
@@ -393,13 +398,14 @@ void NHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
 
     Action subgoal(action.getState(), action.isClockwise(), true, action.isCorner(), action.getParent());
     Node* parent = node->getParent();
+    int j = 0;
     if(insideGlobal(action.getState(), action.isSubgoal()))
     {
         dead++;
         return;
     }
 
-    while(!parent->contains(subgoal.getState()))
+    while(!parent->contains(subgoal.getState()) && j < k_ancestors)
     {
         if(!parent->insideArea(subgoal.getState()))
         {
@@ -412,6 +418,7 @@ void NHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
         }
         parent->addSubgoal(subgoal.getState());
         parent = parent->getParent();
+        j++;
     }
 
 }

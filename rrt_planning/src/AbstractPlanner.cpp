@@ -33,6 +33,25 @@ int AbstractPlanner::getDeadActions()
     return dead;
 }
 
+void AbstractPlanner::computeRoughness(std::vector<Eigen::VectorXd> path)
+{
+    double r = 0;
+    for(int i=0; i < path.size()-1; i++)
+    {
+        double deltaK = fabs(path[i](2)-path[i+1](2));
+        double contribute = pow(deltaK,2);
+        r = r + contribute;
+    }
+    roughness = r / length;
+
+    return;
+}
+
+double AbstractPlanner::getRoughness()
+{
+    return roughness;
+}
+
 AbstractPlanner::~AbstractPlanner()
 {
 

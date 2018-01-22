@@ -7,14 +7,14 @@ import subprocess
 from joblib import Parallel, delayed
 
 gflags.DEFINE_integer('n_jobs', -1, 'number of parallel experiments')
-gflags.DEFINE_string('deadline', '120', 'deadline (in seconds)')
+gflags.DEFINE_string('deadline', '180', 'deadline (in seconds)')
 gflags.DEFINE_integer('n_exp', 1, 'number of experiments')
 gflags.DEFINE_string('env_name', 'map', 'environment name')
 gflags.DEFINE_string('model', 'differentialDrive', 'kinematic model')
 
 maps = ['map']
 #algorithms = ['nh', 'forward_nh', 'rrt', 'rrt_star', 'theta_star_rrt', 'voronoi_rrt']
-algorithms = ['theta_star_rrt']
+algorithms = ['nh', 'forward_nh', 'theta_star_rrt']
 
 def experiment(a, c, i):
     print ''
@@ -54,9 +54,10 @@ if __name__ == '__main__':
     time.sleep(1)
 
     Parallel(n_jobs=gflags.FLAGS.n_jobs)(delayed(experiment)
-                                        (alg, conf, str(configurations.index(conf)))
+                                        (alg, conf, str(r))
                                         for alg in algorithms
                                         for conf in configurations
+                                        for r in range(0,99)
                                         )
     print 'magic is real'
     subprocess.Popen.kill(map_server)

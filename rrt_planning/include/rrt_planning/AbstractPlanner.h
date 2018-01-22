@@ -8,6 +8,7 @@
 #include <geometry_msgs/PoseStamped.h>
 
 #include <chrono>
+#include <Eigen/Dense>
 
 namespace rrt_planning
 {
@@ -26,11 +27,13 @@ public:
 	double getElapsedTime();
 	double getPathLength();
     int getDeadActions();
+    double getRoughness();
 
     virtual ~AbstractPlanner();
 
 protected:
 	bool timeOut();
+	void computeRoughness(std::vector<Eigen::VectorXd> path);
 
 
 protected:
@@ -39,6 +42,7 @@ protected:
 	std::chrono::duration<double> Tcurrent;
 	double length;
     int dead;
+    double roughness;
 
 };
 

@@ -156,6 +156,7 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                 Tcurrent = chrono::steady_clock::now() - t0;
                 length = rrt.computeCost(node);
                 auto&& path = rrt.getPathToLastNode();
+                computeRoughness(path);
                 publishPlan(path, plan, start.header.stamp);
 #ifdef VIS_CONF
                 visualizer.displayPlan(plan);
@@ -163,6 +164,9 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #endif
 #ifdef PRINT_CONF
                 ROS_INFO("Plan found");
+                ROS_FATAL_STREAM("time: " << Tcurrent.count());
+                ROS_FATAL_STREAM("length: " << getPathLength());
+                ROS_FATAL_STREAM("roughness: " << getRoughness());
 #endif
                 return true;
             }

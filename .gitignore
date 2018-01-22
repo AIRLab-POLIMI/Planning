@@ -30,3 +30,7 @@
 
 # ROS cmakeLists
 CMakeLists.txt
+
+# Folders
+*.log
+*.csv

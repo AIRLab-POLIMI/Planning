@@ -3,6 +3,8 @@
 #include <string>
 #include <fstream>
 #include <chrono>
+#include <thread>
+#include <stdlib.h>
 
 #include <tf/transform_listener.h>
 #include <nav_core/base_global_planner.h>
@@ -23,10 +25,10 @@ using namespace std;
 AbstractPlanner* getPlanner(const string& name, costmap_2d::Costmap2DROS* costmap_ros, const string& t);
 bool parse(const std::string& conf, geometry_msgs::PoseStamped& start_pose,
 				 geometry_msgs::PoseStamped& goal_pose);
-void save(const std::string& filename, const std::string& conf, double t, double l,
+void save(const std::string& filename, const std::string& conf, double t, double l, double r,
 				std::vector<geometry_msgs::PoseStamped>& plan);
 
-void saveNH(const std::string& filename, const std::string& conf, double t, double l, int kills);
+void saveNH(const std::string& filename, const std::string& conf, double t, double l, double r, int kills);
 
 int main(int argc, char** argv)
 {
@@ -46,6 +48,8 @@ int main(int argc, char** argv)
         //Costmap inizialization magics
         tf::TransformListener tf_(ros::Duration(10));
         costmap_2d::Costmap2DROS* costmap_ros = new costmap_2d::Costmap2DROS("global_costmap", tf_);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        costmap_ros->pause();
 
         ROS_FATAL_STREAM("Costmap loaded");
 
@@ -69,15 +73,19 @@ int main(int argc, char** argv)
 	bool result = planner->makePlan(start_pose, goal_pose, plan);
 	if(result)
 	{
-		//save(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), plan);
-		saveNH(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getDeadActions());
+                //save(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getRoughness(), plan);
+                saveNH(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getRoughness(), planner->getDeadActions());
 	}
 	else
 	{
 		std::ofstream f;
 		f.open(dir+node_name + string(".log"));
 		f << "configuration " << conf << "\n";
-		f << "NO_PATH_FOUND_WITHIN_DEADLINE" << "\n";
+                double tmax = atof(deadline.c_str());
+                if(planner->getElapsedTime() < tmax)
+                    f << "FAILED_TO_FIND_PLAN" << "\n";
+                else
+                    f << "NO_PATH_FOUND_WITHIN_DEADLINE" << "\n";
 		f.close();
 	}
 
@@ -126,7 +134,7 @@ bool parse(const string& conf, geometry_msgs::PoseStamped& start_pose, geometry_
         return true;
 }
 
-void save(const std::string& filename, const std::string& conf, double t, double l, std::vector<geometry_msgs::PoseStamped>& plan)
+void save(const std::string& filename, const std::string& conf, double t, double l, double r, std::vector<geometry_msgs::PoseStamped>& plan)
 {
 	std::ofstream f;
 	f.open(filename + string(".log"));
@@ -139,7 +147,9 @@ void save(const std::string& filename, const std::string& conf, double t, double
 	f << "length " << l << "\n";
 
 	//Write execution Time
-	f << "time "<<t << "\n";
+        f << "time "<< t << "\n";
+
+        f << "roughness " << r << "\n";
 
 	//Write path points
 	for(auto p : plan)
@@ -151,7 +161,7 @@ void save(const std::string& filename, const std::string& conf, double t, double
 	f.close();
 }
 
-void saveNH(const std::string& filename, const std::string& conf, double t, double l, int kills)
+void saveNH(const std::string& filename, const std::string& conf, double t, double l, double r, int kills)
 {
 	std::ofstream f;
 	f.open(filename + string(".log"));
@@ -166,7 +176,7 @@ void saveNH(const std::string& filename, const std::string& conf, double t, doub
 	//Write execution Time
 	f << "time "<< t << "\n";
 
-	f << "kills " << kills << "\n";
+        f << "roughness " << r << "\n";
 
         f.close();
 }
