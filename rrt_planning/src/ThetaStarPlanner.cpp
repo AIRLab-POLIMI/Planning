@@ -26,8 +26,6 @@
 #include <pluginlib/class_list_macros.h>
 #include <visualization_msgs/Marker.h>
 
-//#define VIS_CONF
-#define PRINT_CONF
 
 //register this planner as a BaseGlobalPlanner plugin
 PLUGINLIB_EXPORT_CLASS(rrt_planning::ThetaStarPlanner, nav_core::BaseGlobalPlanner)

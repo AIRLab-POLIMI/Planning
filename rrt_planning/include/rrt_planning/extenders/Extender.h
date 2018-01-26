@@ -58,6 +58,7 @@ public:
     virtual bool check(const Eigen::VectorXd& x0, const Eigen::VectorXd& xGoal) = 0;
     virtual void initialize(ros::NodeHandle& nh) = 0;
     virtual bool steer(const Eigen::VectorXd& xCurr, const Eigen::VectorXd& xCorner, Eigen::VectorXd& xNew, std::vector<Eigen::VectorXd>& parents, double& cost) = 0;
+    virtual bool isReached(const Eigen::VectorXd& x0, const Eigen::VectorXd& xTarget) = 0;
     virtual ~Extender()
     {
 
@@ -66,6 +67,8 @@ public:
 protected:
     Map& map;
     Distance& distance;
+    Distance* l2distance;
+    Distance* thetadistance;
 };
 
 

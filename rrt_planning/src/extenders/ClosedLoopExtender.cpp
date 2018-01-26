@@ -35,6 +35,8 @@ ClosedLoopExtender::ClosedLoopExtender(KinematicModel& model, Controller& contro
 {
     deltaT = 0;
     loopN = 0;
+    l2distance = new L2Distance();
+    thetadistance = new ThetaDistance();
 }
 
 bool ClosedLoopExtender::compute(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew)
@@ -125,8 +127,6 @@ bool ClosedLoopExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd
 bool ClosedLoopExtender::steer(const VectorXd& xStart, const VectorXd& xCorner, VectorXd& xNew, vector<VectorXd>& parents, double& cost)
 {
     //Separates the length check from the angle check
-    Distance* l2distance = new L2Distance();
-    Distance* thetadistance = new ThetaDistance();
     Distance& l2dis = *l2distance;
     Distance& thetadis = *thetadistance;
 
@@ -148,6 +148,13 @@ bool ClosedLoopExtender::steer(const VectorXd& xStart, const VectorXd& xCorner, 
      } while(is_valid && !((l2dis(xCurr, xCorner) < deltaX) && (thetadis(xCurr, xCorner) < deltaTheta)));
 
     return is_valid;
+}
+
+bool ClosedLoopExtender::isReached(const VectorXd& x0, const VectorXd& xTarget)
+{
+    Distance& l2dis = *this->l2distance;
+    Distance& thetadis = *this->thetadistance;
+    return ((l2dis(x0, xTarget) < deltaX) && (thetadis(x0, xTarget) < deltaTheta));
 }
 
 

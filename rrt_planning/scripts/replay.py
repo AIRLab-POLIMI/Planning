@@ -7,11 +7,11 @@ import roslaunch
 from geometry_msgs.msg  import PoseStamped
 from geometry_msgs.msg  import PoseWithCovarianceStamped
 
-def launch(i):
+def launch(alg, i):
 
     uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
-
-    args = ['rrt_planning', 'nh.launch']
+    launch = alg + '.launch'
+    args = ['rrt_planning', launch]
     roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(args)
     launch = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file)
     launch.start()
@@ -64,9 +64,10 @@ def publish(row):
     rospy.logfatal('published goal')
 
 if __name__ == '__main__':
-    i = sys.argv[1]
+    alg = sys.argv[1]
+    i = sys.argv[2]
     global s_pub, g_pub, sub
     s_pub = rospy.Publisher('/initialpose', PoseWithCovarianceStamped, queue_size=10)
     g_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
     rospy.init_node('test', anonymous=True)
-    launch(i)
+    launch(alg, i)

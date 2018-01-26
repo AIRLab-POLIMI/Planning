@@ -9,8 +9,6 @@
 #include "rrt_planning/utils/RandomGenerator.h"
 #include "rrt_planning/rrt/RRT.h"
 
-//#define VIS_CONF
-#define PRINT_CONF
 
 using namespace Eigen;
 using namespace voronoi_planner;
@@ -85,6 +83,8 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     //Retrieve Voronoi plan
     vector<geometry_msgs::PoseStamped> voronoiPlan;
 
+    t0 = chrono::steady_clock::now();
+
     if(!voronoiPlanner->makePlan(start, goal, voronoiPlan))
     {
 #ifdef PRINT_CONF
@@ -95,6 +95,11 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #ifdef VIS_CONF
     visualizer.displayPlan(voronoiPlan);
 #endif
+
+#ifdef PRINT_CONF
+    Tcurrent = chrono::steady_clock::now() - t0;
+    ROS_FATAL_STREAM("voronoi plan time: " << Tcurrent.count());
+#endif
     //Compute VoronoiRRT plan
     Distance& distance = *this->distance;
 
@@ -103,7 +108,6 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
     RRT rrt(distance, x0);
 
-    t0 = chrono::steady_clock::now();
 #ifdef PRINT_CONF
     ROS_INFO("Voronoi-RRT started");
 #endif
@@ -135,7 +139,7 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
 #endif
-            if(distance(xNew, xGoal) < deltaX)
+            if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
                 length = rrt.computeCost(node);

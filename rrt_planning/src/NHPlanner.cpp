@@ -11,10 +11,6 @@
 #include "rrt_planning/kinematics_models/DifferentialDrive.h"
 #include "rrt_planning/utils/RandomGenerator.h"
 
-//#define DEBUG_CONF
-#define PRINT_CONF
-//#define VIS_CONF
-
 using namespace Eigen;
 
 //register this planner as a BaseGlobalPlanner plugin
@@ -311,7 +307,7 @@ Node* NHPlanner::reach(Node* current, const VectorXd& xCorner)
     is_valid = extenderFactory.getExtender().steer(xCurr, xCorner, xNew, parents, cost);
 
     Node* new_node = nullptr;
-    if(is_valid && map->isTrueCornerWOW(xNew))
+    if(is_valid)
     {
         parents.pop_back();
         new_node = new Node(xNew, current, cost, parents);

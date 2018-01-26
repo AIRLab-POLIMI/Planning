@@ -1,19 +1,19 @@
 import os
 
-algorithms = ['nh', 'forward_nh', 'theta_star_rrt']
+algorithms = ['forward_nh']
 
 def parse():
     wd = os.getcwd()
     for alg in algorithms:
         compare = open(wd + '/logs/' + alg + '_compare.csv', 'w')
         compare.writelines('length,time,roughness' + '\n')
-        for i in range(0,99):
+        for i in range(0,50):
             nh = open(wd + '/logs/'+ alg +'_map_' + str(i) + '.log', 'r')
             nh_lines = nh.readlines()[1:]
             results = ['0', '0', '0']
             for line in nh_lines:
-                if 'NO_PLAN_FOUND_WITHIN_DEADLINE' in line:
-                    results[1] = '120'
+                if 'NO_PATH_FOUND_WITHIN_DEADLINE' in line:
+                    results[1] = '300'
                     break
                 if 'FAILED_TO_FIND_PLAN' in line:
                     break

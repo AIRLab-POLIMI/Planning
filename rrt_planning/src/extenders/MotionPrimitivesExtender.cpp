@@ -35,10 +35,23 @@ MotionPrimitivesExtender::MotionPrimitivesExtender(KinematicModel& model, Consta
 {
     deltaT = 0;
     discretization = 0;
+    l2distance = new L2Distance();
+    thetadistance = new ThetaDistance();
 }
 
-bool MotionPrimitivesExtender::compute(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew)
+bool MotionPrimitivesExtender::compute(const VectorXd& x0, const VectorXd& xSample, VectorXd& xNew)
 {
+    VectorXd xRand = xSample;
+    if(diffDrive)
+    {
+        double dis = sqrt(pow((x0(0) - xSample(0)),2) + pow((x0(1) - xSample(1)), 2));
+        if(dis > 0.5)
+        {
+            double theta = atan2(xSample(1) - x0(1), xSample(0) - x0(0));
+            xRand(2) = theta;
+        }
+    }
+
     double minDistance = std::numeric_limits<double>::infinity();
 
     for(auto& mp : motionPrimitives)
@@ -94,10 +107,8 @@ bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xSample, 
 bool MotionPrimitivesExtender::steer(const VectorXd& xStart, const VectorXd& xCorner, VectorXd& xNew, vector<VectorXd>& parents, double& cost)
 {
     //Separates the length check from the angle check
-    Distance* l2distance = new L2Distance();
-    Distance* thetadistance = new ThetaDistance();
-    Distance& l2dis = *l2distance;
-    Distance& thetadis = *thetadistance;
+    Distance& l2dis = *this->l2distance;
+    Distance& thetadis = *this->thetadistance;
 
     VectorXd xCurr = xStart;
     double meters = l2dis(xCurr, xCorner);
@@ -121,6 +132,13 @@ bool MotionPrimitivesExtender::steer(const VectorXd& xStart, const VectorXd& xCo
      } while(is_valid && !((meters < deltaX) && (angles < deltaTheta)));
 
     return is_valid;
+}
+
+bool MotionPrimitivesExtender::isReached(const VectorXd& x0, const VectorXd& xTarget)
+{
+    Distance& l2dis = *this->l2distance;
+    Distance& thetadis = *this->thetadistance;
+    return ((l2dis(x0, xTarget) < deltaX) && (thetadis(x0, xTarget) < deltaTheta));
 }
 
 bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)
@@ -166,24 +184,23 @@ void MotionPrimitivesExtender::initialize(ros::NodeHandle& nh)
     std::string planner_name;
     nh.param("planner_name", planner_name, std::string("unspecified"));
 
-    if(planner_name == std::string("NHPlanner"))
-    {
-        std::string kinematicModelName;
-        nh.param("kinematicModel", kinematicModelName, std::string("DifferentialDrive"));
-        if(kinematicModelName == "DifferentialDrive")
-        {
-            distance = L2ThetaDistance();
-            diffDrive = true;
-        }
-        else if(kinematicModelName == "Bicycle")
-        {
-            distance = L2ThetaDistance();
-            diffDrive = false;
-        }
 
-        nh.param("deltaX", deltaX, 0.5);
-        nh.param("deltaTheta", deltaTheta, 1.86);
+    std::string kinematicModelName;
+    nh.param("kinematicModel", kinematicModelName, std::string("DifferentialDrive"));
+    if(kinematicModelName == "DifferentialDrive")
+    {
+        distance = L2ThetaDistance();
+        diffDrive = true;
     }
+    else if(kinematicModelName == "Bicycle")
+    {
+        distance = L2ThetaDistance();
+        diffDrive = false;
+    }
+
+    nh.param("deltaX", deltaX, 0.5);
+    nh.param("deltaTheta", deltaTheta, 1.86);
+
 }
 
 void MotionPrimitivesExtender::generateMotionPrimitives()

@@ -32,9 +32,6 @@
 #include "rrt_planning/utils/RandomGenerator.h"
 #include "rrt_planning/rrt/RRT.h"
 
-//#define VIS_CONF
-#define PRINT_CONF
-
 using namespace Eigen;
 
 //register this planner as a BaseGlobalPlanner plugin
@@ -109,6 +106,8 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     // Retrive Theta* plan
     vector<geometry_msgs::PoseStamped> thetaStarPlan;
 
+    t0 = chrono::steady_clock::now();
+
     if(!thetaStarPlanner->makePlan(start, goal, thetaStarPlan))
     {
 #ifdef PRINT_CONF
@@ -116,6 +115,11 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #endif
         return false;
     }
+
+#ifdef DEBUG_CONF
+    Tcurrent = chrono::steady_clock::now() - t0;
+    ROS_FATAL_STREAM("thetastar plan time: " << Tcurrent.count());
+#endif
 
     // Compute RRT-Theta* plan
     Distance& distance = *this->distance;
@@ -125,7 +129,6 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
     RRT rrt(distance, x0);
 
-    t0 = chrono::steady_clock::now();
 #ifdef PRINT_CONF
     ROS_INFO("Theta*-RRT started");
 #endif
@@ -145,13 +148,13 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
         VectorXd xNew;
 
-        if(newState(xRand, node->x, xNew))
+        if(newState(node->x, xRand, xNew))
         {
             rrt.addNode(node, xNew);
 #ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
 #endif
-            if(distance(xNew, xGoal) < deltaX)
+            if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
                 length = rrt.computeCost(node);
@@ -164,6 +167,8 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #endif
 #ifdef PRINT_CONF
                 ROS_INFO("Plan found");
+#endif
+#ifdef DEBUG_CONF
                 ROS_FATAL_STREAM("time: " << Tcurrent.count());
                 ROS_FATAL_STREAM("length: " << getPathLength());
                 ROS_FATAL_STREAM("roughness: " << getRoughness());
@@ -184,8 +189,8 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 }
 
 
-bool ThetaStarRRTPlanner::newState(const VectorXd& xRand,
-                                   const VectorXd& xNear,
+bool ThetaStarRRTPlanner::newState(const VectorXd& xNear,
+                                   const VectorXd& xRand,
                                    VectorXd& xNew)
 {
     return extenderFactory.getExtender().compute(xNear, xRand, xNew);

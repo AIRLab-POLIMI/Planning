@@ -8,7 +8,7 @@ namespace rrt_planning
 
     double BetaSampler::sample()
     {
-        boost::math::beta_distribution<double> b_dist(5.0, 5.0);
+        boost::math::beta_distribution<double> b_dist(100.0, 100.0);
         std::uniform_real_distribution<double> u_dist(0, 1);
         double u_sample = u_dist(gen);
 

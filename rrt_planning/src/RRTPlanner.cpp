@@ -32,9 +32,6 @@
 #include "rrt_planning/utils/RandomGenerator.h"
 #include "rrt_planning/rrt/RRT.h"
 
-//#define VIS_CONF
-#define PRINT_CONF
-
 using namespace Eigen;
 
 //register this planner as a BaseGlobalPlanner plugin
@@ -130,7 +127,7 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
 #endif
-            if(distance(xNew, xGoal) < deltaX)
+            if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
                 length = rrt.computeCost(node);

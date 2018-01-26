@@ -3,7 +3,7 @@ planner_name: NHPlanner
 k_ancestors: 5
 
 #Corner parameters
-k: 3
+k: 1
 ray: 0.3
 threshold: 0.40
 discretization: 360

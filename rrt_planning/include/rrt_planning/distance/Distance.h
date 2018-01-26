@@ -66,7 +66,7 @@ public:
     {
         double poseDistance = (x1.head(2)-x2.head(2)).squaredNorm();
         double angleDistance = std::pow(1.0 - std::cos(x1(2) - x2(2)), 2);
-
+        
         return wt*poseDistance + wr*angleDistance;
     }
 

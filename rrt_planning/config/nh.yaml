@@ -1,6 +1,6 @@
 # Configuration of NH Planner
 planner_name: NHPlanner
-k_ancestors: 5
+k_ancestors: 1000
 
 #Corner parameters
 k: 3

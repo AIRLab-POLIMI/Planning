@@ -40,6 +40,7 @@ public:
     virtual bool check(const Eigen::VectorXd& x0, const Eigen::VectorXd& xGoal) override;
     virtual bool los(const Eigen::VectorXd& x0, const Eigen::VectorXd& xRand, Eigen::VectorXd& xNew, double length) override;
     virtual bool steer(const Eigen::VectorXd& xCurr, const Eigen::VectorXd& xCorner, Eigen::VectorXd& xNew, std::vector<Eigen::VectorXd>& parents, double& cost) override;
+    virtual bool isReached(const Eigen::VectorXd& x0, const Eigen::VectorXd& xTarget) override;
     virtual void initialize(ros::NodeHandle& nh) override;
 
     virtual ~ClosedLoopExtender();

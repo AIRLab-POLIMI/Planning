@@ -61,7 +61,7 @@ private:
 class RRTIndex : CoverTree<RRTCoverWrapper>
 {
 public:
-    RRTIndex(Distance& dist) : dist(dist), CoverTree<RRTCoverWrapper>(1e3)
+    RRTIndex(Distance& dist) : dist(dist), CoverTree<RRTCoverWrapper>(2e4)
     {
 
     }

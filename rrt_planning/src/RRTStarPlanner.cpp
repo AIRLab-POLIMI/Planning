@@ -9,8 +9,6 @@
 #include "rrt_planning/utils/RandomGenerator.h"
 #include "rrt_planning/rrt/RRT.h"
 
-//#define VIS_CONF
-#define PRINT_CONF
 
 using namespace Eigen;
 
@@ -156,7 +154,7 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                 }
             }
 
-            if(distance(xNew, xGoal) < deltaX)
+            if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
                 last = rrt.getPointer();
                 plan_found = true;

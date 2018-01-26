@@ -47,8 +47,9 @@ RRTNode* RRT::searchNearestNode(Eigen::VectorXd& x)
             dMin = newDist;
             nearest = node;
         }
-    }*/
+    }
 
+    return nearest;*/
     return index.getNearestNeighbour(x);
 }
 
