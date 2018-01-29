@@ -6,22 +6,21 @@ import subprocess
 
 from joblib import Parallel, delayed
 
-gflags.DEFINE_integer('n_jobs', -1, 'number of parallel experiments')
-gflags.DEFINE_string('deadline', '120', 'deadline (in seconds)')
-gflags.DEFINE_integer('n_exp', 1, 'number of experiments')
-gflags.DEFINE_string('env_name', 'map', 'environment name')
+gflags.DEFINE_integer('n_jobs', 2, 'number of parallel experiments')
+gflags.DEFINE_string('deadline', '300', 'deadline (in seconds)')
+gflags.DEFINE_integer('n_exp', 50, 'number of experiments')
+gflags.DEFINE_string('env_name', 'open', 'environment name')
 gflags.DEFINE_string('model', 'differentialDrive', 'kinematic model')
 
-maps = ['map']
 #algorithms = ['nh', 'forward_nh', 'rrt', 'rrt_star', 'theta_star_rrt', 'voronoi_rrt']
-algorithms = ['theta_star_rrt']
+algorithms = ['forward_nh_s3', 'forward_nh_s3_p1']
 
-def experiment(a, c, i):
+def experiment(a, c, row, i):
     print ''
     print '*************************************************'
-    print a, c, i
-    ns = a + '_' + 'map' + '_' + i
-    os.system('rosparam load config/' + a + '.yaml ' + ns)
+    it = row + '_' + i
+    ns = a + '_' + gflags.FLAGS.env_name + '_' + it
+    os.system('rosparam load config/planner/' + a + '.yaml ' + ns)
     os.system('rosparam load config/' + gflags.FLAGS.model + '.yaml ' + ns)
     os.system('rosparam load config/' + 'global_costmap_params.yaml ' + ns)
     os.system('rosparam load config/' + 'costmap_common_params.yaml ' + ns + '/global_costmap')
@@ -29,15 +28,13 @@ def experiment(a, c, i):
               ' ' + a +
               ' ' + gflags.FLAGS.env_name +
               ' ' + c +
-              ' ' + i +
+              ' ' + it +
               ' ' + gflags.FLAGS.deadline +
               ' ' + os.getcwd() + '/logs/')
-    print 'node has died'
-
 
 if __name__ == '__main__':
     argv = gflags.FLAGS(sys.argv)
-    filename = os.getcwd() + "/data/" + "map" + ".exp";
+    filename = os.getcwd() + "/data/" + gflags.FLAGS.env_name + ".exp";
     with open(filename) as f:
         configurations = f.read().splitlines()
     print configurations
@@ -45,8 +42,8 @@ if __name__ == '__main__':
     time.sleep(1)
     origWD = os.getcwd()
     print 'launching map server'
-    map_dir = os.getcwd() + "maps/map.yaml"
-    map_server = subprocess.Popen(['rosrun', 'map_server', 'map_server', 'maps/map.yaml'])
+    map_dir = "maps/" + gflags.FLAGS.env_name + ".yaml"
+    map_server = subprocess.Popen(['rosrun', 'map_server', 'map_server', map_dir])
     time.sleep(1)
     print 'launching static tf'
     tf = subprocess.Popen(['rosrun', 'tf', 'static_transform_publisher',
@@ -54,12 +51,13 @@ if __name__ == '__main__':
     time.sleep(1)
 
     Parallel(n_jobs=gflags.FLAGS.n_jobs)(delayed(experiment)
-                                        (alg, conf, str(configurations.index(conf)))
+                                        (alg, conf, str(configurations.index(conf)), str(i))
                                         for alg in algorithms
                                         for conf in configurations
+                                        for i in range(0,50)
                                         )
     print 'magic is real'
-    subprocess.Popen.kill(map_server)
-    subprocess.Popen.kill(tf)
-    subprocess.Popen.kill(roscore)
+    subprocess.kill(roscore)
+    subprocess.kill(map_server)
+    subprocess.kill(tf)
     os.system('killall -9 rosmaster')
