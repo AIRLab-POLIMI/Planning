@@ -13,7 +13,7 @@ gflags.DEFINE_string('env_name', 'grass', 'environment name')
 gflags.DEFINE_string('model', 'differentialDrive', 'kinematic model')
 
 #algorithms = ['nh', 'forward_nh', 'rrt', 'rrt_star', 'theta_star_rrt', 'voronoi_rrt']
-algorithms = ['theta_star_rrt', 'nh_s2', 'nh_s2_p1', 'nh_s3', 'nh_s3_p1',
+algorithms = ['nh_s2', 'nh_s2_p1', 'nh_s3', 'nh_s3_p1',
               'forward_nh_s2', 'forward_nh_s2_p1','forward_nh_s3', 'forward_nh_s3_p1']
 
 def experiment(a, c, row, i):
@@ -33,12 +33,8 @@ def experiment(a, c, row, i):
               ' ' + gflags.FLAGS.deadline +
               ' ' + os.getcwd() + '/logs/')
 
-if __name__ == '__main__':
-    argv = gflags.FLAGS(sys.argv)
-    filename = os.getcwd() + "/data/" + gflags.FLAGS.env_name + ".exp";
-    with open(filename) as f:
-        configurations = f.read().splitlines()
-    print configurations
+
+def run(configurations, alg):
     roscore = subprocess.Popen('roscore')
     time.sleep(1)
     origWD = os.getcwd()
@@ -53,12 +49,20 @@ if __name__ == '__main__':
 
     Parallel(n_jobs=gflags.FLAGS.n_jobs)(delayed(experiment)
                                         (alg, conf, str(configurations.index(conf)), str(i))
-                                        for alg in algorithms
-                                        for conf in configurations
-                                        for i in range(0,50)
-                                        )
-    print 'magic is real'
-    subprocess.kill(roscore)
-    subprocess.kill(map_server)
-    subprocess.kill(tf)
+                                         for conf in configurations
+                                         for i in range(0,50)
+                                         )
+    print alg + ' out'
+    subprocess.Popen.kill(roscore)
+    subprocess.Popen.kill(map_server)
+    subprocess.Popen.kill(tf)
     os.system('killall -9 rosmaster')
+    time.sleep(1)
+
+if __name__ == '__main__':
+    argv = gflags.FLAGS(sys.argv)
+    filename = os.getcwd() + "/data/" + gflags.FLAGS.env_name + ".exp";
+    with open(filename) as f:
+        configurations = f.read().splitlines()
+    for alg in algorithms:
+        run(configurations, alg)

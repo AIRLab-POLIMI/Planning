@@ -15,7 +15,7 @@ algorithms = ['theta_star_rrt', 'nh_s2', 'nh_s2_p1', 'nh_s3', 'nh_s3_p1',
 
 def plot(m):
     wd = os.getcwd()
-    df = pd.read_csv(wd + '/logs/compare/' + m + '.csv')
+    df = pd.read_csv(wd + '/results/compare/' + m + '.csv')
     df_a = df[(df.algorithm == 'theta_star_rrt') | (df.algorithm == 'nh_s3')]
 
     params = {'axes.labelsize': 10,'axes.titlesize': 10, 'text.fontsize': 10, 'legend.fontsize': 10, 'xtick.labelsize': 10, 'ytick.labelsize': 10}

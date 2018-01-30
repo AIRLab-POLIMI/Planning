@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-maps = ['open', 'map', 'offices']
-#maps = ['open']
+maps = ['open', 'map', 'offices', 'grass']
+#maps = ['grass']
 labels = ['length', 'time', 'roughness', 'success rate']
 algorithms = ['theta_star_rrt', 'nh_s2', 'nh_s2_p1', 'nh_s3', 'nh_s3_p1',
               'forward_nh_s2', 'forward_nh_s2_p1', 'forward_nh_s3', 'forward_nh_s3_p1']
@@ -17,11 +17,11 @@ algorithms = ['theta_star_rrt', 'nh_s2', 'nh_s2_p1', 'nh_s3', 'nh_s3_p1',
 def plot(m):
     wd = os.getcwd()
 
-    magics = PdfPages(m + '.pdf')
+    magics = PdfPages(wd + '/results/' + m + '.pdf')
     params = {'axes.labelsize': 10,'axes.titlesize': 15, 'text.fontsize': 10, 'legend.fontsize': 10, 'xtick.labelsize': 10, 'ytick.labelsize': 10}
     matplotlib.rcParams.update(params)
 
-    f_in = pd.read_csv(wd + '/logs/compare/' + m + '.csv')
+    f_in = pd.read_csv(wd + '/results/compare/' + m + '.csv')
     conf = max(f_in.conf) + 1
 
     for i in range(0,conf):

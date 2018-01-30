@@ -3,15 +3,14 @@ import pandas as pd
 
 algorithms = ['theta_star_rrt', 'nh_s2', 'nh_s2_p1', 'nh_s3', 'nh_s3_p1',
               'forward_nh_s2', 'forward_nh_s2_p1', 'forward_nh_s3', 'forward_nh_s3_p1']
-#maps = ['open', 'map']
-maps = ['offices']
+maps = ['open', 'map', 'grass']
+#maps = ['offices']
 
-max_conf = 5
-
+max_conf = 10
 
 def parse_logs(m):
     wd = os.getcwd()
-    compare = open(wd + '/logs/compare/' + m + '.csv', 'w')
+    compare = open(wd + '/results/compare/' + m + '.csv', 'w')
     compare.writelines('conf,algorithm,run,length,time,roughness' + '\n')
     for alg in algorithms:
         for conf in range(0,max_conf):
@@ -41,9 +40,9 @@ def parse_logs(m):
 
 def describe(m):
     wd = os.getcwd()
-    compare = open(wd + '/logs/compare/' + m + '_shenanigans.csv', 'w')
+    compare = open(wd + '/results/compare/' + m + '_shenanigans.csv', 'w')
     compare.writelines('conf,alg,mean_length,std_length,mean_time,std_time,mean_roughness,std_roughness,success_rate' + '\n')
-    df = pd.read_csv(wd + '/logs/compare/' + m + '.csv')
+    df = pd.read_csv(wd + '/results/compare/' + m + '.csv')
     for conf in range(0,max_conf):
         for alg in algorithms:
             data = df[(df.algorithm == alg)]
