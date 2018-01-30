@@ -1,0 +1,29 @@
+# Configuration of NH Planner
+planner_name: NHPlanner
+k_ancestors: 1
+
+#Corner parameters
+k: 2
+ray: 0.3
+threshold: 0.40
+discretization: 360
+corner_step: 0.1
+
+#los parameters
+step: 0.05
+micro: 0.1
+macro: 0.3
+k_los: 2
+
+#Weighted distance parameters
+r_min: 0.05
+r_max: 0.5
+wt: 1.0
+
+#Samplers parameters
+position_sampler: Gaussian2D
+angle_sampler: Beta
+
+
+# notEpsilonh
+epsilon: 0.3
