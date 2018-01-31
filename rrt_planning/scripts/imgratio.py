@@ -16,7 +16,7 @@ def process(a):
     edges = cv2.Canny(img, 100, 200)
     perimeter = cv2.countNonZero(edges)
     
-    ratio = float(area)/float(perimeter)
+    ratio = float(perimeter)/float(area)
     print ratio   
 
 

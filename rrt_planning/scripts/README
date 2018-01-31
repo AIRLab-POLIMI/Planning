@@ -1,0 +1,28 @@
+************Scripts explanation************
+
+All must be used from the folder above
+
+    
+1. run_experiment.py 
+
+    starts the experiments
+    produces logs
+    define inside which algorithms, maps and configurations to run
+
+    
+2. parse.py
+
+    processes the logs
+    outputs the compare files
+
+    
+3. plot_map.py
+
+    plots the data in compare file into a pdf
+    divided by map
+
+    
+4. imgratio.py
+
+    calculates perimeter/area ratio of obstacles in a map
+    needs file name and extension as input        
