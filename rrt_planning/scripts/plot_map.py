@@ -7,11 +7,10 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-maps = ['open', 'map', 'offices', 'grass']
-#maps = ['grass']
+#maps = ['open', 'map', 'offices', 'grass']
+maps = ['buildings']
 labels = ['length', 'time', 'roughness', 'success rate']
-algorithms = ['theta_star_rrt', 'nh_s2', 'nh_s2_p1', 'nh_s3', 'nh_s3_p1',
-              'forward_nh_s2', 'forward_nh_s2_p1', 'forward_nh_s3', 'forward_nh_s3_p1']
+algorithms = ['theta_star_rrt', 'nh']
 
 
 def plot(m):

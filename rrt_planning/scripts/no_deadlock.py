@@ -9,19 +9,18 @@ from joblib import Parallel, delayed
 gflags.DEFINE_integer('n_jobs', 2, 'number of parallel experiments')
 gflags.DEFINE_string('deadline', '300', 'deadline (in seconds)')
 gflags.DEFINE_integer('n_exp', 50, 'number of experiments')
-gflags.DEFINE_string('env_name', 'grass', 'environment name')
+gflags.DEFINE_string('env_name', 'map', 'environment name')
 gflags.DEFINE_string('model', 'differentialDrive', 'kinematic model')
 
 #algorithms = ['nh', 'forward_nh', 'rrt', 'rrt_star', 'theta_star_rrt', 'voronoi_rrt']
-algorithms = ['nh_s2', 'nh_s2_p1', 'nh_s3', 'nh_s3_p1',
-              'forward_nh_s2', 'forward_nh_s2_p1','forward_nh_s3', 'forward_nh_s3_p1']
+algorithms = ['rrt_star']
 
 def experiment(a, c, row, i):
     print ''
     print '*************************************************'
     it = row + '_' + i
     ns = a + '_' + gflags.FLAGS.env_name + '_' + it
-    os.system('rosparam load config/planner/' + a + '.yaml ' + ns)
+    os.system('rosparam load config/' + a + '.yaml ' + ns)
     os.system('rosparam load config/' + gflags.FLAGS.model + '.yaml ' + ns)
     os.system('rosparam load config/' + 'global_costmap_params.yaml ' + ns)
     os.system('rosparam load config/' + 'costmap_common_params.yaml ' + ns + '/global_costmap')
@@ -50,7 +49,7 @@ def run(configurations, alg):
     Parallel(n_jobs=gflags.FLAGS.n_jobs)(delayed(experiment)
                                         (alg, conf, str(configurations.index(conf)), str(i))
                                          for conf in configurations
-                                         for i in range(0,50)
+                                         for i in range(0,5)
                                          )
     print alg + ' out'
     subprocess.Popen.kill(roscore)

@@ -38,11 +38,11 @@ void AbstractPlanner::computeRoughness(std::vector<Eigen::VectorXd> path)
     double r = 0;
     for(int i=0; i < path.size()-1; i++)
     {
-        double deltaK = fabs(path[i](2)-path[i+1](2));
+        double deltaK = fabs((path[i](2)-path[i+1](2))/length);
         double contribute = pow(deltaK,2);
         r = r + contribute;
     }
-    roughness = r / length;
+    roughness = r;
 
     return;
 }

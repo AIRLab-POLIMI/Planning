@@ -64,7 +64,7 @@ void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
     visualizer.initialize(private_nh);
 
     double t;
-    private_nh.param("Tmax", t, 300.0);
+    private_nh.param("Tmax", t, 3600.0);
     Tmax = std::chrono::duration<double>(t);
 }
 
@@ -88,11 +88,12 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #endif
     t0 = chrono::steady_clock::now();
 
-    for(unsigned int i = 0; (i < K || (i >= K && !plan_found)) && !timeOut(); i++)
+    //for(unsigned int i = 0; (i < K || (i >= K && !plan_found)) && !timeOut(); i++)
+    while(!timeOut())
     {
         VectorXd xRand;
 
-        if(RandomGenerator::sampleEvent(greedy))
+        if(!plan_found && RandomGenerator::sampleEvent(greedy))
             xRand = xGoal;
         else
             xRand = extenderFactory.getKinematicModel().sampleOnBox(map->getBounds());
@@ -109,11 +110,11 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             double maxCost, newCost;
             RRTNode* father = node;
             int cardinality = rrt.getLength();
-            double radius = gamma*pow(log(cardinality)/cardinality, 1/dimension);
+            double radius = gamma*pow(log(cardinality)/double(cardinality), double(1)/double(dimension));
 
             //Find all samples inside ray
             neighbors = rrt.findNeighbors(xNew, knn, radius);
-           //neighbors.push_back(node->father);
+            //neighbors.push_back(node->father);
 
             //Compute cost of getting there
             maxCost = rrt.computeCost(node) + distance(node->x, xNew);
@@ -153,9 +154,17 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                     }
                 }
             }
-
+#ifdef DEBUG_CONF
+            if(distance(xNew, xGoal) < 0.5)
+            {
+                ROS_INFO("old distance triggered");
+            }
+#endif
             if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
+#ifdef DEBUG_CONF
+                ROS_INFO("new distance triggered");
+#endif
                 last = rrt.getPointer();
                 plan_found = true;
             }

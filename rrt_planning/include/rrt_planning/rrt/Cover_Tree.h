@@ -549,6 +549,7 @@ std::vector<Point> CoverTree<Point>::kNearestNeighbors(const Point& p,
 {
     if(_root==NULL) return std::vector<Point>();
     std::vector<CoverTreeNode*> v = kNearestNodes(p, k);
+
     std::vector<Point> kNN;
     typename std::vector<CoverTreeNode*>::const_iterator it;
     for(it=v.begin(); it!=v.end(); ++it)
@@ -557,6 +558,7 @@ std::vector<Point> CoverTree<Point>::kNearestNeighbors(const Point& p,
         kNN.insert(kNN.end(),p.begin(),p.end());
         if(kNN.size() >= k) break;
     }
+    
     return kNN;
 }
 

@@ -22,6 +22,7 @@
  */
 
 #include "rrt_planning/rrt/RRT.h"
+#include "ros/ros.h"
 
 namespace rrt_planning
 {

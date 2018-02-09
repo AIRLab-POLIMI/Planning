@@ -1,10 +1,9 @@
 import os
 import pandas as pd
 
-algorithms = ['theta_star_rrt', 'nh_s2', 'nh_s2_p1', 'nh_s3', 'nh_s3_p1',
-              'forward_nh_s2', 'forward_nh_s2_p1', 'forward_nh_s3', 'forward_nh_s3_p1']
-maps = ['open', 'map', 'grass']
-#maps = ['offices']
+algorithms = ['rrt_star']
+#maps = ['open', 'map', 'grass']
+maps = ['map']
 
 max_conf = 10
 
@@ -14,7 +13,7 @@ def parse_logs(m):
     compare.writelines('conf,algorithm,run,length,time,roughness' + '\n')
     for alg in algorithms:
         for conf in range(0,max_conf):
-            for run in range(0,50):
+            for run in range(0,5):
                 log = open(wd + '/logs/'+ m +'/' + alg + '_' + m + '_' + str(conf) + '_' + str(run) +'.log', 'r')
                 log_lines = log.readlines()[1:]
                 results = [str(conf), alg, str(run), '0', '0', '0']

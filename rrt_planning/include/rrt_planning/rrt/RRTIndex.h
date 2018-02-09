@@ -39,7 +39,7 @@ public:
 
     inline bool operator ==(const RRTCoverWrapper& obj) const
     {
-        return obj.node == this->node;
+        return obj.node->x == this->node->x;
     }
 
     inline double distance(const RRTCoverWrapper& obj) const
@@ -90,7 +90,7 @@ public:
         RRTNode tmp(nullptr, x);
         RRTCoverWrapper tmpWrapped(&dist, &tmp);
         auto result = CoverTree<RRTCoverWrapper>::kNearestNeighbors(tmpWrapped, k);
-
+        
         std::vector<RRTNode*> neighbors;
         for (auto n: result)
         {

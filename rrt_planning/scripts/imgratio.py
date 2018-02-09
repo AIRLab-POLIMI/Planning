@@ -17,7 +17,10 @@ def process(a):
     perimeter = cv2.countNonZero(edges)
     
     ratio = float(perimeter)/float(area)
-    print ratio   
+    print "obstacle ratio: " + str(ratio)
+    
+    occupied_area = float(area)/float(img.size)
+    print "occupied percentage: " + str(occupied_area)
 
 
 if __name__ == '__main__':
