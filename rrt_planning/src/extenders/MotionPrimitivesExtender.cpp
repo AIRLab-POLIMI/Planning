@@ -131,6 +131,8 @@ bool MotionPrimitivesExtender::steer(const VectorXd& xStart, const VectorXd& xCo
         angles = thetadis(xCurr, xCorner);
      } while(is_valid && !((meters < deltaX) && (angles < deltaTheta)));
 
+    if(is_valid)
+        ROS_FATAL_STREAM("Number of motion primitives: " << parents.size());
     return is_valid;
 }
 
@@ -143,7 +145,11 @@ bool MotionPrimitivesExtender::isReached(const VectorXd& x0, const VectorXd& xTa
 
 bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)
 {
+    VectorXd xNew;
+    vector<VectorXd> dummy;
     double minDistance = std::numeric_limits<double>::infinity();
+
+    return steer(x0, xGoal, xNew, dummy, minDistance);
 
     for(auto& mp : motionPrimitives)
     {

@@ -64,7 +64,7 @@ void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
     visualizer.initialize(private_nh);
     gamma = pow(2.0,4.0)*exp(1.0 + 1.0/3.0);
     double t;
-    private_nh.param("Tmax", t, 600.0);
+    private_nh.param("Tmax", t, 300.0);
     Tmax = std::chrono::duration<double>(t);
 }
 
@@ -110,7 +110,9 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             double maxCost, newCost;
             RRTNode* father = node;
             int cardinality = rrt.getLength();
-            double radius = gamma*pow(log(cardinality)/double(cardinality), double(1)/double(dimension));
+            //double radius = gamma*pow(log(cardinality)/double(cardinality), double(1)/double(dimension));
+
+            double radius = 100000;
             double knearest = gamma*log10(cardinality);
             //Find all samples inside ray
             neighbors = rrt.findNeighbors(xNew, knn, radius);
@@ -123,7 +125,8 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             {
                 if(collisionFree(n->x, xNew))
                 {
-                    newCost = rrt.computeLength(n) + (n->x.head(2) - xNew.head(2)).norm();
+                    //newCost = rrt.computeLength(n) + (n->x.head(2) - xNew.head(2)).norm();
+                    newCost = rrt.computeCost(n) + distance(xNew, n->x);
                     if(newCost < maxCost)
                     {
                         maxCost = newCost;
