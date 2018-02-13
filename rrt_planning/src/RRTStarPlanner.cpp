@@ -56,15 +56,15 @@ void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
     private_nh.param("iterations", K, 30000);
     private_nh.param("deltaX", deltaX, 0.5);
     private_nh.param("greedy", greedy, 0.1);
-    private_nh.param("gamma", gamma, 1.5);
+    //private_nh.param("gamma", gamma, 1.5);
     private_nh.param("dimension", dimension, 3);
     private_nh.param("knn", knn, 10);
 
     extenderFactory.initialize(private_nh, *map, *distance);
     visualizer.initialize(private_nh);
-
+    gamma = pow(2.0,4.0)*exp(1.0 + 1.0/3.0);
     double t;
-    private_nh.param("Tmax", t, 3600.0);
+    private_nh.param("Tmax", t, 600.0);
     Tmax = std::chrono::duration<double>(t);
 }
 
@@ -111,19 +111,19 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             RRTNode* father = node;
             int cardinality = rrt.getLength();
             double radius = gamma*pow(log(cardinality)/double(cardinality), double(1)/double(dimension));
-
+            double knearest = gamma*log10(cardinality);
             //Find all samples inside ray
             neighbors = rrt.findNeighbors(xNew, knn, radius);
             //neighbors.push_back(node->father);
 
             //Compute cost of getting there
-            maxCost = rrt.computeCost(node) + distance(node->x, xNew);
+            maxCost = rrt.computeLength(node) + (node->x.head(2) - xNew.head(2)).norm();
 
             for(auto n : neighbors)
             {
                 if(collisionFree(n->x, xNew))
                 {
-                    newCost = rrt.computeCost(n) + distance(n->x, xNew);
+                    newCost = rrt.computeLength(n) + (n->x.head(2) - xNew.head(2)).norm();
                     if(newCost < maxCost)
                     {
                         maxCost = newCost;
@@ -138,16 +138,17 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #endif
             //Rewire tree
             RRTNode* newNode = rrt.getPointer();
-            double cost = rrt.computeCost(newNode);
+            double cost = rrt.computeLength(newNode);
 
             for(auto n : neighbors)
             {
                 if(collisionFree(xNew, n->x))
                 {
-                    newCost = cost + distance(xNew, n->x);
-                    if(newCost < rrt.computeCost(n))
+                    newCost = cost + (n->x.head(2) - xNew.head(2)).norm();
+                    if(newCost < rrt.computeLength(n))
                     {
                         n->father = newNode;
+                        newNode->childs.push_back(n);
 #ifdef VIS_CONF
                         visualizer.addSegment(xNew, n->x);
 #endif
@@ -160,12 +161,25 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                 ROS_INFO("old distance triggered");
             }
 #endif
-            if(extenderFactory.getExtender().isReached(xNew, xGoal))
+            if(!plan_found && extenderFactory.getExtender().isReached(xNew, xGoal))
             {
 #ifdef DEBUG_CONF
                 ROS_INFO("new distance triggered");
 #endif
                 last = rrt.getPointer();
+
+                length = rrt.computeLength(last);
+                double cost = rrt.computeCost(last);
+                ROS_FATAL_STREAM("first cost: " << cost);
+                ROS_FATAL_STREAM("first length: " << length);
+                auto&& path = rrt.getPathToLastNode();
+                plan.clear();
+                publishPlan(path, plan, start.header.stamp);
+#ifdef VIS_CONF
+                visualizer.displayPlan(plan);
+                visualizer.flush();
+#endif
+
                 plan_found = true;
             }
         }
@@ -175,9 +189,13 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     if(plan_found)
     {
         Tcurrent = chrono::steady_clock::now() - t0;
-        length = rrt.computeCost(last);
+        length = rrt.computeLength(last);
+        double cost = rrt.computeCost(last);
+        ROS_FATAL_STREAM("refined cost: " << cost);
+        ROS_FATAL_STREAM("refined length: " << length);
         auto&& path = rrt.getPathToLastNode(last);
         computeRoughness(path);
+        plan.clear();
         publishPlan(path, plan, start.header.stamp);
 #ifdef VIS_CONF
         visualizer.displayPlan(plan);

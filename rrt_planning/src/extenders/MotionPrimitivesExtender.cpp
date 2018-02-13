@@ -149,7 +149,7 @@ bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)
     {
         VectorXd x = model.applyTransform(x0, mp);
 
-        if(map.isFree(x) && x == xGoal)
+        if(map.isFree(x) && isReached(x, xGoal))
         {
             return true;
         }

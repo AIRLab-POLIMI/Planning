@@ -44,6 +44,7 @@ public:
 
     std::vector<RRTNode*> findNeighbors(Eigen::VectorXd& xNew, int k, double ray);
     double computeCost(RRTNode* node);
+    double computeLength(RRTNode* node);
     RRTNode* getPointer();
     int getLength();
 

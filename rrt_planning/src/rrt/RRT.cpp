@@ -101,10 +101,10 @@ std::vector<RRTNode*> RRT::findNeighbors(Eigen::VectorXd& xNew, int k, double ra
 
     for(auto node : candidates)
     {
-        if(distance(node->x, xNew) <= ray)
-        {
+        //if(distance(node->x, xNew) <= ray)
+        //{
             neighbors.push_back(node);
-        }
+        //}
     }
 
     return neighbors;
@@ -117,11 +117,25 @@ double RRT::computeCost(RRTNode* node)
     while(current != root)
     {
         RRTNode* parent = current->father;
-        cost = cost + sqrt(pow(current->x(0) - parent->x(0),2) + pow(current->x(1) - parent->x(1),2));
+        cost = cost + distance(current->x, parent->x);
         current = parent;
     }
 
     return cost;
+}
+
+double RRT::computeLength(RRTNode* node)
+{
+    RRTNode* current = node;
+    double length = 0;
+    while(current != root)
+    {
+        RRTNode* parent = current->father;
+        length = length + (current->x.head(2)-parent->x.head(2)).norm();
+        current = parent;
+    }
+
+    return length;
 }
 
 RRTNode* RRT::getPointer()

@@ -70,8 +70,8 @@ int main(int argc, char** argv)
 
     if(result)
     {
-        //save(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getRoughness(), plan);
-        saveNH(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getRoughness(), planner->getDeadActions());
+        save(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getRoughness(), plan);
+        //saveNH(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getRoughness(), planner->getDeadActions());
     }
      else
     {
