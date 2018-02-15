@@ -60,7 +60,7 @@ public:
 class L2ThetaDistance : public Distance
 {
 public:
-    L2ThetaDistance(double wt = 1.0, double wr = 1.0) : wt(wt), wr(wr){}
+    L2ThetaDistance(double wt = 1.0, double wr = 0.5) : wt(wt), wr(wr){}
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
     {

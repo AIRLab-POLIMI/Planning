@@ -10,9 +10,9 @@
 #include <chrono>
 #include <Eigen/Dense>
 
-#define DEBUG_CONF
+//#define DEBUG_CONF
 #define PRINT_CONF
-#define VIS_CONF
+//#define VIS_CONF
 
 namespace rrt_planning
 {

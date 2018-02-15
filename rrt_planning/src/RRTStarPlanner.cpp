@@ -9,6 +9,9 @@
 #include "rrt_planning/utils/RandomGenerator.h"
 #include "rrt_planning/rrt/RRT.h"
 
+#include <thread>
+#include <chrono>
+
 
 using namespace Eigen;
 
@@ -64,7 +67,7 @@ void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
     visualizer.initialize(private_nh);
     gamma = pow(2.0,4.0)*exp(1.0 + 1.0/3.0);
     double t;
-    private_nh.param("Tmax", t, 300.0);
+    private_nh.param("Tmax", t, 1800.0);
     Tmax = std::chrono::duration<double>(t);
 }
 
@@ -87,45 +90,60 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     visualizer.clean();
 #endif
     t0 = chrono::steady_clock::now();
-
+    int i=0;
+    int s=0;
     //for(unsigned int i = 0; (i < K || (i >= K && !plan_found)) && !timeOut(); i++)
     while(!timeOut())
     {
         VectorXd xRand;
 
-        if(!plan_found && RandomGenerator::sampleEvent(greedy))
+        if(RandomGenerator::sampleEvent(greedy))
+        {
+            i++;
+            s++;
             xRand = xGoal;
+            //ROS_FATAL_STREAM("sampled goal " << i << " times");
+            //ROS_FATAL_STREAM("number of samples so far: " << s);
+        }
         else
-            xRand = extenderFactory.getKinematicModel().sampleOnBox(map->getBounds());
+        {
+            do
+            {
+                xRand = extenderFactory.getKinematicModel().sampleOnBox(map->getBounds());
+            } while(!map->isFree(xRand));
+            s++;
+        }
 #ifdef VIS_CONF
         visualizer.addPoint(xRand);
 #endif
+
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
         auto* node = rrt.searchNearestNode(xRand);
         VectorXd xNew;
 
         if(newState(xRand, node->x, xNew))
         {
-            //rrt.addNode(node, xNew);
+            visualizer.addUpdate(xRand, node->x);
+            //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
             std::vector<RRTNode*> neighbors;
             double maxCost, newCost;
             RRTNode* father = node;
             int cardinality = rrt.getLength();
-            //double radius = gamma*pow(log(cardinality)/double(cardinality), double(1)/double(dimension));
+            double radius = gamma*pow(log(cardinality)/double(cardinality), double(1)/double(dimension));
 
-            double radius = 100000;
-            double knearest = gamma*log10(cardinality);
-            //Find all samples inside ray
-            neighbors = rrt.findNeighbors(xNew, knn, radius);
-            //neighbors.push_back(node->father);
+            double knearest = gamma*log(cardinality);
+
+            //Find all samples inside ray or the k-nearest neighbors
+            neighbors = rrt.findNeighbors(xNew, knearest, radius);
 
             //Compute cost of getting there
-            maxCost = rrt.computeLength(node) + (node->x.head(2) - xNew.head(2)).norm();
-
+            maxCost = rrt.computeCost(node) + distance(node->x, xNew);
             for(auto n : neighbors)
             {
                 if(collisionFree(n->x, xNew))
                 {
-                    //newCost = rrt.computeLength(n) + (n->x.head(2) - xNew.head(2)).norm();
                     newCost = rrt.computeCost(n) + distance(xNew, n->x);
                     if(newCost < maxCost)
                     {
@@ -136,19 +154,21 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
              }
 
             rrt.addNode(father, xNew);
+
 #ifdef VIS_CONF
             visualizer.addSegment(father->x, xNew);
 #endif
+
+            //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             //Rewire tree
             RRTNode* newNode = rrt.getPointer();
-            double cost = rrt.computeLength(newNode);
-
+            double n_cost = rrt.computeCost(newNode);
             for(auto n : neighbors)
             {
                 if(collisionFree(xNew, n->x))
                 {
-                    newCost = cost + (n->x.head(2) - xNew.head(2)).norm();
-                    if(newCost < rrt.computeLength(n))
+                    newCost = n_cost + distance(n->x, xNew);
+                    if(newCost < rrt.computeCost(n))
                     {
                         n->father = newNode;
                         newNode->childs.push_back(n);
@@ -158,17 +178,10 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                     }
                 }
             }
-#ifdef DEBUG_CONF
-            if(distance(xNew, xGoal) < 0.5)
-            {
-                ROS_INFO("old distance triggered");
-            }
-#endif
+
+
             if(!plan_found && extenderFactory.getExtender().isReached(xNew, xGoal))
             {
-#ifdef DEBUG_CONF
-                ROS_INFO("new distance triggered");
-#endif
                 last = rrt.getPointer();
 
                 length = rrt.computeLength(last);

@@ -99,15 +99,15 @@ std::vector<RRTNode*> RRT::findNeighbors(Eigen::VectorXd& xNew, int k, double ra
     std::vector<RRTNode*> candidates = index.getNearestNeighbours(xNew, k);
     std::vector<RRTNode*> neighbors;
 
-    for(auto node : candidates)
+    /*for(auto node : candidates)
     {
-        //if(distance(node->x, xNew) <= ray)
-        //{
+        if(distance(node->x, xNew) <= ray)
+        {
             neighbors.push_back(node);
-        //}
-    }
+        }
+    }*/
 
-    return neighbors;
+    return candidates;
 }
 
 double RRT::computeCost(RRTNode* node)

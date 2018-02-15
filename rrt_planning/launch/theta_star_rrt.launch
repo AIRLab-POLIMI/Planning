@@ -27,7 +27,7 @@
 
 		<!-- Theta*-RRT configuration -->
 		<param name="base_global_planner" value="rrt_planning/ThetaStarRRTPlanner"/>
-		<rosparam file="$(find rrt_planning)/config/theta_star.yaml" command="load" ns="ThetaStarPlanner"/>
+		<rosparam file="$(find rrt_planning)/config/theta_star_rrt.yaml" command="load" ns="ThetaStarPlanner"/>
 		<rosparam file="$(find rrt_planning)/config/rrt.yaml" command="load" ns="ThetaStarRRTPlanner"/>
 		<rosparam file="$(find rrt_planning)/config/differentialDrive.yaml" command="load" ns="ThetaStarRRTPlanner" if="$(arg differentialDrive)"/>
 		<rosparam file="$(find rrt_planning)/config/bicycle.yaml" command="load" ns="ThetaStarRRTPlanner" unless="$(arg differentialDrive)"/>

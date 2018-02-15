@@ -131,8 +131,8 @@ bool MotionPrimitivesExtender::steer(const VectorXd& xStart, const VectorXd& xCo
         angles = thetadis(xCurr, xCorner);
      } while(is_valid && !((meters < deltaX) && (angles < deltaTheta)));
 
-    if(is_valid)
-        ROS_FATAL_STREAM("Number of motion primitives: " << parents.size());
+    //if(is_valid)
+        //ROS_FATAL_STREAM("Number of motion primitives: " << parents.size());
     return is_valid;
 }
 
