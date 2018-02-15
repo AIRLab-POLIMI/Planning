@@ -90,7 +90,7 @@ int main(int argc, char** argv)
 
     private_nh.deleteParam("");
 	ROS_FATAL_STREAM("Plan found: " << result);
-    
+
    //Clean up
     if(planner)
         delete planner;

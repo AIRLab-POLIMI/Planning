@@ -61,9 +61,11 @@ void VoronoiRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* c
 
     private_nh.param("iterations", K, 30000);
     private_nh.param("deltaX", deltaX, 0.5);
-    private_nh.param("laneWidth", laneWidth, 2.0);
+    private_nh.param("laneWidth", laneWidth, 1.0);
     private_nh.param("greedy", greedy, 0.1);
     private_nh.param("deltaTheta", deltaTheta, M_PI/4);
+    private_nh.param("knn", knn, 10);
+    private_nh.param("bias", bias, 1);
 
     extenderFactory.initialize(private_nh, *map, *distance);
     visualizer.initialize(private_nh);
@@ -115,34 +117,61 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     for(unsigned int i = 0; i < K && !timeOut(); i++)
     {
         VectorXd xRand;
+        double theta;
 
         if(RandomGenerator::sampleEvent(greedy))
         {
             xRand = xGoal;
+            theta = xGoal(2);
         }
         else
         {
-            xRand = extenderFactory.getKinematicModel().sampleOnLane(voronoiPlan,
+            double theta = extenderFactory.getKinematicModel().voronoiSampleOnLane(voronoiPlan, xRand,
                                                                      laneWidth,
                                                                      deltaTheta);
         }
 #ifdef VIS_CONF
         visualizer.addPoint(xRand);
 #endif
-        auto* node = rrt.searchNearestNode(xRand);
+
+        //auto* node = rrt.searchNearestNode(xRand);
+        vector<RRTNode*> Xnear = rrt.findNeighbors(xRand, knn, 0);
+        VectorXd sample_path = extenderFactory.getKinematicModel().computeProjection(voronoiPlan, xRand);
+        double d1 = sqrt(pow((sample_path(0) - xRand(0)),2) + pow((sample_path(1) - xRand(1)), 2));
+        double theta1 = std::cos(xRand(2) - theta);
+        double min_cost = std::numeric_limits<double>::infinity();
+        RRTNode* node;
+
+        for(auto n : Xnear)
+        {
+            double parent_cost = rrt.computeCost(n);
+            double projection_cost = bias * n->projectionCost + d1 + (1 - theta1);
+            double dist = distance(n->x, xRand);
+            double cost = dist + parent_cost + projection_cost;
+            if(cost < min_cost)
+            {
+                node = n;
+                min_cost = cost;
+            }
+        }
+
 
         VectorXd xNew;
 
         if(newState(xRand, node->x, xNew))
         {
-            rrt.addNode(node, xNew);
+            //rrt.addNode(node, xNew);
+            VectorXd x_path = extenderFactory.getKinematicModel().computeProjection(voronoiPlan, xNew);
+            double d2 = sqrt(pow((x_path(0) - xNew(0)),2) + pow((x_path(1) - xNew(1)), 2));
+            double theta2 = std::cos(xNew(2) - x_path(2));
+            rrt.addNode(node, xNew, d2 + (1 -theta2));
 #ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
 #endif
             if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
-                length = rrt.computeCost(node);
+                length = rrt.computeLength(node);
                 auto&& path = rrt.getPathToLastNode();
                 computeRoughness(path);
                 publishPlan(path, plan, start.header.stamp);
@@ -152,6 +181,9 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #endif
 #ifdef PRINT_CONF
                 ROS_INFO("Plan found");
+                ROS_FATAL_STREAM("time: " << Tcurrent.count());
+                ROS_FATAL_STREAM("length: " << getPathLength());
+                ROS_FATAL_STREAM("roughness: " << getRoughness());
 #endif
                 return true;
             }

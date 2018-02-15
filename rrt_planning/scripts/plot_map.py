@@ -8,19 +8,22 @@ import pandas as pd
 import seaborn as sns
 
 #maps = ['open', 'map', 'offices', 'grass']
-maps = ['buildings']
+maps = ['map']
 labels = ['length', 'time', 'roughness', 'success rate']
-algorithms = ['theta_star_rrt', 'nh']
+algorithms = ['voronoi_rrt_l1_1','voronoi_rrt_l2_1',
+              'theta_star_rrt']
 
 
 def plot(m):
     wd = os.getcwd()
 
-    magics = PdfPages(wd + '/results/' + m + '.pdf')
+    magics = PdfPages(wd + '/results/' + m +'_bias' + '.pdf')
     params = {'axes.labelsize': 10,'axes.titlesize': 15, 'text.fontsize': 10, 'legend.fontsize': 10, 'xtick.labelsize': 10, 'ytick.labelsize': 10}
     matplotlib.rcParams.update(params)
 
-    f_in = pd.read_csv(wd + '/results/compare/' + m + '.csv')
+    f = pd.read_csv(wd + '/results/compare/' + m + '.csv')
+    f_in = f[(f.algorithm == 'theta_star_rrt') | (f.algorithm == 'voronoi_rrt_l1_1') | (f.algorithm == 'voronoi_rrt_l2_1')]
+
     conf = max(f_in.conf) + 1
 
     for i in range(0,conf):

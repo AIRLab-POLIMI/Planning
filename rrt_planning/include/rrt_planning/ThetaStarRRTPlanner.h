@@ -39,7 +39,6 @@
 #include "rrt_planning/ThetaStarPlanner.h"
 #include "rrt_planning/AbstractPlanner.h"
 
-
 namespace rrt_planning
 {
 
@@ -64,7 +63,6 @@ private:
                   Eigen::VectorXd& xNew);
 
     Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
-
     void publishPlan(std::vector<Eigen::VectorXd>& path, std::vector<geometry_msgs::PoseStamped>& plan,
                      const ros::Time& stamp);
 
@@ -74,6 +72,7 @@ private:
     Distance* distance;
 
     int K;
+    int knn;
     double deltaX;
     double laneWidth;
     double greedy;

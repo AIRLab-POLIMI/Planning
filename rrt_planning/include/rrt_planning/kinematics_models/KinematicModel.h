@@ -54,8 +54,13 @@ public:
     virtual Eigen::VectorXd getInitialState() = 0;
 
     virtual Eigen::VectorXd sampleOnBox(const Bounds& bounds) = 0;
-    Eigen::VectorXd sampleOnLane(std::vector<geometry_msgs::PoseStamped>& plan,
-                                 double width, double deltaTheta);
+    double sampleOnLane(std::vector<geometry_msgs::PoseStamped>& plan,
+                        Eigen::VectorXd& p, double width, double deltaTheta);
+    double voronoiSampleOnLane(std::vector<geometry_msgs::PoseStamped>& plan,
+                        Eigen::VectorXd& p, double width, double deltaTheta);
+    Eigen::VectorXd computeProjection(std::vector<geometry_msgs::PoseStamped>& plan,
+                                 const Eigen::VectorXd& p);
+
 
     Eigen::VectorXd applyTransform(const Eigen::VectorXd& x0, const Eigen::VectorXd& T);
 

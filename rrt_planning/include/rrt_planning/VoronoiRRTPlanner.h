@@ -47,6 +47,8 @@ class VoronoiRRTPlanner : public AbstractPlanner
         Distance* distance;
 
         int K;
+        int knn;
+        int bias;
         double deltaX;
         double laneWidth;
         double greedy;

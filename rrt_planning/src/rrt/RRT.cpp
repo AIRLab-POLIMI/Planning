@@ -34,6 +34,14 @@ RRT::RRT(Distance& distance, Eigen::VectorXd& x0) : distance(distance), index(di
     index.insert(root);
 }
 
+void RRT::addNode(RRTNode* parent, Eigen::VectorXd& xNew, double cost)
+{
+    RRTNode* child = new RRTNode(parent, xNew, cost);
+    parent->childs.push_back(child);
+    nodes.push_back(child);
+    index.insert(child);
+}
+
 RRTNode* RRT::searchNearestNode(Eigen::VectorXd& x)
 {
     /*RRTNode* nearest = root;

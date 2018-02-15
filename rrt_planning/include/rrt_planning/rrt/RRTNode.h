@@ -34,10 +34,12 @@ struct RRTNode
 {
     RRTNode();
     RRTNode(RRTNode* father, const Eigen::VectorXd& x);
+    RRTNode(RRTNode* father, const Eigen::VectorXd& x, double cost);
 
     Eigen::VectorXd x;
     std::vector<RRTNode*> childs;
-
+    double projectionCost;
+    
     RRTNode* father;
 };
 

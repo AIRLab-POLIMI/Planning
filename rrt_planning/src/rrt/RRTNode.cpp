@@ -35,6 +35,14 @@ RRTNode::RRTNode(RRTNode* father, const Eigen::VectorXd& x)
 {
     this->father = father;
     this->x = x;
+    this->projectionCost = 0;
+}
+
+RRTNode::RRTNode(RRTNode* father, const Eigen::VectorXd& x, double cost)
+{
+    this->father = father;
+    this->x = x;
+    this->projectionCost = cost;
 }
 
 }

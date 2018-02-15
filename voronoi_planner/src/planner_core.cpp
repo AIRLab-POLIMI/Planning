@@ -74,12 +74,12 @@ void VoronoiPlanner::outlineMap(unsigned char* costarr, int nx, int ny, unsigned
 
 VoronoiPlanner::VoronoiPlanner() :
         costmap_(NULL), initialized_(false), publish_voronoi_grid_(true),
-        smooth_path_ (true), weight_data_ (0.5), weight_smooth_ (0.3) {
+        smooth_path_ (true), weight_data_ (0.5), weight_smooth_ (0.9) {
 }
 
 VoronoiPlanner::VoronoiPlanner(std::string name, costmap_2d::Costmap2D* costmap, std::string frame_id) :
         costmap_(NULL), initialized_(false), publish_voronoi_grid_(true),
-        smooth_path_ (true), weight_data_ (0.5), weight_smooth_ (0.3)
+        smooth_path_ (true), weight_data_ (0.5), weight_smooth_ (0.9)
 {
     //initialize the planner
     initialize(name, costmap, frame_id);
@@ -135,8 +135,8 @@ void VoronoiPlanner::costmapUpdateCallback(const map_msgs::OccupancyGridUpdate::
 
 
 void VoronoiPlanner::reconfigureCB(voronoi_planner::VoronoiPlannerConfig& config, uint32_t level) {
-    weight_data_ = config.weight_data;
-    weight_smooth_ = config.weight_smooth;
+    weight_data_ = 0.5;
+    weight_smooth_ = 0.4;
 
     publish_voronoi_grid_ = config.publish_voronoi_grid;
     smooth_path_ = config.smooth_path;
@@ -251,9 +251,6 @@ bool VoronoiPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geo
     int nx = costmap_->getSizeInCellsX(), ny = costmap_->getSizeInCellsY();
 
     outlineMap(costmap_->getCharMap(), nx, ny, costmap_2d::LETHAL_OBSTACLE);
-
-
-
 
 
     bool **map=NULL;
@@ -404,7 +401,7 @@ bool VoronoiPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geo
 
 //    visualize("/tmp/plan.ppm", &voronoi_, map, &path1);
 
-
+    smoothPath(&path1);
     for(int i = 0; i < path1.size(); i++)
     {
 
@@ -663,6 +660,7 @@ void VoronoiPlanner::smoothPath(std::vector<std::pair<float, float> > *path)
         }
     }
     *path = newpath;
+    ROS_FATAL_STREAM("Smooth done");
 }
 
 
@@ -732,4 +730,3 @@ void VoronoiPlanner::publishVoronoiGrid(DynamicVoronoi *voronoi)
 
 
 } //end namespace voronoi_planner
-

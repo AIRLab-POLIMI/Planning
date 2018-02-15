@@ -86,6 +86,7 @@ void ThetaStarRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS*
     private_nh.param("laneWidth", laneWidth, 2.0);
     private_nh.param("greedy", greedy, 0.1);
     private_nh.param("deltaTheta", deltaTheta, M_PI/4);
+    private_nh.param("knn", knn, 42);
 
     extenderFactory.initialize(private_nh, *map, *distance);
     visualizer.initialize(private_nh);
@@ -119,6 +120,7 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #ifdef DEBUG_CONF
     Tcurrent = chrono::steady_clock::now() - t0;
     ROS_FATAL_STREAM("thetastar plan time: " << Tcurrent.count());
+    ROS_FATAL_STREAM("knn: " << knn);
 #endif
 
     // Compute RRT-Theta* plan
@@ -132,32 +134,63 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #ifdef PRINT_CONF
     ROS_INFO("Theta*-RRT started");
 #endif
+
     for(unsigned int i = 0; i < K && !timeOut(); i++)
     {
 
         VectorXd xRand;
+        double theta;
 
         if(RandomGenerator::sampleEvent(greedy))
+        {
             xRand = xGoal;
+            theta = xGoal(2);
+        }
         else
-            xRand = extenderFactory.getKinematicModel().sampleOnLane(thetaStarPlan, laneWidth, deltaTheta);
+        {
+            theta = extenderFactory.getKinematicModel().sampleOnLane(thetaStarPlan, xRand, laneWidth, deltaTheta);
+        }
 #ifdef VIS_CONF
         visualizer.addPoint(xRand);
 #endif
-        auto* node = rrt.searchNearestNode(xRand);
 
+        //Compute the nearest node
+        //auto* node = rrt.searchNearestNode(xRand);
+        vector<RRTNode*> Xnear = rrt.findNeighbors(xRand, knn, 0);
+        VectorXd sample_path = extenderFactory.getKinematicModel().computeProjection(thetaStarPlan, xRand);
+        double d1 = sqrt(pow((sample_path(0) - xRand(0)),2) + pow((sample_path(1) - xRand(1)), 2));
+        double theta1 = std::cos(xRand(2) - theta);
+        double min_cost = std::numeric_limits<double>::infinity();
+        RRTNode* node;
+
+        for(auto n : Xnear)
+        {
+            double parent_cost = rrt.computeCost(n);
+            double projection_cost = n->projectionCost + d1 + (1 - theta1);
+            double dist = distance(n->x, xRand);
+            double cost = dist + parent_cost + projection_cost;
+            if(cost < min_cost)
+            {
+                node = n;
+                min_cost = cost;
+            }
+        }
+
+        //Connect nearest node to sample
         VectorXd xNew;
-
         if(newState(node->x, xRand, xNew))
         {
-            rrt.addNode(node, xNew);
+            VectorXd x_path = extenderFactory.getKinematicModel().computeProjection(thetaStarPlan, xNew);
+            double d2 = sqrt(pow((x_path(0) - xNew(0)),2) + pow((x_path(1) - xNew(1)), 2));
+            double theta2 = std::cos(xNew(2) - x_path(2));
+            rrt.addNode(node, xNew, d2 + (1 -theta2));
 #ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
 #endif
             if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
-                length = rrt.computeCost(node);
+                length = rrt.computeLength(node);
                 auto&& path = rrt.getPathToLastNode();
                 computeRoughness(path);
                 publishPlan(path, plan, start.header.stamp);
@@ -187,7 +220,6 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     return false;
 
 }
-
 
 bool ThetaStarRRTPlanner::newState(const VectorXd& xNear,
                                    const VectorXd& xRand,
