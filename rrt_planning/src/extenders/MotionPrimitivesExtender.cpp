@@ -149,7 +149,7 @@ bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)
     vector<VectorXd> dummy;
     double minDistance = std::numeric_limits<double>::infinity();
 
-    return steer(x0, xGoal, xNew, dummy, minDistance);
+    //return steer(x0, xGoal, xNew, dummy, minDistance);
 
     for(auto& mp : motionPrimitives)
     {

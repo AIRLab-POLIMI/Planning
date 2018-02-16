@@ -65,9 +65,9 @@ void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
 
     extenderFactory.initialize(private_nh, *map, *distance);
     visualizer.initialize(private_nh);
-    gamma = pow(2.0,4.0)*exp(1.0 + 1.0/3.0);
+    //gamma = pow(2.0,4.0)*exp(1.0 + 1.0/3.0);
     double t;
-    private_nh.param("Tmax", t, 1800.0);
+    private_nh.param("Tmax", t, 300.0);
     Tmax = std::chrono::duration<double>(t);
 }
 
@@ -82,6 +82,10 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     RRTNode* last;
     bool plan_found = false;
 
+    double gamma_knn = 6.0;
+    double gamma_r = 23.0;
+    double min_radius = 1.0;
+
     RRT rrt(distance, x0);
 #ifdef PRINT_CONF
     ROS_INFO("Planner started");
@@ -90,17 +94,13 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     visualizer.clean();
 #endif
     t0 = chrono::steady_clock::now();
-    int i=0;
-    int s=0;
-    //for(unsigned int i = 0; (i < K || (i >= K && !plan_found)) && !timeOut(); i++)
+
     while(!timeOut())
     {
         VectorXd xRand;
 
         if(RandomGenerator::sampleEvent(greedy))
         {
-            i++;
-            s++;
             xRand = xGoal;
             //ROS_FATAL_STREAM("sampled goal " << i << " times");
             //ROS_FATAL_STREAM("number of samples so far: " << s);
@@ -111,7 +111,6 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             {
                 xRand = extenderFactory.getKinematicModel().sampleOnBox(map->getBounds());
             } while(!map->isFree(xRand));
-            s++;
         }
 #ifdef VIS_CONF
         visualizer.addPoint(xRand);
@@ -124,19 +123,19 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
         if(newState(xRand, node->x, xNew))
         {
-            visualizer.addUpdate(xRand, node->x);
+            //visualizer.addUpdate(xRand, node->x);
             //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
             std::vector<RRTNode*> neighbors;
             double maxCost, newCost;
             RRTNode* father = node;
             int cardinality = rrt.getLength();
-            double radius = gamma*pow(log(cardinality)/double(cardinality), double(1)/double(dimension));
-
-            double knearest = gamma*log(cardinality);
+            double radius = gamma_r*pow(log(cardinality)/double(cardinality), double(1)/double(dimension));
+            double ray = min(min_radius, radius);
+            double knearest = gamma_knn*log(cardinality);
 
             //Find all samples inside ray or the k-nearest neighbors
-            neighbors = rrt.findNeighbors(xNew, knearest, radius);
+            neighbors = rrt.findNeighbors(xNew, knearest, ray);
 
             //Compute cost of getting there
             maxCost = rrt.computeCost(node) + distance(node->x, xNew);

@@ -12,7 +12,7 @@
 
 //#define DEBUG_CONF
 #define PRINT_CONF
-//#define VIS_CONF
+#define VIS_CONF
 
 namespace rrt_planning
 {

@@ -1,5 +1,5 @@
 # Configuration of rrt planner
 iterations: 10000
 deltaX: 0.5
-greedy: 0.2
+greedy: 0.1
 knn: 10

@@ -107,13 +107,13 @@ std::vector<RRTNode*> RRT::findNeighbors(Eigen::VectorXd& xNew, int k, double ra
     std::vector<RRTNode*> candidates = index.getNearestNeighbours(xNew, k);
     std::vector<RRTNode*> neighbors;
 
-    /*for(auto node : candidates)
+    for(auto node : candidates)
     {
-        if(distance(node->x, xNew) <= ray)
+        if((node->x.head(2) - xNew.head(2)).norm() <= ray)
         {
             neighbors.push_back(node);
         }
-    }*/
+    }
 
     return candidates;
 }
