@@ -27,6 +27,7 @@
 #include <Eigen/Dense>
 #include "angles/angles.h"
 #include <iostream>
+#include <ros/ros.h>
 
 namespace rrt_planning
 {
@@ -60,20 +61,20 @@ public:
 class L2ThetaDistance : public Distance
 {
 public:
-    L2ThetaDistance(double wt = 1.0, double wr = 0.5) : wt(wt), wr(wr){}
+    L2ThetaDistance(double wt = 1.0, double wr = 1.0) : wt(wt), wr(wr){}
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) override
     {
-        double poseDistance = (x1.head(2)-x2.head(2)).squaredNorm();
-        double angleDistance = std::pow(1.0 - std::cos(x1(2) - x2(2)), 2);
+        double poseDistance = (x1.head(2)-x2.head(2)).norm();
+        double angleDistance = 1.0 - std::cos(x1(2) - x2(2));
         
         return wt*poseDistance + wr*angleDistance;
     }
 
     inline virtual double operator()(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, double length) override
     {
-        double poseDistance = (x1.head(2)-x2.head(2)).squaredNorm();
-        double angleDistance = std::pow(1.0 - std::cos(x1(2) - x2(2)), 2);
+        double poseDistance = (x1.head(2)-x2.head(2)).norm();
+        double angleDistance = 1.0 - std::cos(x1(2) - x2(2));
 
         return wt*poseDistance + wr*angleDistance;
     }

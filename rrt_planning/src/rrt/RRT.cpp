@@ -24,9 +24,22 @@
 #include "rrt_planning/rrt/RRT.h"
 #include "ros/ros.h"
 
+
 namespace rrt_planning
 {
+struct Cmp
+{
+  bool operator()(const Eigen::VectorXd a, const Eigen::VectorXd b) const
+  {
+      return ((a(0) < b(0)) ||(a(0) == b(0) && a(1) < b(1)) ||
+               (a(0) == b(0) && a(1) == b(1) && a(2) < b(2)));
+  }
 
+  bool operator()(const Eigen::Vector2d a, const Eigen::Vector2d b) const
+  {
+      return ((a(0) < b(0)) ||(a(0) == b(0) && a(1) < b(1)));
+  }
+};
 RRT::RRT(Distance& distance, Eigen::VectorXd& x0) : distance(distance), index(distance)
 {
     root = new RRTNode(nullptr, x0);
@@ -115,7 +128,7 @@ std::vector<RRTNode*> RRT::findNeighbors(Eigen::VectorXd& xNew, int k, double ra
         }
     }
 
-    return candidates;
+    return neighbors;
 }
 
 double RRT::computeCost(RRTNode* node)

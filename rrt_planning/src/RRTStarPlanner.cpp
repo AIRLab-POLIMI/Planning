@@ -56,7 +56,7 @@ void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
     //Get parameters from ros parameter server
     ros::NodeHandle private_nh("~/" + name);
 
-    private_nh.param("iterations", K, 30000);
+    private_nh.param("K", K, 1);
     private_nh.param("deltaX", deltaX, 0.5);
     private_nh.param("greedy", greedy, 0.1);
     //private_nh.param("gamma", gamma, 1.5);
@@ -67,7 +67,7 @@ void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
     visualizer.initialize(private_nh);
     //gamma = pow(2.0,4.0)*exp(1.0 + 1.0/3.0);
     double t;
-    private_nh.param("Tmax", t, 300.0);
+    private_nh.param("Tmax", t, 180.0);
     Tmax = std::chrono::duration<double>(t);
 }
 
@@ -81,10 +81,10 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     VectorXd&& xGoal = convertPose(goal);
     RRTNode* last;
     bool plan_found = false;
-
+    std::set<RRTNode*> ending_nodes;
     double gamma_knn = 6.0;
     double gamma_r = 23.0;
-    double min_radius = 1.0;
+    double min_radius = double(K)/2.0;
 
     RRT rrt(distance, x0);
 #ifdef PRINT_CONF
@@ -99,11 +99,9 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     {
         VectorXd xRand;
 
-        if(RandomGenerator::sampleEvent(greedy))
+        if(!plan_found && RandomGenerator::sampleEvent(greedy))
         {
             xRand = xGoal;
-            //ROS_FATAL_STREAM("sampled goal " << i << " times");
-            //ROS_FATAL_STREAM("number of samples so far: " << s);
         }
         else
         {
@@ -116,16 +114,11 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         visualizer.addPoint(xRand);
 #endif
 
-        //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
         auto* node = rrt.searchNearestNode(xRand);
         VectorXd xNew;
 
         if(newState(xRand, node->x, xNew))
         {
-            //visualizer.addUpdate(xRand, node->x);
-            //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
             std::vector<RRTNode*> neighbors;
             double maxCost, newCost;
             RRTNode* father = node;
@@ -158,7 +151,6 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             visualizer.addSegment(father->x, xNew);
 #endif
 
-            //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             //Rewire tree
             RRTNode* newNode = rrt.getPointer();
             double n_cost = rrt.computeCost(newNode);
@@ -179,10 +171,15 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             }
 
 
-            if(!plan_found && extenderFactory.getExtender().isReached(xNew, xGoal))
+            if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
                 last = rrt.getPointer();
-
+                if(!plan_found)
+                {
+                    Tcurrent = chrono::steady_clock::now() - t0;
+                    ROS_FATAL_STREAM("first plan found in " << Tcurrent.count() << " seconds");
+                }
+#ifdef DEBUG_CONF
                 length = rrt.computeLength(last);
                 double cost = rrt.computeCost(last);
                 ROS_FATAL_STREAM("first cost: " << cost);
@@ -190,12 +187,13 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                 auto&& path = rrt.getPathToLastNode();
                 plan.clear();
                 publishPlan(path, plan, start.header.stamp);
+#endif
 #ifdef VIS_CONF
                 visualizer.displayPlan(plan);
                 visualizer.flush();
 #endif
-
                 plan_found = true;
+                ending_nodes.insert(last);
             }
         }
 
@@ -204,10 +202,23 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     if(plan_found)
     {
         Tcurrent = chrono::steady_clock::now() - t0;
-        length = rrt.computeLength(last);
-        double cost = rrt.computeCost(last);
-        ROS_FATAL_STREAM("refined cost: " << cost);
-        ROS_FATAL_STREAM("refined length: " << length);
+        length = -1;
+        double cost = -1;
+        for(auto p : ending_nodes)
+        {
+            double l = rrt.computeLength(p);
+            double c = rrt.computeCost(p);
+            if((length == -1) || (length != -1 && c < cost))
+            {
+                length = l;
+                cost = c;
+                last = p;
+            }
+        }
+#ifdef PRINT_CONF
+        ROS_FATAL_STREAM("cost: " << cost);
+        ROS_FATAL_STREAM("length: " << length);
+#endif
         auto&& path = rrt.getPathToLastNode(last);
         computeRoughness(path);
         plan.clear();
@@ -237,7 +248,9 @@ bool RRTStarPlanner::newState(const VectorXd& xRand,
                           const VectorXd& xNear,
                           VectorXd& xNew)
 {
-    return extenderFactory.getExtender().compute(xNear, xRand, xNew);
+    vector<VectorXd> parents;
+    double cost;
+    return extenderFactory.getExtender().steer(xNear, xRand, xNew, parents, cost);
 }
 
 bool RRTStarPlanner::collisionFree(const VectorXd& x0, const VectorXd& xGoal)

@@ -7,7 +7,7 @@ import subprocess
 from joblib import Parallel, delayed
 
 gflags.DEFINE_integer('n_jobs', 2, 'number of parallel experiments')
-gflags.DEFINE_string('deadline', '1800', 'deadline (in seconds)')
+gflags.DEFINE_string('deadline', '600', 'deadline (in seconds)')
 gflags.DEFINE_integer('n_exp', 50, 'number of experiments')
 gflags.DEFINE_string('env_name', 'map', 'environment name')
 gflags.DEFINE_string('model', 'differentialDrive', 'kinematic model')

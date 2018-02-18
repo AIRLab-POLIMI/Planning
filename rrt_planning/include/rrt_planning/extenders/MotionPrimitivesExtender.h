@@ -61,6 +61,7 @@ private:
     bool diffDrive;
     double deltaX;
     double deltaTheta;
+    int K;
 
 };
 

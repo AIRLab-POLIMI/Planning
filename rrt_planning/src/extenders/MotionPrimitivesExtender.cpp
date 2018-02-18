@@ -109,7 +109,8 @@ bool MotionPrimitivesExtender::steer(const VectorXd& xStart, const VectorXd& xCo
     //Separates the length check from the angle check
     Distance& l2dis = *this->l2distance;
     Distance& thetadis = *this->thetadistance;
-
+    int j = 0;
+    int i = 0;
     VectorXd xCurr = xStart;
     double meters = l2dis(xCurr, xCorner);
     double angles = thetadis(xCurr, xCorner);
@@ -129,10 +130,11 @@ bool MotionPrimitivesExtender::steer(const VectorXd& xStart, const VectorXd& xCo
         parents.push_back(xCurr);
         meters = l2dis(xCurr, xCorner);
         angles = thetadis(xCurr, xCorner);
-     } while(is_valid && !((meters < deltaX) && (angles < deltaTheta)));
+        j++;
+        i++;
+     } while((K == -1 || j < K) && is_valid && !((meters < deltaX) && (angles < deltaTheta)));
 
-    //if(is_valid)
-        //ROS_FATAL_STREAM("Number of motion primitives: " << parents.size());
+    //ROS_FATAL_STREAM("K: " << K << ", iterations: " << i);
     return is_valid;
 }
 
@@ -149,9 +151,9 @@ bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)
     vector<VectorXd> dummy;
     double minDistance = std::numeric_limits<double>::infinity();
 
-    //return steer(x0, xGoal, xNew, dummy, minDistance);
+    return steer(x0, xGoal, xNew, dummy, minDistance);
 
-    for(auto& mp : motionPrimitives)
+    /*for(auto& mp : motionPrimitives)
     {
         VectorXd x = model.applyTransform(x0, mp);
 
@@ -161,13 +163,14 @@ bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)
         }
     }
 
-    return false;
+    return false;*/
 }
 
 void MotionPrimitivesExtender::initialize(ros::NodeHandle& nh)
 {
     nh.param("deltaT", deltaT, 0.5);
     nh.param("motion_primitives/discretization", discretization, 5);
+    nh.param("K", K, -1);
 
     std::vector<double> minU_vec;
     std::vector<double> maxU_vec;
