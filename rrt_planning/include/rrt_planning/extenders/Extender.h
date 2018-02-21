@@ -54,10 +54,11 @@ public:
     }
 
     virtual bool compute(const Eigen::VectorXd& x0, const Eigen::VectorXd& xRand, Eigen::VectorXd& xNew) = 0;
-    virtual bool los(const Eigen::VectorXd& x0, const Eigen::VectorXd& xRand, Eigen::VectorXd& xNew, double length) = 0;
-    virtual bool check(const Eigen::VectorXd& x0, const Eigen::VectorXd& xGoal) = 0;
+    virtual bool los(const Eigen::VectorXd& x0, const Eigen::VectorXd& xRand, Eigen::VectorXd& xNew) = 0;
+    virtual bool check(const Eigen::VectorXd& x0, const Eigen::VectorXd& xGoal, std::vector<Eigen::VectorXd>& parents, double& cost) = 0;
     virtual void initialize(ros::NodeHandle& nh) = 0;
     virtual bool steer(const Eigen::VectorXd& xCurr, const Eigen::VectorXd& xCorner, Eigen::VectorXd& xNew, std::vector<Eigen::VectorXd>& parents, double& cost) = 0;
+    virtual bool steer_l2(const Eigen::VectorXd& xCurr, const Eigen::VectorXd& xCorner, Eigen::VectorXd& xNew, std::vector<Eigen::VectorXd>& parents, double& cost) = 0;
     virtual bool isReached(const Eigen::VectorXd& x0, const Eigen::VectorXd& xTarget) = 0;
     virtual ~Extender()
     {

@@ -6,14 +6,14 @@ import subprocess
 
 from joblib import Parallel, delayed
 
-gflags.DEFINE_integer('n_jobs', 2, 'number of parallel experiments')
-gflags.DEFINE_string('deadline', '600', 'deadline (in seconds)')
+gflags.DEFINE_integer('n_jobs', 4, 'number of parallel experiments')
+gflags.DEFINE_string('deadline', '300', 'deadline (in seconds)')
 gflags.DEFINE_integer('n_exp', 50, 'number of experiments')
-gflags.DEFINE_string('env_name', 'map', 'environment name')
+gflags.DEFINE_string('env_name', 'buildings', 'environment name')
 gflags.DEFINE_string('model', 'differentialDrive', 'kinematic model')
 
 #algorithms = ['nh', 'forward_nh', 'rrt', 'rrt_star', 'theta_star_rrt', 'voronoi_rrt']
-algorithms = ['rrt_star']
+algorithms = ['nh']
 
 def experiment(a, c, row, i):
     print ''
@@ -30,7 +30,7 @@ def experiment(a, c, row, i):
               ' ' + c +
               ' ' + it +
               ' ' + gflags.FLAGS.deadline +
-              ' ' + os.getcwd() + '/logs/')
+              ' ' + os.getcwd() + '/logs/' + gflags.FLAGS.env_name + '/')
 
 
 def run(configurations, alg):
@@ -49,7 +49,7 @@ def run(configurations, alg):
     Parallel(n_jobs=gflags.FLAGS.n_jobs)(delayed(experiment)
                                         (alg, conf, str(configurations.index(conf)), str(i))
                                          for conf in configurations
-                                         for i in range(0,5)
+                                         for i in range(0,50)
                                          )
     print alg + ' out'
     subprocess.Popen.kill(roscore)

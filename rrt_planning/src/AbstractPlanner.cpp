@@ -23,6 +23,15 @@ double AbstractPlanner::getPathLength()
 	return length;
 }
 
+void AbstractPlanner::computeLength(std::vector<Eigen::VectorXd>& path)
+{
+    length = 0;
+    for(int i=0; i < path.size()-1; i++)
+    {
+        length += (path[i].head(2) - path[i+1].head(2)).norm();
+    }
+}
+
 double AbstractPlanner::getElapsedTime()
 {
     return Tcurrent.count();

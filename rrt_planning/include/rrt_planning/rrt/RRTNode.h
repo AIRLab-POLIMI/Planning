@@ -35,10 +35,15 @@ struct RRTNode
     RRTNode();
     RRTNode(RRTNode* father, const Eigen::VectorXd& x);
     RRTNode(RRTNode* father, const Eigen::VectorXd& x, double cost);
+    RRTNode(RRTNode* father, const Eigen::VectorXd& x, std::vector<Eigen::VectorXd> primitives, double cost);
+    RRTNode(RRTNode* father, const Eigen::VectorXd& x, std::vector<Eigen::VectorXd> primitives, double cost, double projectionCost);
+
 
     Eigen::VectorXd x;
     std::vector<RRTNode*> childs;
     double projectionCost;
+    double cost;
+    std::vector<Eigen::VectorXd> primitives;
     
     RRTNode* father;
 };

@@ -8,10 +8,9 @@ import pandas as pd
 import seaborn as sns
 
 #maps = ['open', 'map', 'offices', 'grass']
-maps = ['map']
+maps = ['buildings']
 labels = ['length', 'time', 'roughness', 'success rate']
-algorithms = ['voronoi_rrt_l1_1','voronoi_rrt_l2_1',
-              'theta_star_rrt']
+algorithms = ['nh']
 
 
 def plot(m):
@@ -22,7 +21,7 @@ def plot(m):
     matplotlib.rcParams.update(params)
 
     f = pd.read_csv(wd + '/results/compare/' + m + '.csv')
-    f_in = f[(f.algorithm == 'theta_star_rrt') | (f.algorithm == 'voronoi_rrt_l1_1') | (f.algorithm == 'voronoi_rrt_l2_1')]
+    f_in = f[(f.algorithm == 'nh') | (f.algorithm == 'voronoi_rrt_l1_1') | (f.algorithm == 'voronoi_rrt_l2_1')]
 
     conf = max(f_in.conf) + 1
 

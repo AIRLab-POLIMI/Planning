@@ -1,9 +1,9 @@
 import os
 import pandas as pd
 
-algorithms = ['theta_star_rrt']
+algorithms = ['nh']
 #maps = ['open', 'map', 'grass']
-maps = ['map']
+maps = ['buildings']
 
 max_conf = 10
 
@@ -14,7 +14,7 @@ def parse_logs(m):
     for alg in algorithms:
         for conf in range(0,max_conf):
             for run in range(0,50):
-                log = open(wd + '/logs/'+ alg + '_' + m + '_' + str(conf) + '_' + str(run) +'.log', 'r')
+                log = open(wd + '/logs/'+ m + "/" + alg + '_' + m + '_' + str(conf) + '_' + str(run) +'.log', 'r')
                 log_lines = log.readlines()[1:]
                 results = [str(conf), alg, str(run), '0', '0', '0']
                 for line in log_lines:

@@ -73,7 +73,7 @@ bool MotionPrimitivesExtender::compute(const VectorXd& x0, const VectorXd& xSamp
     return minDistance < std::numeric_limits<double>::infinity();
 }
 
-bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xSample, VectorXd& xNew, double length)
+bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xSample, VectorXd& xNew)
 {
     VectorXd xRand = xSample;
     if(diffDrive)
@@ -92,7 +92,7 @@ bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xSample, 
     {
         VectorXd x = model.applyTransform(x0, mp);
 
-        double currentDist = distance(x, xRand, length);
+        double currentDist = distance(x, xRand);
         if(currentDist < minDistance)
         {
           xNew = x;
@@ -106,35 +106,55 @@ bool MotionPrimitivesExtender::los(const VectorXd& x0, const VectorXd& xSample, 
 
 bool MotionPrimitivesExtender::steer(const VectorXd& xStart, const VectorXd& xCorner, VectorXd& xNew, vector<VectorXd>& parents, double& cost)
 {
-    //Separates the length check from the angle check
-    Distance& l2dis = *this->l2distance;
-    Distance& thetadis = *this->thetadistance;
+
     int j = 0;
-    int i = 0;
+
     VectorXd xCurr = xStart;
-    double meters = l2dis(xCurr, xCorner);
-    double angles = thetadis(xCurr, xCorner);
+
 
     bool is_valid = true;
     set<VectorXd, CmpReached> check;
 
-    double length = l2dis(xStart, xCorner);
+    do{
+        is_valid = los(xCurr, xCorner, xNew);
+        if(!check.insert(xNew).second){
+            is_valid = false;
+        }
+        cost += distance(xCurr, xNew);
+        xCurr = xNew;
+        parents.push_back(xCurr);
+
+        j++;
+     } while((K == -1 || j < K) && is_valid && !isReached(xCurr, xCorner));
+
+    return is_valid;
+}
+
+bool MotionPrimitivesExtender::steer_l2(const VectorXd& xStart, const VectorXd& xCorner, VectorXd& xNew, vector<VectorXd>& parents, double& cost)
+{
+    //Separates the length check from the angle check
+    Distance& l2dis = *this->l2distance;
+
+    int j = 0;
+
+    VectorXd xCurr = xStart;
+
+
+    bool is_valid = true;
+    set<VectorXd, CmpReached> check;
 
     do{
-        is_valid = los(xCurr, xCorner, xNew, length);
+        is_valid = los(xCurr, xCorner, xNew);
         if(!check.insert(xNew).second){
             is_valid = false;
         }
         cost += l2dis(xCurr, xNew);
         xCurr = xNew;
         parents.push_back(xCurr);
-        meters = l2dis(xCurr, xCorner);
-        angles = thetadis(xCurr, xCorner);
-        j++;
-        i++;
-     } while((K == -1 || j < K) && is_valid && !((meters < deltaX) && (angles < deltaTheta)));
 
-    //ROS_FATAL_STREAM("K: " << K << ", iterations: " << i);
+        j++;
+     } while((K == -1 || j < K) && is_valid && !isReached(xCurr, xCorner));
+
     return is_valid;
 }
 
@@ -145,13 +165,13 @@ bool MotionPrimitivesExtender::isReached(const VectorXd& x0, const VectorXd& xTa
     return ((l2dis(x0, xTarget) < deltaX) && (thetadis(x0, xTarget) < deltaTheta));
 }
 
-bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal)
+bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal, vector<VectorXd>& parents, double& cost)
 {
     VectorXd xNew;
-    vector<VectorXd> dummy;
-    double minDistance = std::numeric_limits<double>::infinity();
 
-    return steer(x0, xGoal, xNew, dummy, minDistance);
+    bool is_valid = steer(x0, xGoal, xNew, parents, cost);
+
+    return is_valid && isReached(xGoal, xNew);
 
     /*for(auto& mp : motionPrimitives)
     {

@@ -66,7 +66,7 @@ bool ClosedLoopExtender::compute(const VectorXd& x0, const VectorXd& xRand, Vect
     return valid;
 }
 
-bool ClosedLoopExtender::check(const VectorXd& x0, const VectorXd& xGoal)
+bool ClosedLoopExtender::check(const VectorXd& x0, const VectorXd& xGoal, std::vector<Eigen::VectorXd>& parents, double& cost)
 {
     controller.setGoal(xGoal);
     VectorXd xNew;
@@ -96,7 +96,7 @@ bool ClosedLoopExtender::check(const VectorXd& x0, const VectorXd& xGoal)
     return valid;
 }
 
-bool ClosedLoopExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew, double length)
+bool ClosedLoopExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew)
 {
     controller.setGoal(xRand);
 
@@ -138,7 +138,7 @@ bool ClosedLoopExtender::steer(const VectorXd& xStart, const VectorXd& xCorner, 
     double length = l2dis(xCurr, xCorner);
 
     do{
-        is_valid = los(xCurr, xCorner, xNew, length);
+        is_valid = los(xCurr, xCorner, xNew);
         if(!check.insert(xNew).second){
             is_valid = false;
         }
@@ -149,6 +149,33 @@ bool ClosedLoopExtender::steer(const VectorXd& xStart, const VectorXd& xCorner, 
 
     return is_valid;
 }
+
+bool ClosedLoopExtender::steer_l2(const VectorXd& xStart, const VectorXd& xCorner, VectorXd& xNew, vector<VectorXd>& parents, double& cost)
+{
+    //Separates the length check from the angle check
+    Distance& l2dis = *l2distance;
+    Distance& thetadis = *thetadistance;
+
+    VectorXd xCurr = xStart;
+
+    bool is_valid = true;
+    set<VectorXd, CmpReached> check;
+
+    double length = l2dis(xCurr, xCorner);
+
+    do{
+        is_valid = los(xCurr, xCorner, xNew);
+        if(!check.insert(xNew).second){
+            is_valid = false;
+        }
+        cost += l2dis(xCurr, xNew);
+        xCurr = xNew;
+        parents.push_back(xCurr);
+     } while(is_valid && !((l2dis(xCurr, xCorner) < deltaX) && (thetadis(xCurr, xCorner) < deltaTheta)));
+
+    return is_valid;
+}
+
 
 bool ClosedLoopExtender::isReached(const VectorXd& x0, const VectorXd& xTarget)
 {

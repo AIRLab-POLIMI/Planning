@@ -32,9 +32,14 @@ public:
 private:
     bool newState(const Eigen::VectorXd& xRand,
                   const Eigen::VectorXd& xNear,
-                  Eigen::VectorXd& xNew);
+                  Eigen::VectorXd& xNew,
+                  std::vector<Eigen::VectorXd>& primitives,
+                  double& cost);
 
-    bool collisionFree(const Eigen::VectorXd& x0, const Eigen::VectorXd& xGoal);
+    bool collisionFree(const Eigen::VectorXd& x0, 
+                       const Eigen::VectorXd& xGoal,
+                       std::vector<Eigen::VectorXd>& primitives,
+                       double& cost);
 
     Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
 

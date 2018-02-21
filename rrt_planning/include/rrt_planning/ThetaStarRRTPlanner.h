@@ -60,7 +60,9 @@ public:
 private:
     bool newState(const Eigen::VectorXd& xRand,
                   const Eigen::VectorXd& xNear,
-                  Eigen::VectorXd& xNew);
+                  Eigen::VectorXd& xNew,
+                  std::vector<Eigen::VectorXd>& primitives,
+                  double& cost);
 
     Eigen::VectorXd convertPose(const geometry_msgs::PoseStamped& pose);
     void publishPlan(std::vector<Eigen::VectorXd>& path, std::vector<geometry_msgs::PoseStamped>& plan,

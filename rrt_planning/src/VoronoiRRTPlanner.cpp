@@ -135,7 +135,7 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #endif
 
         //auto* node = rrt.searchNearestNode(xRand);
-        vector<RRTNode*> Xnear = rrt.findNeighbors(xRand, knn, 1000000);
+        vector<RRTNode*> Xnear = rrt.findNeighbors(xRand, knn, laneWidth);
         VectorXd sample_path = extenderFactory.getKinematicModel().computeProjection(voronoiPlan, xRand);
         double d1 = sqrt(pow((sample_path(0) - xRand(0)),2) + pow((sample_path(1) - xRand(1)), 2));
         double theta1 = std::cos(xRand(2) - theta);
@@ -144,7 +144,7 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
         for(auto n : Xnear)
         {
-            double parent_cost = rrt.computeCost(n);
+            double parent_cost = n->cost;
             double projection_cost = bias * n->projectionCost + d1 + (1 - theta1);
             double dist = distance(n->x, xRand);
             double cost = dist + parent_cost + projection_cost;
@@ -157,14 +157,16 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
 
         VectorXd xNew;
+        vector<VectorXd> primitives;
+        double c_node = node->cost;
 
-        if(newState(xRand, node->x, xNew))
+        if(newState(xRand, node->x, xNew, primitives, c_node))
         {
             //rrt.addNode(node, xNew);
             VectorXd x_path = extenderFactory.getKinematicModel().computeProjection(voronoiPlan, xNew);
             double d2 = sqrt(pow((x_path(0) - xNew(0)),2) + pow((x_path(1) - xNew(1)), 2));
             double theta2 = std::cos(xNew(2) - x_path(2));
-            rrt.addNode(node, xNew, d2 + (1 -theta2));
+            rrt.addNode(node, xNew, primitives, c_node, d2 + (1 -theta2));
 #ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
 #endif
@@ -172,8 +174,8 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
                 RRTNode* last = rrt.getPointer();
-                length = rrt.computeLength(last);
                 auto&& path = rrt.getPathToLastNode();
+                computeLength(path);
                 computeRoughness(path);
                 publishPlan(path, plan, start.header.stamp);
 #ifdef VIS_CONF
@@ -201,13 +203,10 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 }
 
 bool VoronoiRRTPlanner::newState(const Eigen::VectorXd& xRand,
-                                 const Eigen::VectorXd& xNear,
-                                 Eigen::VectorXd& xNew)
+                                 const VectorXd& xNear,
+                                 VectorXd& xNew, vector<VectorXd>& primitives, double& cost)
 {
-    vector<VectorXd> dummy;
-    double cost;
-    return extenderFactory.getExtender().steer(xNear, xRand, xNew, dummy, cost);
-    //return extenderFactory.getExtender().compute(xNear, xRand,  xNew);
+   return extenderFactory.getExtender().steer(xNear, xRand, xNew, primitives, cost);
 }
 
 VectorXd VoronoiRRTPlanner::convertPose(const geometry_msgs::PoseStamped& msg)

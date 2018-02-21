@@ -36,6 +36,9 @@ RRTNode::RRTNode(RRTNode* father, const Eigen::VectorXd& x)
     this->father = father;
     this->x = x;
     this->projectionCost = 0;
+    this->cost = 0;
+    std::vector<Eigen::VectorXd> empty;
+    this->primitives = empty;
 }
 
 RRTNode::RRTNode(RRTNode* father, const Eigen::VectorXd& x, double cost)
@@ -43,6 +46,27 @@ RRTNode::RRTNode(RRTNode* father, const Eigen::VectorXd& x, double cost)
     this->father = father;
     this->x = x;
     this->projectionCost = cost;
+    this->cost = 0;
+    std::vector<Eigen::VectorXd> empty;
+    this->primitives = empty;
+}
+
+RRTNode::RRTNode(RRTNode* father, const Eigen::VectorXd& x, std::vector<Eigen::VectorXd> primitives, double cost)
+{
+    this->father = father;
+    this->x = x;
+    this->cost = cost;
+    this->primitives = primitives;
+    this->projectionCost = 0;
+}
+
+RRTNode::RRTNode(RRTNode* father, const Eigen::VectorXd& x, std::vector<Eigen::VectorXd> primitives, double cost, double projectionCost)
+{
+    this->father = father;
+    this->x = x;
+    this->cost = cost;
+    this->primitives = primitives;
+    this->projectionCost = projectionCost;
 }
 
 }

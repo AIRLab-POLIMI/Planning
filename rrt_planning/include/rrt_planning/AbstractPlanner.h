@@ -38,6 +38,7 @@ public:
 protected:
 	bool timeOut();
 	void computeRoughness(std::vector<Eigen::VectorXd> path);
+	void computeLength(std::vector<Eigen::VectorXd>& path);
 
 
 protected:

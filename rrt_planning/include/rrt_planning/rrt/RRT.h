@@ -39,11 +39,14 @@ public:
     RRTNode* searchNearestNode(Eigen::VectorXd& x);
     void addNode(RRTNode* parent, Eigen::VectorXd& xNew);
     void addNode(RRTNode* parent, Eigen::VectorXd& xNew, double cost);
+    void addNode(RRTNode* parent, Eigen::VectorXd& xNew, std::vector<Eigen::VectorXd> primitives, double cost);
+    void addNode(RRTNode* parent, Eigen::VectorXd& xNew, std::vector<Eigen::VectorXd> primitives, double cost, double projCost);
 
     std::vector<Eigen::VectorXd> getPathToLastNode();
     std::vector<Eigen::VectorXd> getPathToLastNode(RRTNode* last);
 
     std::vector<RRTNode*> findNeighbors(Eigen::VectorXd& xNew, int k, double ray);
+    std::vector<RRTNode*> findNeighborsBias(Eigen::VectorXd& xNew, int k, double ray);
     double computeCost(RRTNode* node);
     double computeLength(RRTNode* node);
     RRTNode* getPointer();

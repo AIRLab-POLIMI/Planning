@@ -121,18 +121,20 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         auto* node = rrt.searchNearestNode(xRand);
 
         VectorXd xNew;
+        vector<VectorXd> primitives;
+        double cost = node->cost;
 
-        if(newState(xRand, node->x, xNew))
+        if(newState(xRand, node->x, xNew, primitives, cost))
         {
-            rrt.addNode(node, xNew);
+            rrt.addNode(node, xNew, primitives, cost);
 #ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
 #endif
             if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
-                length = rrt.computeCost(node);
                 auto&& path = rrt.getPathToLastNode();
+                computeLength(path);
                 computeRoughness(path);
                 publishPlan(path, plan, start.header.stamp);
 #ifdef VIS_CONF
@@ -160,9 +162,9 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
 bool RRTPlanner::newState(const VectorXd& xRand,
                           const VectorXd& xNear,
-                          VectorXd& xNew)
+                          VectorXd& xNew, vector<VectorXd>& primitives, double& cost)
 {
-    return extenderFactory.getExtender().compute(xNear, xRand, xNew);
+    return extenderFactory.getExtender().steer(xNear, xRand, xNew, primitives, cost);
 }
 
 VectorXd RRTPlanner::convertPose(const geometry_msgs::PoseStamped& msg)
