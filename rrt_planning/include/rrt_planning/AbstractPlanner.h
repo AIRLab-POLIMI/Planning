@@ -10,9 +10,9 @@
 #include <chrono>
 #include <Eigen/Dense>
 
-#define DEBUG_CONF
-#define PRINT_CONF
-#define VIS_CONF
+//#define DEBUG_CONF
+//#define PRINT_CONF
+//#define VIS_CONF
 
 namespace rrt_planning
 {
@@ -30,24 +30,35 @@ public:
 
 	double getElapsedTime();
 	double getPathLength();
-    int getDeadActions();
     double getRoughness();
+    double getFirstLength();
+    double getFirstRoughness();
+    
+    std::vector<Eigen::VectorXd> getPath();
+    std::vector<Eigen::VectorXd> getFirstPath();
+    
 
     virtual ~AbstractPlanner();
 
 protected:
 	bool timeOut();
-	void computeRoughness(std::vector<Eigen::VectorXd> path);
+	void computeFirstRoughness(std::vector<Eigen::VectorXd>& path);
+	void computeRoughness(std::vector<Eigen::VectorXd>& path);
+	void computeFirstLength(std::vector<Eigen::VectorXd>& path);
 	void computeLength(std::vector<Eigen::VectorXd>& path);
-
+	
 
 protected:
 	std::chrono::steady_clock::time_point t0;
 	std::chrono::duration<double> Tmax;
 	std::chrono::duration<double> Tcurrent;
 	double length;
-    int dead;
     double roughness;
+    double first_length;
+    double first_roughness;
+    
+    std::vector<Eigen::VectorXd> first_path;
+    std::vector<Eigen::VectorXd> final_path;
 
 };
 

@@ -1,5 +1,5 @@
-#ifndef INCLUDE_FORWARDNHPLANNER_H_
-#define INCLUDE_FORWARDNHPLANNER_H_
+#ifndef INCLUDE_NHPLANNERL2_H_
+#define INCLUDE_NHPLANNERL2_H_
 
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
@@ -23,19 +23,19 @@
 namespace rrt_planning
 {
 
-class ForwardNHPlanner : public AbstractPlanner
+class NHPlannerL2 : public AbstractPlanner
 {
 public:
-    ForwardNHPlanner();
-    ForwardNHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
-    ForwardNHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t);
+    NHPlannerL2();
+    NHPlannerL2(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
+    NHPlannerL2(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t);
 
     void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros) override;
     bool makePlan(const geometry_msgs::PoseStamped& start,
                   const geometry_msgs::PoseStamped& goal,
                   std::vector<geometry_msgs::PoseStamped>& plan) override;
 
-    virtual ~ForwardNHPlanner();
+    virtual ~NHPlannerL2();
 
 private:
     Node* reach(Node* current, const Eigen::VectorXd& xCorner);
@@ -49,7 +49,6 @@ private:
     void addOpen(Node* node, const Action& action, Distance& distance);
     void addSubgoal(Node* node, const Action& action, Distance& distance);
     std::vector<Action> findAction(Node* node, const Action& action, Distance& distance, std::vector<Triangle>& triangles);
-    void infiniteSample(Node* node, const Action& action, std::vector<Action>& actions, std::vector<Triangle>& triangles);
     std::vector<Eigen::VectorXd> retrievePath(Node* node);
 
     void sampleCorner(const Eigen::VectorXd& corner, bool cw);
@@ -89,4 +88,4 @@ private:
 
 
 
-#endif /* INCLUDE_FORWARDNHPLANNER_H_ */
+#endif /* INCLUDE_NHPLANNERL2_H_ */

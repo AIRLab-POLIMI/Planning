@@ -4,19 +4,17 @@
 #include <chrono>
 #include <thread>
 
-#include "rrt_planning/ForwardNHPlanner.h"
-
+#include "rrt_planning/NHPlannerL2.h"
 
 #include "rrt_planning/extenders/MotionPrimitivesExtender.h"
 #include "rrt_planning/map/ROSMap.h"
 #include "rrt_planning/kinematics_models/DifferentialDrive.h"
 #include "rrt_planning/utils/RandomGenerator.h"
 
-
 using namespace Eigen;
 
 //register this planner as a BaseGlobalPlanner plugin
-PLUGINLIB_EXPORT_CLASS(rrt_planning::ForwardNHPlanner, nav_core::BaseGlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(rrt_planning::NHPlannerL2, nav_core::BaseGlobalPlanner)
 
 using namespace std;
 
@@ -24,7 +22,7 @@ using namespace std;
 namespace rrt_planning
 {
 
-ForwardNHPlanner::ForwardNHPlanner()
+NHPlannerL2::NHPlannerL2()
 {
     deltaX = 0;
     deltaTheta = 0;
@@ -37,18 +35,18 @@ ForwardNHPlanner::ForwardNHPlanner()
 
 }
 
-ForwardNHPlanner::ForwardNHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
+NHPlannerL2::NHPlannerL2(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
     initialize(name, costmap_ros);
 }
 
-ForwardNHPlanner::ForwardNHPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t)
+NHPlannerL2::NHPlannerL2(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t)
 {
     initialize(name, costmap_ros);
     Tmax = t;
 }
 
-void ForwardNHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
+void NHPlannerL2::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
     //Get parameters from ros parameter server
     ros::NodeHandle private_nh("~/" + name);
@@ -75,12 +73,12 @@ void ForwardNHPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* co
     Tmax = std::chrono::duration<double>(t);
 }
 
-bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
+bool NHPlannerL2::makePlan(const geometry_msgs::PoseStamped& start_pose,
                                    const geometry_msgs::PoseStamped& goal_pose,
                                    std::vector<geometry_msgs::PoseStamped>& plan)
 {
     count = 0;
-    dead = 0;
+
 #ifdef VIS_CONF
     visualizer.clean();
 #endif
@@ -111,7 +109,7 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
     length = 0;
     roughness = 0;
 
-    target = Action(xGoal, xGoal, true, true, false, nullptr);
+    target = Action(xGoal, true, true, false, nullptr);
     shared_ptr<Action> goal_action = make_shared<Action>(target);
     goal_action->setParent(goal_action);
     target = *goal_action;
@@ -139,6 +137,7 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         if(isReached(current->getState(), xGoal))
         {
             auto&& path = retrievePath(current);
+            final_path = path;
             publishPlan(path, plan, start_pose.header.stamp);
 #ifdef VIS_CONF
             visualizer.displayPlan(plan);
@@ -216,8 +215,8 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                 Action p = *action.getParent();
                 if(!new_node->contains(p.getState()))
                 {
-                    Action parent(p.getState(), p.getState(), p.isClockwise(),
-                                    true, p.isCorner(), p.getParent());
+                    Action parent(p.getState(), p.isClockwise(), true,
+                                        p.isCorner(), p.getParent());
                     addOpen(new_node, parent, l2dis);
                     new_node->addSubgoal(parent.getState());
                 }
@@ -266,7 +265,6 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                     else
                         visualizer.addPoint(a.getState());
 #endif
-
                 }
             }
 
@@ -285,6 +283,7 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 #ifdef VIS_CONF
     visualizer.flush();
 #endif
+
 #ifdef PRINT_CONF
     ROS_FATAL("Failed to find plan: omae wa mou shindeiru");
 #endif
@@ -298,7 +297,7 @@ bool ForwardNHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
 
 }
 
-Node* ForwardNHPlanner::reach(Node* current, const VectorXd& xCorner)
+Node* NHPlannerL2::reach(Node* current, const VectorXd& xCorner)
 {
     VectorXd xCurr = current->getState();
     VectorXd xNew = xCurr;
@@ -306,7 +305,7 @@ Node* ForwardNHPlanner::reach(Node* current, const VectorXd& xCorner)
     bool is_valid = false;
     double cost = current->getCost();
 
-    is_valid = extenderFactory.getExtender().steer(xCurr, xCorner, xNew, parents, cost);
+    is_valid = extenderFactory.getExtender().steer_l2(xCurr, xCorner, xNew, parents, cost);
 
     Node* new_node = nullptr;
     if(is_valid)
@@ -317,7 +316,7 @@ Node* ForwardNHPlanner::reach(Node* current, const VectorXd& xCorner)
     return new_node;
 }
 
-bool ForwardNHPlanner::isReached(const VectorXd& x0, const VectorXd& xTarget)
+bool NHPlannerL2::isReached(const VectorXd& x0, const VectorXd& xTarget)
 {
     Distance& l2dis = *this->l2dis;
     Distance& thetadis = *this->thetadis;
@@ -325,7 +324,7 @@ bool ForwardNHPlanner::isReached(const VectorXd& x0, const VectorXd& xTarget)
     return ((l2dis(x0, xTarget) < deltaX) && (thetadis(x0, xTarget) < deltaTheta));
 }
 
-VectorXd ForwardNHPlanner::convertPose(const geometry_msgs::PoseStamped& msg)
+VectorXd NHPlannerL2::convertPose(const geometry_msgs::PoseStamped& msg)
 {
     auto& q_ros = msg.pose.orientation;
     auto& t_ros = msg.pose.position;
@@ -340,7 +339,7 @@ VectorXd ForwardNHPlanner::convertPose(const geometry_msgs::PoseStamped& msg)
     return x;
 }
 
-void ForwardNHPlanner::publishPlan(std::vector<VectorXd>& path,
+void NHPlannerL2::publishPlan(std::vector<VectorXd>& path,
                                       std::vector<geometry_msgs::PoseStamped>& plan, const ros::Time& stamp)
 {
     for(auto x : path)
@@ -370,18 +369,18 @@ void ForwardNHPlanner::publishPlan(std::vector<VectorXd>& path,
     }
 }
 
-void ForwardNHPlanner::addOpen(Node* node, const Action& action, Distance& distance)
+void NHPlannerL2::addOpen(Node* node, const Action& action, Distance& distance)
 {
 
-    if(insideGlobal(action.getState(), action.isSubgoal()))
+    if((action.getState() !=  target.getState()) && insideGlobal(action.getState(), action.isSubgoal()))
     {
-        dead++;
+
         return;
     }
 
    if(node->insideArea(action.getState()))
     {
-        dead++;
+
         return;
     }
 
@@ -391,15 +390,15 @@ void ForwardNHPlanner::addOpen(Node* node, const Action& action, Distance& dista
 
 }
 
-void ForwardNHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
+void NHPlannerL2::addSubgoal(Node* node, const Action& action, Distance& distance)
 {
 
-    Action subgoal(action.getState(), action.getState(), action.isClockwise(), true, action.isCorner(), action.getParent());
+    Action subgoal(action.getState(), action.isClockwise(), true, action.isCorner(), action.getParent());
     Node* parent = node->getParent();
     int j = 0;
     if(insideGlobal(action.getState(), action.isSubgoal()))
     {
-        dead++;
+
         return;
     }
 
@@ -411,10 +410,6 @@ void ForwardNHPlanner::addSubgoal(Node* node, const Action& action, Distance& di
             double h = distance(parent->getState(), subgoal.getState()) + distance(subgoal.getState(), target.getState());
             open.insert(key, h + parent->getCost());
         }
-        else
-        {
-            dead++;
-        }
         parent->addSubgoal(subgoal.getState());
         parent = parent->getParent();
         j++;
@@ -422,37 +417,7 @@ void ForwardNHPlanner::addSubgoal(Node* node, const Action& action, Distance& di
 
 }
 
-void ForwardNHPlanner::infiniteSample(Node* node, const Action& action, vector<Action>& actions, vector<Triangle>& triangles)
-{
-    vector<VectorXd> collision;
-    VectorXd n = node->getState();
-    VectorXd a = action.getState();
-    bool is_los = map->collisionPoints(n, a, collision);
-    if(is_los) return;
-
-    actions.clear();
-    VectorXd middle = map->computeMiddle(collision[0], collision[1]);
-
-    //cw
-    vector<VectorXd> cw_actions = map->infiniteExitPoint(node->getState(), middle, true);
-    for(auto cw : cw_actions)
-    {
-        bool corner = map->isCorner(cw);
-        actions.push_back(Action(cw, cw, true, false, corner, action.getParent()));
-    }
-
-    //ccw
-    vector<VectorXd> ccw_actions = map->infiniteExitPoint(node->getState(), middle, false);
-    for(auto ccw : ccw_actions)
-    {
-        bool corner = map->isCorner(ccw);
-        actions.push_back(Action(ccw, ccw, false, false, corner, action.getParent()));
-    }
-
-    return;
-}
-
-vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Distance& distance, vector<Triangle>& triangles)
+vector<Action> NHPlannerL2::findAction(Node* node, const Action& action, Distance& distance, vector<Triangle>& triangles)
 {
     vector<Action> actions;
     VectorXd n = node->getState();
@@ -463,23 +428,15 @@ vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Di
     bool follow = false;
 
     triangles.clear();
-
-    if(a == target.getState())
-    {
-        infiniteSample(node, action, actions, triangles);
-        return actions;
-    }
-
-    bool is_los = map->collisionPoints(n, a, collision);
+    bool is_los = map->collisionPoints(a, n, collision);
 
     if(is_los)
     {
-        //triangles.push_back(createTriangle(action, n));
-        triangles.push_back(Triangle(n, a, action.getMiddle()));
+        triangles.push_back(createTriangle(action, n));
 
         is_los = map->followObstacle(n, a, collision);
         if(is_los){
-            actions.push_back(Action(collision[0], action.getMiddle(), action.isClockwise(), false, true, action.getParent()));
+            actions.push_back(Action(collision[0], action.isClockwise(), false, true, action.getParent()));
             return actions;
         }
         follow = true;
@@ -491,9 +448,9 @@ vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Di
     double c2 = distance(collision[1], a);
     bool sample = action.isSubgoal();
     if(!follow && c1 > step && c2 > step) {sample = true;}
+    if(!is_los) {swap(collision[0], collision[1]);}
 
     VectorXd middle = map->computeMiddle(collision[0], collision[1]);
-    VectorXd exit_point = collision[1];
 
     if(action.isClockwise() || sample)
     {
@@ -508,7 +465,7 @@ vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Di
                 p = make_shared<Action>(action);
             }
 
-            actions.push_back(Action(new_state, middle, true, false, corner, p));
+            actions.push_back(Action(new_state, true, false, corner, p));
         }
     }
 
@@ -524,12 +481,12 @@ vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Di
             {
                 p = make_shared<Action>(action);
             }
-            actions.push_back(Action(new_state, middle, false, false, corner, p));
+            actions.push_back(Action(new_state, false, false, corner, p));
         }
     }
 
 
-    if(sample && vertices[0] != vertices[1])
+    if(sample && vertices.size() == 2 && vertices[0] != vertices[1])
     {
         Triangle t(a, vertices[0], vertices[1]);
         triangles.push_back(t);
@@ -538,7 +495,7 @@ vector<Action> ForwardNHPlanner::findAction(Node* node, const Action& action, Di
     return actions;
   }
 
-void ForwardNHPlanner::addGlobal(const VectorXd& node, const VectorXd& action, const VectorXd& parent)
+void NHPlannerL2::addGlobal(const VectorXd& node, const VectorXd& action, const VectorXd& parent)
 {
     Distance& distance= *this->l2dis;
     vector<VectorXd> collision;
@@ -558,11 +515,13 @@ void ForwardNHPlanner::addGlobal(const VectorXd& node, const VectorXd& action, c
         p = map->computeMiddle(collision[0], collision[1]);
     }
 
+    //TODO check los(action, parent)
+
     Triangle t(node, action, p);
     global_closed.push_back(t);
 }
 
-bool ForwardNHPlanner::insideGlobal(const Eigen::VectorXd& p, bool subgoal)
+bool NHPlannerL2::insideGlobal(const Eigen::VectorXd& p, bool subgoal)
 {
     for(auto t: global_closed)
     {
@@ -573,7 +532,7 @@ bool ForwardNHPlanner::insideGlobal(const Eigen::VectorXd& p, bool subgoal)
   return false;
 }
 
-Triangle ForwardNHPlanner::createTriangle(const Action& action, const Eigen::VectorXd& n)
+Triangle NHPlannerL2::createTriangle(const Action& action, const Eigen::VectorXd& n)
 {
     vector<VectorXd> collision;
     VectorXd p = action.getParent()->getState();
@@ -586,7 +545,7 @@ Triangle ForwardNHPlanner::createTriangle(const Action& action, const Eigen::Vec
     return Triangle(a, n, p);
 }
 
-/*void ForwardNHPlanner::sampleCorner(const VectorXd& corner, bool cw)
+/*void NHPlannerL2::sampleCorner(const VectorXd& corner, bool cw)
 {
     vector<VectorXd> samples;
     VectorXd sample = positionFactory.getSampling().sample(corner, cw);
@@ -608,7 +567,7 @@ Triangle ForwardNHPlanner::createTriangle(const Action& action, const Eigen::Vec
     }
     corner_samples[Vector2d(corner(0), corner(1))] = samples;
     samples.push_back(corner);
-    while(samples.size() < k)
+    /*while(samples.size() < k)
     {
         VectorXd sample = positionFactory.getSampling().sample(corner, cw);
         if(rosmap->isFree(sample))
@@ -621,7 +580,7 @@ Triangle ForwardNHPlanner::createTriangle(const Action& action, const Eigen::Vec
     return;
 }*/
 
-void ForwardNHPlanner::sampleCorner(const VectorXd& corner, bool cw)
+void NHPlannerL2::sampleCorner(const VectorXd& corner, bool cw)
 {
     vector<VectorXd> samples;
     while(samples.size() < k)
@@ -641,13 +600,13 @@ void ForwardNHPlanner::sampleCorner(const VectorXd& corner, bool cw)
     return;
 }
 
-double ForwardNHPlanner::sampleAngle(double theta)
+double NHPlannerL2::sampleAngle(double theta)
 {
     return (angleFactory.getSampling().sample() + theta);
 }
 
 
-vector<VectorXd> ForwardNHPlanner::retrievePath(Node* node)
+vector<VectorXd> NHPlannerL2::retrievePath(Node* node)
 {
     std::vector<Eigen::VectorXd> path, mp;
     Node* current = node;
@@ -674,7 +633,7 @@ vector<VectorXd> ForwardNHPlanner::retrievePath(Node* node)
     return path;
 }
 
-ForwardNHPlanner::~ForwardNHPlanner()
+NHPlannerL2::~NHPlannerL2()
 {
     if(l2dis)
         delete l2dis;

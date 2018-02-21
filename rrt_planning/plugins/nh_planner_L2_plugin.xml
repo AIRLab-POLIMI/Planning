@@ -1,5 +1,5 @@
 <library path="lib/librrt_planner">
-	<class name="rrt_planning/ForwardNHPlanner" type="rrt_planning::ForwardNHPlanner" base_class_type="nav_core::BaseGlobalPlanner">
+	<class name="rrt_planning/NHPlannerL2" type="rrt_planning::NHPlannerL2" base_class_type="nav_core::BaseGlobalPlanner">
 		<description>This is a global planner plugin that uses a non-holonomic planner algorithm</description>
 	</class>
 </library>

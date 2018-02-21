@@ -12,7 +12,7 @@
 
 #include "rrt_planning/AbstractPlanner.h"
 #include "rrt_planning/NHPlanner.h"
-#include "rrt_planning/ForwardNHPlanner.h"
+#include "rrt_planning/NHPlannerL2.h"
 #include "rrt_planning/RRTPlanner.h"
 #include "rrt_planning/RRTStarPlanner.h"
 #include "rrt_planning/ThetaStarRRTPlanner.h"
@@ -26,9 +26,9 @@ AbstractPlanner* getPlanner(const string& name, costmap_2d::Costmap2DROS* costma
 bool parse(const std::string& conf, geometry_msgs::PoseStamped& start_pose,
                          geometry_msgs::PoseStamped& goal_pose);
 void save(const std::string& filename, const std::string& conf, double t, double l, double r,
-                        std::vector<geometry_msgs::PoseStamped>& plan);
+                        std::vector<Eigen::VectorXd> plan);
 
-void saveNH(const std::string& filename, const std::string& conf, double t, double l, double r, int kills);
+void saveRRTStar(const std::string& filename, const std::string& conf, rrt_planning::AbstractPlanner* planner, double tmax);
 
 int main(int argc, char** argv)
 {
@@ -68,24 +68,51 @@ int main(int argc, char** argv)
     AbstractPlanner* planner = getPlanner(planner_name, costmap_ros, deadline);
     bool result = planner->makePlan(start_pose, goal_pose, plan);
 
+    double tmax = atof(deadline.c_str());
     if(result)
     {
-        save(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getRoughness(), plan);
-        //saveNH(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getRoughness(), planner->getDeadActions());
+        if(planner_name == "rrt_star")
+        {
+            saveRRTStar(dir + node_name, conf, planner, tmax);
+        }
+        else
+        {
+            save(dir + node_name, conf, planner->getElapsedTime(), planner->getPathLength(), planner->getRoughness(), planner->getPath());
+        }
     }
      else
     {
-        std::ofstream f;
-        f.open(dir+node_name + string(".log"));
-        f << "configuration " << conf << "\n";
-        double tmax = atof(deadline.c_str());
+        if(planner_name == "rrt_star")
+        {
+            std::ofstream ff;
+            ff.open(dir+node_name + "_first" + string(".log"));
+            ff << "configuration " << conf << "\n";
 
-        if(planner->getElapsedTime() < tmax)
-            f << "FAILED_TO_FIND_PLAN" << "\n";
+            ff << "NO_PATH_FOUND_WITHIN_DEADLINE" << "\n";
+
+            ff.close();
+
+            std::ofstream fl;
+            fl.open(dir+node_name + "_last" + string(".log"));
+            fl << "configuration " << conf << "\n";
+
+            fl << "NO_PATH_FOUND_WITHIN_DEADLINE" << "\n";
+
+            fl.close();
+        }
         else
-            f << "NO_PATH_FOUND_WITHIN_DEADLINE" << "\n";
+        {
+            std::ofstream f;
+            f.open(dir+node_name + string(".log"));
+            f << "configuration " << conf << "\n";
 
-        f.close();
+            if(planner->getElapsedTime() < tmax)
+                f << "FAILED_TO_FIND_PLAN" << "\n";
+            else
+                f << "NO_PATH_FOUND_WITHIN_DEADLINE" << "\n";
+
+            f.close();
+        }
     }
 
     private_nh.deleteParam("");
@@ -135,7 +162,7 @@ bool parse(const string& conf, geometry_msgs::PoseStamped& start_pose, geometry_
     return true;
 }
 
-void save(const std::string& filename, const std::string& conf, double t, double l, double r, std::vector<geometry_msgs::PoseStamped>& plan)
+void save(const std::string& filename, const std::string& conf, double t, double l, double r, std::vector<Eigen::VectorXd> plan)
 {
     std::ofstream f;
     f.open(filename + string(".log"));
@@ -148,38 +175,69 @@ void save(const std::string& filename, const std::string& conf, double t, double
 
     for(auto p : plan)
     {
-        f << p.pose.position.x << d << p.pose.position.y << d
-          << p.pose.orientation.z << d << p.pose.orientation.w << "\n";
+        f << p(0) << d << p(1) << d
+          << p(2) << "\n";
     }
 
     f.close();
 }
 
-void saveNH(const std::string& filename, const std::string& conf, double t, double l, double r, int kills)
+void saveRRTStar(const std::string& filename, const std::string& conf, AbstractPlanner* planner, double tmax)
 {
-    std::ofstream f;
-    f.open(filename + string(".log"));
+    std::ofstream ff;
+    ff.open(filename + "_first" + string(".log"));
     std::string d = string("_");
 
-    f << "configuration "<< conf << "\n";
-    f << "length " << l << "\n";
-    f << "time "<< t << "\n";
-    f << "roughness " << r << "\n";
+    double l = planner->getFirstLength();
+    double t = planner->getElapsedTime();
+    double r = planner->getFirstRoughness();
+    std::vector<Eigen::VectorXd> plan = planner->getFirstPath();
 
-    f.close();
+    ff << "configuration "<< conf << "\n";
+    ff << "length " << l << "\n";
+    ff << "time "<< t << "\n";
+    ff << "roughness " << r << "\n";
+
+    for(auto p : plan)
+    {
+        ff << p(0) << d << p(1) << d
+          << p(2) << "\n";
+    }
+
+    ff.close();
+
+    std::ofstream fl;
+    fl.open(filename + "_last" + string(".log"));
+
+    l = planner->getPathLength();
+    r = planner->getRoughness();
+    plan = planner->getPath();
+
+    fl << "configuration "<< conf << "\n";
+    fl << "length " << l << "\n";
+    fl << "time "<< tmax << "\n";
+    fl << "roughness " << r << "\n";
+
+    for(auto p : plan)
+    {
+        fl << p(0) << d << p(1) << d
+          << p(2) << "\n";
+    }
+
+    fl.close();
 }
 
 AbstractPlanner* getPlanner(const string& name, costmap_2d::Costmap2DROS* costmap_ros, const string& t)
 {
     chrono::duration<double> Tmax(stod(t));
-    if(name == "nh" || name == "nh_s2" || name == "nh_s2_p1" || name == "nh_s3" || name == "nh_s3_p1")
+    if(name == "nh")
     {
         NHPlanner* planner = new NHPlanner(string(""), costmap_ros, Tmax);
         return planner;
     }
-    else if(name == "forward_nh" || name == "forward_nh_s2" || name == "forward_nh_s2_p1" || name == "forward_nh_s3" || name == "forward_nh_s3_p1")
+    else if(name == "nh_l2")
     {
-        ForwardNHPlanner* planner = new ForwardNHPlanner(string(""), costmap_ros, Tmax);
+        NHPlannerL2* planner = new NHPlannerL2(string(""), costmap_ros, Tmax);
         return planner;
     }
     else if(name == "rrt")

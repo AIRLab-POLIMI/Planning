@@ -166,7 +166,7 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         for(auto n : Xnear)
         {
             double parent_cost = n->cost;
-            double projection_cost = n->projectionCost + d1 + (1 - theta1);
+            double projection_cost = n->projectionCost + (d1 + (1 - theta1));
             double dist = distance(n->x, xRand);
             double cost = dist + parent_cost + projection_cost;
             if(cost < min_cost)
@@ -186,7 +186,8 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             VectorXd x_path = extenderFactory.getKinematicModel().computeProjection(thetaStarPlan, xNew);
             double d2 = sqrt(pow((x_path(0) - xNew(0)),2) + pow((x_path(1) - xNew(1)), 2));
             double theta2 = std::cos(xNew(2) - x_path(2));
-            rrt.addNode(node, xNew, primitives, c_node, d2 + (1 -theta2));
+            //primitives.pop_back();
+            rrt.addNode(node, xNew, primitives, c_node, (d2 + (1 -theta2)));
 #ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
 #endif
@@ -194,7 +195,8 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
                 RRTNode* last = rrt.getPointer();
-                auto&& path = rrt.getPathToLastNode();
+                auto&& path = rrt.getPathToLastNode(last);
+                final_path = path;
                 computeLength(path);
                 computeRoughness(path);
                 publishPlan(path, plan, start.header.stamp);
@@ -209,6 +211,7 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                 ROS_FATAL_STREAM("time: " << Tcurrent.count());
                 ROS_FATAL_STREAM("length: " << getPathLength());
                 ROS_FATAL_STREAM("roughness: " << getRoughness());
+                ROS_FATAL_STREAM("cost: " << last->cost);
 #endif
                 return true;
             }
@@ -225,8 +228,8 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
 }
 
-bool ThetaStarRRTPlanner::newState(const VectorXd& xRand,
-                          const VectorXd& xNear,
+bool ThetaStarRRTPlanner::newState(const VectorXd& xNear,
+                          const VectorXd& xRand,
                           VectorXd& xNew, vector<VectorXd>& primitives, double& cost)
 {
     return extenderFactory.getExtender().steer(xNear, xRand, xNew, primitives, cost);

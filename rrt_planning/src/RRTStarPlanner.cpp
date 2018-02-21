@@ -134,9 +134,9 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
             //Compute cost of getting there
             maxCost = rrt.computeCost(node) + cost;
-            vector<VectorXd> new_primitives;
+            vector<VectorXd> new_primitives = primitives;
             vector<VectorXd> tmp_primitives;
-            double c = 0;
+            double c = cost;
             double c_tmp;
 
             for(auto n : neighbors)
@@ -156,7 +156,7 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                 }
              }
 
-            rrt.addNode(father, xNew, primitives, cost);
+            rrt.addNode(father, xNew, new_primitives, c);
 
 #ifdef VIS_CONF
             visualizer.addSegment(father->x, xNew);
@@ -166,7 +166,6 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             RRTNode* newNode = rrt.getPointer();
             double n_cost = rrt.computeCost(newNode);
             new_primitives.clear();
-            c = 0;
 
             for(auto n : neighbors)
             {
@@ -178,8 +177,8 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                     if(newCost < rrt.computeCost(n))
                     {
                         n->father = newNode;
-                        new_primitives = tmp_primitives;
-                        c = c_tmp;
+                        n->primitives = tmp_primitives;
+                        n->cost = c_tmp;
                         newNode->childs.push_back(n);
 #ifdef VIS_CONF
                         visualizer.addSegment(xNew, n->x);
@@ -195,22 +194,23 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
                 if(!plan_found)
                 {
                     Tcurrent = chrono::steady_clock::now() - t0;
-                    ROS_FATAL_STREAM("first plan found in " << Tcurrent.count() << " seconds");
 
+                    double cost = rrt.computeCost(last);
+
+                    auto&& path = rrt.getPathToLastNode();
+                    first_path = path;
+                    computeFirstLength(path);
+                    computeFirstRoughness(path);
 #ifdef DEBUG_CONF
-
-                double cost = rrt.computeCost(last);
-
-                auto&& path = rrt.getPathToLastNode();
-                computeLength(path);
-                ROS_FATAL_STREAM("first cost: " << cost);
-                ROS_FATAL_STREAM("first length: " << length);
-                plan.clear();
-                publishPlan(path, plan, start.header.stamp);
+                    ROS_FATAL_STREAM("first plan found in " << Tcurrent.count() << " seconds");
+                    ROS_FATAL_STREAM("first cost: " << cost);
+                    ROS_FATAL_STREAM("first length: " << first_length);
+                    plan.clear();
+                    publishPlan(path, plan, start.header.stamp);
 #endif
 #ifdef VIS_CONF
-                visualizer.displayPlan(plan);
-                visualizer.flush();
+                    visualizer.displayPlan(plan);
+                    visualizer.flush();
 #endif
                 }
                 plan_found = true;
@@ -222,7 +222,6 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
     if(plan_found)
     {
-        Tcurrent = chrono::steady_clock::now() - t0;
         double length_tmp = -1;
         double cost = -1;
         for(auto p : ending_nodes)
@@ -240,6 +239,7 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         }
 
         auto&& path = rrt.getPathToLastNode(last);
+        final_path = path;
         length = length_tmp;
 #ifdef PRINT_CONF
         ROS_FATAL_STREAM("cost: " << cost);

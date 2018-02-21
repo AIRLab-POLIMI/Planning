@@ -78,7 +78,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
                                    std::vector<geometry_msgs::PoseStamped>& plan)
 {
     count = 0;
-    dead = 0;
+
 #ifdef VIS_CONF
     visualizer.clean();
 #endif
@@ -137,6 +137,7 @@ bool NHPlanner::makePlan(const geometry_msgs::PoseStamped& start_pose,
         if(isReached(current->getState(), xGoal))
         {
             auto&& path = retrievePath(current);
+            final_path = path;
             publishPlan(path, plan, start_pose.header.stamp);
 #ifdef VIS_CONF
             visualizer.displayPlan(plan);
@@ -373,13 +374,13 @@ void NHPlanner::addOpen(Node* node, const Action& action, Distance& distance)
 
     if((action.getState() !=  target.getState()) && insideGlobal(action.getState(), action.isSubgoal()))
     {
-        dead++;
+
     	return;
     }
 
    if(node->insideArea(action.getState()))
     {
-        dead++;
+
     	return;
     }
 
@@ -397,7 +398,7 @@ void NHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
     int j = 0;
     if(insideGlobal(action.getState(), action.isSubgoal()))
     {
-        dead++;
+
         return;
     }
 
@@ -408,9 +409,6 @@ void NHPlanner::addSubgoal(Node* node, const Action& action, Distance& distance)
             Key key(parent, subgoal);
             double h = distance(parent->getState(), subgoal.getState()) + distance(subgoal.getState(), target.getState());
             open.insert(key, h + parent->getCost());
-        }else
-        {
-            dead++;
         }
         parent->addSubgoal(subgoal.getState());
         parent = parent->getParent();

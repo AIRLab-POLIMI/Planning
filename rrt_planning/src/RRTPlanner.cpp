@@ -126,6 +126,7 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
         if(newState(xRand, node->x, xNew, primitives, cost))
         {
+            primitives.pop_back();
             rrt.addNode(node, xNew, primitives, cost);
 #ifdef VIS_CONF
             visualizer.addSegment(node->x, xNew);
@@ -134,6 +135,7 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
                 auto&& path = rrt.getPathToLastNode();
+                final_path = path;
                 computeLength(path);
                 computeRoughness(path);
                 publishPlan(path, plan, start.header.stamp);

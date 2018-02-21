@@ -185,11 +185,10 @@ double RRT::computeCost(RRTNode* node)
 {
     RRTNode* current = node;
     double cost = 0;
-    while(current)
+    while(current != root)
     {
-        RRTNode* parent = current->father;
-        cost = cost + current->cost;
-        current = parent;
+        cost += current->cost;
+        current = current->father;
     }
 
     return cost;

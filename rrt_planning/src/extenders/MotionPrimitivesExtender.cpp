@@ -171,7 +171,25 @@ bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal, 
 
     bool is_valid = steer(x0, xGoal, xNew, parents, cost);
 
-    return is_valid && isReached(xGoal, xNew);
+    bool result = is_valid && isReached(xGoal, xNew);
+    int size = parents.size();
+
+    if(result && size!=0)
+    {
+        if(size == 1)
+        {
+            parents.pop_back();
+            cost = distance(x0, xGoal);
+        }
+        else
+        {
+            cost -= distance(parents[size-1], parents[size-2]);
+            parents.pop_back();
+            cost += distance(parents[size-1], xGoal);
+        }
+    }
+
+    return result;
 
     /*for(auto& mp : motionPrimitives)
     {
