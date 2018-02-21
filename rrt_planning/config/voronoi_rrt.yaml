@@ -5,3 +5,4 @@ greedy: 0.1
 laneWidth: 2.0
 knn: 10
 bias: 1.0
+K: 3

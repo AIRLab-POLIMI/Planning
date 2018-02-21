@@ -86,7 +86,7 @@ void ThetaStarRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS*
     private_nh.param("laneWidth", laneWidth, 2.0);
     private_nh.param("greedy", greedy, 0.1);
     private_nh.param("deltaTheta", deltaTheta, M_PI/4);
-    private_nh.param("knn", knn, 42);
+    private_nh.param("knn", knn, 10);
 
     extenderFactory.initialize(private_nh, *map, *distance);
     visualizer.initialize(private_nh);
@@ -156,7 +156,7 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
         //Compute the nearest node
         //auto* node = rrt.searchNearestNode(xRand);
-        vector<RRTNode*> Xnear = rrt.findNeighbors(xRand, knn, 0);
+        vector<RRTNode*> Xnear = rrt.findNeighbors(xRand, knn, 10000);
         VectorXd sample_path = extenderFactory.getKinematicModel().computeProjection(thetaStarPlan, xRand);
         double d1 = sqrt(pow((sample_path(0) - xRand(0)),2) + pow((sample_path(1) - xRand(1)), 2));
         double theta1 = std::cos(xRand(2) - theta);
@@ -190,7 +190,8 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
-                length = rrt.computeLength(node);
+                RRTNode* last = rrt.getPointer();
+                length = rrt.computeLength(last);
                 auto&& path = rrt.getPathToLastNode();
                 computeRoughness(path);
                 publishPlan(path, plan, start.header.stamp);
@@ -225,7 +226,10 @@ bool ThetaStarRRTPlanner::newState(const VectorXd& xNear,
                                    const VectorXd& xRand,
                                    VectorXd& xNew)
 {
-    return extenderFactory.getExtender().compute(xNear, xRand, xNew);
+    vector<VectorXd> dummy;
+    double cost;
+    return extenderFactory.getExtender().steer(xNear, xRand, xNew, dummy, cost);
+    //return extenderFactory.getExtender().compute(xNear, xRand, xNew);
 }
 
 VectorXd ThetaStarRRTPlanner::convertPose(const geometry_msgs::PoseStamped& msg)

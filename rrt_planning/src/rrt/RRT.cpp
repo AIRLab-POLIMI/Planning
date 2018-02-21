@@ -155,7 +155,6 @@ double RRT::computeLength(RRTNode* node)
         length = length + (current->x.head(2)-parent->x.head(2)).norm();
         current = parent;
     }
-
     return length;
 }
 

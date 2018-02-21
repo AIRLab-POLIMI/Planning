@@ -117,6 +117,7 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #ifdef VIS_CONF
         visualizer.addPoint(xRand);
 #endif
+        
         auto* node = rrt.searchNearestNode(xRand);
 
         VectorXd xNew;

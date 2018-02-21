@@ -95,7 +95,7 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         return false;
     }
 #ifdef VIS_CONF
-    visualizer.displayPlan(voronoiPlan);
+    //visualizer.displayPlan(voronoiPlan);
 #endif
 
 #ifdef PRINT_CONF
@@ -135,7 +135,7 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #endif
 
         //auto* node = rrt.searchNearestNode(xRand);
-        vector<RRTNode*> Xnear = rrt.findNeighbors(xRand, knn, 0);
+        vector<RRTNode*> Xnear = rrt.findNeighbors(xRand, knn, 1000000);
         VectorXd sample_path = extenderFactory.getKinematicModel().computeProjection(voronoiPlan, xRand);
         double d1 = sqrt(pow((sample_path(0) - xRand(0)),2) + pow((sample_path(1) - xRand(1)), 2));
         double theta1 = std::cos(xRand(2) - theta);
@@ -171,7 +171,8 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             if(extenderFactory.getExtender().isReached(xNew, xGoal))
             {
                 Tcurrent = chrono::steady_clock::now() - t0;
-                length = rrt.computeLength(node);
+                RRTNode* last = rrt.getPointer();
+                length = rrt.computeLength(last);
                 auto&& path = rrt.getPathToLastNode();
                 computeRoughness(path);
                 publishPlan(path, plan, start.header.stamp);
@@ -203,8 +204,10 @@ bool VoronoiRRTPlanner::newState(const Eigen::VectorXd& xRand,
                                  const Eigen::VectorXd& xNear,
                                  Eigen::VectorXd& xNew)
 {
-    return extenderFactory.getExtender().compute(xNear, xRand,
-                                                 xNew);
+    vector<VectorXd> dummy;
+    double cost;
+    return extenderFactory.getExtender().steer(xNear, xRand, xNew, dummy, cost);
+    //return extenderFactory.getExtender().compute(xNear, xRand,  xNew);
 }
 
 VectorXd VoronoiRRTPlanner::convertPose(const geometry_msgs::PoseStamped& msg)
