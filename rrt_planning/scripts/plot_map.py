@@ -8,21 +8,25 @@ import pandas as pd
 import seaborn as sns
 
 #maps = ['open', 'map', 'offices', 'grass']
-maps = ['buildings']
+maps = ['map']
 labels = ['length', 'time', 'roughness', 'success rate']
-algorithms = ['nh']
+#algorithms = ['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
+#algorithms = ['nh', 'nh_l2', 'theta_star_rrt', 'voronoi_rrt']
+algorithms = ['rrt_star_last', 'rrt_star_first']
 
 
 def plot(m):
     wd = os.getcwd()
 
-    magics = PdfPages(wd + '/results/' + m +'_bias' + '.pdf')
+    magics = PdfPages(wd + '/results/' + m + '.pdf')
+    #magics = PdfPages(wd + '/results/' + m + '_fast.pdf')
     params = {'axes.labelsize': 10,'axes.titlesize': 15, 'text.fontsize': 10, 'legend.fontsize': 10, 'xtick.labelsize': 10, 'ytick.labelsize': 10}
     matplotlib.rcParams.update(params)
 
     f = pd.read_csv(wd + '/results/compare/' + m + '.csv')
-    f_in = f[(f.algorithm == 'nh') | (f.algorithm == 'voronoi_rrt_l1_1') | (f.algorithm == 'voronoi_rrt_l2_1')]
-
+    f_in = f[(f.algorithm == 'rrt_star_last') | (f.algorithm == 'rrt_star_first')]
+    #f_in = f
+    #f_in = f[(f.algorithm == 'nh') | (f.algorithm == 'nh_l2') | (f.algorithm == 'theta_star_rrt') | (f.algorithm == 'voronoi_rrt')]
     conf = max(f_in.conf) + 1
 
     for i in range(0,conf):

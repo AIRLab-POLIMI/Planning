@@ -1,11 +1,12 @@
 import os
 import pandas as pd
 
-algorithms = ['nh']
+#algorithms = ['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
 #maps = ['open', 'map', 'grass']
-maps = ['buildings']
+algorithms = ['rrt_star_last', 'rrt_star_first']
+maps = ['map']
 
-max_conf = 10
+max_conf = 5
 
 def parse_logs(m):
     wd = os.getcwd()
@@ -13,8 +14,13 @@ def parse_logs(m):
     compare.writelines('conf,algorithm,run,length,time,roughness' + '\n')
     for alg in algorithms:
         for conf in range(0,max_conf):
-            for run in range(0,50):
-                log = open(wd + '/logs/'+ m + "/" + alg + '_' + m + '_' + str(conf) + '_' + str(run) +'.log', 'r')
+            for run in range(0,25):
+                if alg == 'rrt_star_first':
+                    log = open(wd + '/logs/'+ m + "/" + 'rrt_star_' + m + '_' + str(conf) + '_' + str(run) +'_first.log', 'r')
+                elif alg == 'rrt_star_last':
+                    log = open(wd + '/logs/'+ m + "/" + 'rrt_star_' + m + '_' + str(conf) + '_' + str(run) +'_last.log', 'r')
+                else:
+                    log = log = open(wd + '/logs/'+ m + "/" + alg +'_' + m + '_' + str(conf) + '_' + str(run) +'.log', 'r')
                 log_lines = log.readlines()[1:]
                 results = [str(conf), alg, str(run), '0', '0', '0']
                 for line in log_lines:
@@ -67,5 +73,3 @@ if __name__ == '__main__':
     for m in maps:
         parse_logs(m)
 
-    for m in maps:
-        describe(m)

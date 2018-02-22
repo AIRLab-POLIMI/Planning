@@ -59,15 +59,15 @@ void RRTStarPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
     private_nh.param("K", K, 1);
     private_nh.param("deltaX", deltaX, 0.5);
     private_nh.param("greedy", greedy, 0.1);
-    //private_nh.param("gamma", gamma, 1.5);
+    private_nh.param("gamma", gamma, 20.0);
     private_nh.param("dimension", dimension, 3);
-    private_nh.param("knn", knn, 10);
+    private_nh.param("knn", knn, 20);
 
     extenderFactory.initialize(private_nh, *map, *distance);
     visualizer.initialize(private_nh);
     //gamma = pow(2.0,4.0)*exp(1.0 + 1.0/3.0);
     double t;
-    private_nh.param("Tmax", t, 180.0);
+    private_nh.param("Tmax", t, 300.0);
     Tmax = std::chrono::duration<double>(t);
 }
 
@@ -82,9 +82,8 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     RRTNode* last;
     bool plan_found = false;
     std::set<RRTNode*> ending_nodes;
-    double gamma_knn = 6.0;
-    double gamma_r = 23.0;
-    double min_radius = double(K)/2.0;
+
+    double min_radius = double(K);
 
     RRT rrt(distance, x0);
 #ifdef PRINT_CONF
@@ -125,12 +124,12 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
             double maxCost, newCost;
             RRTNode* father = node;
             int cardinality = rrt.getLength();
-            double radius = gamma_r*pow(log(cardinality)/double(cardinality), double(1)/double(dimension));
+            double radius = gamma*pow(log(cardinality)/double(cardinality), double(1)/double(dimension));
             double ray = min(min_radius, radius);
-            double knearest = gamma_knn*log(cardinality);
 
+            //ROS_FATAL_STREAM("knn: " << knneighbors);
             //Find all samples inside ray or the k-nearest neighbors
-            neighbors = rrt.findNeighbors(xNew, knearest, ray);
+            neighbors = rrt.findNeighbors(xNew, knn, ray);
 
             //Compute cost of getting there
             maxCost = rrt.computeCost(node) + cost;
@@ -224,12 +223,15 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     {
         double length_tmp = -1;
         double cost = -1;
+        ROS_FATAL_STREAM("ending nodes: " << ending_nodes.size());
         for(auto p : ending_nodes)
         {
             auto&& path = rrt.getPathToLastNode(p);
             computeLength(path);
             double l = getPathLength();
             double c = rrt.computeCost(p);
+            ROS_FATAL_STREAM("length: " << l);
+            ROS_FATAL_STREAM("cost: " << c);
             if((length_tmp == -1) || (length_tmp != -1 && c < cost))
             {
                 length_tmp = l;

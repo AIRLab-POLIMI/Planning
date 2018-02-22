@@ -167,11 +167,25 @@ bool MotionPrimitivesExtender::isReached(const VectorXd& x0, const VectorXd& xTa
 
 bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal, vector<VectorXd>& parents, double& cost)
 {
+    VectorXd xCurr = x0;
     VectorXd xNew;
+    bool is_valid = true;
+    set<VectorXd, CmpReached> check;
 
-    bool is_valid = steer(x0, xGoal, xNew, parents, cost);
+    do{
+        is_valid = los(xCurr, xGoal, xNew);
+        if(!check.insert(xNew).second){
+            is_valid = false;
+        }
+        cost += distance(xCurr, xNew);
+        xCurr = xNew;
+        parents.push_back(xCurr);
+
+     } while(is_valid && !isReached(xCurr, xGoal));
 
     bool result = is_valid && isReached(xGoal, xNew);
+
+
     int size = parents.size();
 
     if(result && size!=0)
@@ -183,25 +197,14 @@ bool MotionPrimitivesExtender::check(const VectorXd& x0, const VectorXd& xGoal, 
         }
         else
         {
-            cost -= distance(parents[size-1], parents[size-2]);
+            cost -= distance(parents[size-1], parents[size-2]);           
             parents.pop_back();
+            size = parents.size();
             cost += distance(parents[size-1], xGoal);
         }
     }
 
     return result;
-
-    /*for(auto& mp : motionPrimitives)
-    {
-        VectorXd x = model.applyTransform(x0, mp);
-
-        if(map.isFree(x) && isReached(x, xGoal))
-        {
-            return true;
-        }
-    }
-
-    return false;*/
 }
 
 void MotionPrimitivesExtender::initialize(ros::NodeHandle& nh)
