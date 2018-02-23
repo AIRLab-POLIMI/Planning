@@ -96,6 +96,7 @@ void VoronoiPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* cost
 void VoronoiPlanner::initialize(std::string name, costmap_2d::Costmap2D* costmap, std::string frame_id) {
     if (!initialized_) {
         ros::NodeHandle private_nh("~/" + name);
+        private_nh.param("discretization", discretization, 1.0);
         costmap_ = costmap;
         frame_id_ = frame_id;
 
@@ -469,8 +470,8 @@ bool VoronoiPlanner::findPath(std::vector<std::pair<float, float> > *path,
     float cost = 1;
 
     // grid size
-    unsigned int sizeX = voronoi->getSizeX();
-    unsigned int sizeY = voronoi->getSizeY();
+    unsigned int sizeX = voronoi->getSizeX()*discretization;
+    unsigned int sizeY = voronoi->getSizeY()*discretization;
 
     // closed cells grid (same size as map grid)
     bool **closed=NULL;

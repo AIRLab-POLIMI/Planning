@@ -113,6 +113,8 @@ class VoronoiPlanner : public nav_core::BaseGlobalPlanner {
         bool smooth_path_;
         float weight_data_;
         float weight_smooth_;
+        
+        double discretization;
 
 
 
