@@ -111,13 +111,20 @@ bool RRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         VectorXd xRand;
 
         if(RandomGenerator::sampleEvent(greedy))
+        {
             xRand = xGoal;
+        }
         else
-            xRand = extenderFactory.getKinematicModel().sampleOnBox(map->getBounds());
+        {   do
+            {
+                xRand = extenderFactory.getKinematicModel().sampleOnBox(map->getBounds());
+            } while(!map->isFree(xRand));
+        }
+
 #ifdef VIS_CONF
         visualizer.addPoint(xRand);
 #endif
-        
+
         auto* node = rrt.searchNearestNode(xRand);
 
         VectorXd xNew;

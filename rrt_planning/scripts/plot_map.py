@@ -7,13 +7,17 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-#maps = ['open', 'map', 'offices', 'grass']
-maps = ['map']
-labels = ['length', 'time', 'roughness', 'success rate']
-#algorithms = ['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
-#algorithms = ['nh', 'nh_l2', 'theta_star_rrt', 'voronoi_rrt']
-algorithms = ['rrt_star_last', 'rrt_star_first']
 
+#compare everything
+#algorithms = ['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
+maps = ['open', 'map', 'buildings', 'offices']
+
+
+#compare just some
+#algorithms = ['rrt_star_last', 'rrt_star_first']
+algorithms =['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt']
+#maps = ['open']
+#maps = ['open', 'map', 'offices', 'grass']
 
 def plot(m):
     wd = os.getcwd()
@@ -24,8 +28,8 @@ def plot(m):
     matplotlib.rcParams.update(params)
 
     f = pd.read_csv(wd + '/results/compare/' + m + '.csv')
-    f_in = f[(f.algorithm == 'rrt_star_last') | (f.algorithm == 'rrt_star_first')]
-    #f_in = f
+    #f_in = f[(f.algorithm == 'rrt_star_last') | (f.algorithm == 'rrt_star_first')]
+    f_in = f
     #f_in = f[(f.algorithm == 'nh') | (f.algorithm == 'nh_l2') | (f.algorithm == 'theta_star_rrt') | (f.algorithm == 'voronoi_rrt')]
     conf = max(f_in.conf) + 1
 

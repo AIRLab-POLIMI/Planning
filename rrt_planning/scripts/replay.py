@@ -16,7 +16,7 @@ def launch(alg, i):
     launch = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file)
     launch.start()
     rospy.sleep(2)
-    f = open(os.getcwd() + '/data/map.exp')
+    f = open(os.getcwd() + '/data/buildings.exp')
     row = f.readlines()[int(i)]
     f.close()
     publish(row)

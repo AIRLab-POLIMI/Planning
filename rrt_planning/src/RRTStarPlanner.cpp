@@ -223,15 +223,14 @@ bool RRTStarPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     {
         double length_tmp = -1;
         double cost = -1;
-        ROS_FATAL_STREAM("ending nodes: " << ending_nodes.size());
+
         for(auto p : ending_nodes)
         {
             auto&& path = rrt.getPathToLastNode(p);
             computeLength(path);
             double l = getPathLength();
             double c = rrt.computeCost(p);
-            ROS_FATAL_STREAM("length: " << l);
-            ROS_FATAL_STREAM("cost: " << c);
+            
             if((length_tmp == -1) || (length_tmp != -1 && c < cost))
             {
                 length_tmp = l;

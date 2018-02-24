@@ -101,6 +101,7 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #ifdef PRINT_CONF
     Tcurrent = chrono::steady_clock::now() - t0;
     ROS_FATAL_STREAM("voronoi plan time: " << Tcurrent.count());
+    ROS_FATAL_STREAM("voronoi length: " << voronoiPlan.size());
 #endif
     //Compute VoronoiRRT plan
     Distance& distance = *this->distance;

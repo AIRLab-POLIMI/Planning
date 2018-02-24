@@ -251,7 +251,7 @@ bool VoronoiPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geo
 
     int nx = costmap_->getSizeInCellsX(), ny = costmap_->getSizeInCellsY();
 
-    outlineMap(costmap_->getCharMap(), nx, ny, costmap_2d::LETHAL_OBSTACLE);
+    //outlineMap(costmap_->getCharMap(), nx, ny, costmap_2d::LETHAL_OBSTACLE);
 
 
     bool **map=NULL;
@@ -283,7 +283,7 @@ bool VoronoiPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geo
         }
     }
 
-    ROS_INFO("Time (for map convert): %f sec", (ros::Time::now() - t).toSec());
+    //ROS_INFO("Time (for map convert): %f sec", (ros::Time::now() - t).toSec());
     t = ros::Time::now();
 
 
@@ -292,23 +292,23 @@ bool VoronoiPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geo
 
     // initialize voronoi object it with the map
 
-    ROS_INFO("voronoi.initializeMap");
+    //ROS_INFO("voronoi.initializeMap");
     voronoi_.initializeMap(sizeX, sizeY, map);
-    ROS_INFO("Time (for initializeMap): %f sec", (ros::Time::now() - t).toSec());
+    ROS_FATAL("Time (for initializeMap): %f sec", (ros::Time::now() - t).toSec());
     t = ros::Time::now();
 
 
 
-    ROS_INFO("voronoi.update");
+    //ROS_INFO("voronoi.update");
     voronoi_.update(); // update distance map and Voronoi diagram
-    ROS_INFO("Time (for update): %f sec", (ros::Time::now() - t).toSec());
+    ROS_FATAL("Time (for update): %f sec", (ros::Time::now() - t).toSec());
     t = ros::Time::now();
 
 
 
-    ROS_INFO("voronoi.prune");
+    //ROS_INFO("voronoi.prune");
     if (doPrune) voronoi_.prune();  // prune the Voronoi
-    ROS_INFO("Time (for prune): %f sec", (ros::Time::now() - t).toSec());
+    ROS_FATAL("Time (for prune): %f sec", (ros::Time::now() - t).toSec());
     t = ros::Time::now();
 
 
@@ -318,7 +318,7 @@ bool VoronoiPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geo
 //    ROS_INFO("Time (for visualize): %f sec", (ros::Time::now() - t).toSec());
 
 
-    std::cerr << "Generated initial frame.\n";
+    //std::cerr << "Generated initial frame.\n";
 
 
 
@@ -332,24 +332,23 @@ bool VoronoiPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geo
 //    goal_y = 330;
 
 
-    std::cout << "start_x,start_y " << start_x <<
-              " " << start_y << std::endl;
-    std::cout << "goal_x,goal_y " << goal_x <<
-              " " << goal_y << std::endl;
+    //std::cout << "start_x,start_y " << start_x <<
+              //" " << start_y << std::endl;
+    //std::cout << "goal_x,goal_y " << goal_x <<
+             // " " << goal_y << std::endl;
 
-
-    bool res1 = false, res2 = false, res3 = false;
+   bool res1 = false, res2 = false, res3 = false;
 
     if( !voronoi_.isVoronoi(goal_x,goal_y) )
     {
         //        path3 = findPath( goal, init, A, 0, 1 );
         res3 = findPath( &path3, goal_x, goal_y, start_x, start_y, &voronoi_, 0, 1 );
-        std::cout << "findPath 3 res " << res3 << std::endl;
+        //std::cout << "findPath 3 res " << res3 << std::endl;
         //        goal = path3(end,:);
         goal_x = std::get<0>( path3[path3.size()-1] );
         goal_y = std::get<1>( path3[path3.size()-1] );
 
-        std::cout << "voronoi.isVoronoi(goal_x,goal_y) " << voronoi_.isVoronoi(goal_x,goal_y) << std::endl;
+        //std::cout << "voronoi.isVoronoi(goal_x,goal_y) " << voronoi_.isVoronoi(goal_x,goal_y) << std::endl;
 
 
         //        path3 = flipud(path3);
@@ -359,15 +358,15 @@ bool VoronoiPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geo
     if( !voronoi_.isVoronoi(start_x,start_y) )
     {
         res1 = findPath( &path1, start_x, start_y, goal_x, goal_y, &voronoi_, 0, 1 );
-        std::cout << "findPath 1 res " << res1 << std::endl;
+        //std::cout << "findPath 1 res " << res1 << std::endl;
         start_x = std::get<0>( path1[path1.size()-1] );
         start_y = std::get<1>( path1[path1.size()-1] );
 
-        std::cout << "voronoi.isVoronoi(start_x,start_y) " << voronoi_.isVoronoi(start_x,start_y) << std::endl;
+        //std::cout << "voronoi.isVoronoi(start_x,start_y) " << voronoi_.isVoronoi(start_x,start_y) << std::endl;
     } else {res1 = true;}
 
     res2 = findPath( &path2, start_x, start_y, goal_x, goal_y, &voronoi_, 1, 0 );
-    std::cout << "findPath 2 res " << res2 << std::endl;
+    //std::cout << "findPath 2 res " << res2 << std::endl;
 
 
     if(!(res1 && res2 && res3))
@@ -432,7 +431,7 @@ bool VoronoiPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geo
 
 //    }
 
-    ROS_ERROR("\nTime to get plan: %f sec\n", (ros::Time::now() - t_b).toSec());
+    ROS_FATAL("\nTime to get plan: %f sec\n", (ros::Time::now() - t_b).toSec());
 
 
     //publish the plan for visualization purposes
@@ -470,8 +469,8 @@ bool VoronoiPlanner::findPath(std::vector<std::pair<float, float> > *path,
     float cost = 1;
 
     // grid size
-    unsigned int sizeX = voronoi->getSizeX()*discretization;
-    unsigned int sizeY = voronoi->getSizeY()*discretization;
+    unsigned int sizeX = voronoi->getSizeX() * discretization;
+    unsigned int sizeY = voronoi->getSizeY() * discretization;
 
     // closed cells grid (same size as map grid)
     bool **closed=NULL;
@@ -661,7 +660,7 @@ void VoronoiPlanner::smoothPath(std::vector<std::pair<float, float> > *path)
         }
     }
     *path = newpath;
-    ROS_FATAL_STREAM("Smooth done");
+    //ROS_FATAL_STREAM("Smooth done");
 }
 
 
@@ -693,7 +692,7 @@ void VoronoiPlanner::publishVoronoiGrid(DynamicVoronoi *voronoi)
 {
     int nx = costmap_->getSizeInCellsX(), ny = costmap_->getSizeInCellsY();
 
-    ROS_WARN("costmap sx = %d,sy = %d, voronoi sx = %d, sy = %d", nx, ny,
+    ROS_FATAL("costmap sx = %d,sy = %d, voronoi sx = %d, sy = %d", nx, ny,
              voronoi->getSizeX(), voronoi->getSizeY());
 
     double resolution = costmap_->getResolution();

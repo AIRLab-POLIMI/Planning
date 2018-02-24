@@ -1,12 +1,18 @@
 import os
 import pandas as pd
 
+#compare everything
 #algorithms = ['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
-#maps = ['open', 'map', 'grass']
-algorithms = ['rrt_star_last', 'rrt_star_first']
-maps = ['map']
+maps = ['open', 'map', 'buildings', 'offices']
+
+
+#compare just some
+#algorithms = ['rrt_star_last', 'rrt_star_first']
+algorithms =['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt']
+#maps = ['open']
 
 max_conf = 5
+max_run = 50
 
 def parse_logs(m):
     wd = os.getcwd()
@@ -14,11 +20,17 @@ def parse_logs(m):
     compare.writelines('conf,algorithm,run,length,time,roughness' + '\n')
     for alg in algorithms:
         for conf in range(0,max_conf):
-            for run in range(0,25):
+            for run in range(0,max_run):
                 if alg == 'rrt_star_first':
-                    log = open(wd + '/logs/'+ m + "/" + 'rrt_star_' + m + '_' + str(conf) + '_' + str(run) +'_first.log', 'r')
+                    if os.path.exists(wd + '/logs/'+ m + "/" + 'rrt_star_' + m + '_' + str(conf) + '_' + str(run) +'_first.log'):
+                        log = open(wd + '/logs/'+ m + "/" + 'rrt_star_' + m + '_' + str(conf) + '_' + str(run) +'_first.log', 'r')
+                    else:
+                        continue
                 elif alg == 'rrt_star_last':
-                    log = open(wd + '/logs/'+ m + "/" + 'rrt_star_' + m + '_' + str(conf) + '_' + str(run) +'_last.log', 'r')
+                    if os.path.exists(wd + '/logs/'+ m + "/" + 'rrt_star_' + m + '_' + str(conf) + '_' + str(run) +'_last.log'):
+                        log = open(wd + '/logs/'+ m + "/" + 'rrt_star_' + m + '_' + str(conf) + '_' + str(run) +'_last.log', 'r')
+                    else:
+                        continue
                 else:
                     log = log = open(wd + '/logs/'+ m + "/" + alg +'_' + m + '_' + str(conf) + '_' + str(run) +'.log', 'r')
                 log_lines = log.readlines()[1:]
@@ -72,4 +84,3 @@ def describe(m):
 if __name__ == '__main__':
     for m in maps:
         parse_logs(m)
-

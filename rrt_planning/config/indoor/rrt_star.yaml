@@ -1,5 +1,5 @@
 # Configuration of rrt-star planner
-K: 5
+K: 3
 deltaX: 0.5
 greedy: 0.1
 knn: 20

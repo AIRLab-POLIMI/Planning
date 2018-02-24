@@ -2,7 +2,7 @@
 	<env name="ROSCONSOLE_CONFIG_FILE"
 			value="$(find rrt_planning)/config/custom_rosconsole.conf"/>
 	<!-- arguments -->
-	<arg name="map_file" default="$(find rrt_planning)/maps/map.yaml"/>
+	<arg name="map_file" default="$(find rrt_planning)/maps/buildings.yaml"/>
 	<arg name="world_file" default="$(find rrt_planning)/maps/map.world"/>
 	<arg name="simulated" default="false" />
 	<arg name="differentialDrive" default="true" />
@@ -28,7 +28,7 @@
 		<!-- Voronoi-RRT configuration -->
 		<param name="base_global_planner" value="rrt_planning/VoronoiRRTPlanner"/>
 
-		<rosparam file="$(find rrt_planning)/config/voronoi_rrt.yaml" command="load" ns="VoronoiRRTPlanner"/>
+		<rosparam file="$(find rrt_planning)/config/outdoor/voronoi_rrt.yaml" command="load" ns="VoronoiRRTPlanner"/>
 		<rosparam file="$(find rrt_planning)/config/differentialDrive.yaml" command="load" ns="VoronoiRRTPlanner" if="$(arg differentialDrive)"/>
 
 

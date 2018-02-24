@@ -1,6 +1,8 @@
 # Configuration of theta_star_rrt planner
 iterations: 100000
 deltaX: 0.5
-greedy: 0
-discretization: 0.2
-knn: 10
+greedy: 0.1
+laneWidth: 3.0
+discretization: 0.75
+knn: 30
+K: 5

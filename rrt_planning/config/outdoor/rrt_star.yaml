@@ -2,4 +2,4 @@
 K: 5
 deltaX: 0.5
 greedy: 0.1
-knn: 20
+knn: 30

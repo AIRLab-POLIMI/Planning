@@ -6,22 +6,27 @@ import subprocess
 
 from joblib import Parallel, delayed
 
-gflags.DEFINE_integer('n_jobs', 2, 'number of parallel experiments')
+gflags.DEFINE_integer('n_jobs', 12, 'number of parallel experiments')
 gflags.DEFINE_string('deadline', '300', 'deadline (in seconds)')
 gflags.DEFINE_string('model', 'differentialDrive', 'kinematic model')
 
-algorithms = ['nh', 'rrt', 'theta_star_rrt', 'voronoi_rrt']
-maps = ['buildings', 'open']
+algorithms = ['nh', 'rrt', 'theta_star_rrt', 'rrt_star']
+maps = ['map', 'offices', 'buildings', 'open']
 
 def experiment(a, c, row, i, m):
     print ''
     print '*************************************************'
     it = row + '_' + i
     ns = a + '_' + m + '_' + it
-    os.system('rosparam load config/' + a + '.yaml ' + ns)
+    if m == 'open' or m == 'buildings':
+        os.system('rosparam load config/outdoor/' + a + '.yaml ' + ns)
+        os.system('rosparam load config/outdoor/' + 'costmap_common_params.yaml ' + ns + '/global_costmap')
+    elif m == 'offices' or m == 'map':
+        os.system('rosparam load config/indoor/' + a + '.yaml ' + ns)
+        os.system('rosparam load config/indoor/' + 'costmap_common_params.yaml ' + ns + '/global_costmap')
+
     os.system('rosparam load config/' + gflags.FLAGS.model + '.yaml ' + ns)
     os.system('rosparam load config/' + 'global_costmap_params.yaml ' + ns)
-    os.system('rosparam load config/' + 'costmap_common_params.yaml ' + ns + '/global_costmap')
     os.system('rosrun rrt_planning experiment ' +
               ' ' + a +
               ' ' + m +
@@ -47,7 +52,7 @@ def run(configurations, alg, m):
     Parallel(n_jobs=gflags.FLAGS.n_jobs)(delayed(experiment)
                                         (alg, conf, str(configurations.index(conf)), str(i), m)
                                          for conf in configurations
-                                         for i in range(0,15)
+                                         for i in range(0,50)
                                          )
     print alg + ' out'
     subprocess.Popen.kill(roscore)

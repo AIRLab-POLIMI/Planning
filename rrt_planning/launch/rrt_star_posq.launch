@@ -3,7 +3,7 @@
     <env name="ROSCONSOLE_CONFIG_FILE"
 			value="$(find rrt_planning)/config/custom_rosconsole.conf"/>
 	<!-- arguments -->
-	<arg name="map_file" default="$(find rrt_planning)/maps/offices.yaml"/>
+	<arg name="map_file" default="$(find rrt_planning)/maps/map.yaml"/>
 	<arg name="world_file" default="$(find rrt_planning)/maps/map.world"/>
 	<arg name="simulated" default="false" />
 	<arg name="differentialDrive" default="true" />
@@ -20,7 +20,7 @@
 	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
 		<!-- default configuration -->
 		<param name="controller_frequency" value="10.0" />
-		<rosparam file="$(find rrt_planning)/config/indoor/costmap_common_params.yaml" command="load" ns="global_costmap" />
+		<rosparam file="$(find rrt_planning)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
 		<rosparam file="$(find rrt_planning)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
 		<rosparam file="$(find rrt_planning)/config/local_costmap_params.yaml" command="load" />
 		<rosparam file="$(find rrt_planning)/config/global_costmap_params.yaml" command="load" />
@@ -30,8 +30,8 @@
 		<!-- RRT Star configuration -->
 		<param name="base_global_planner" value="rrt_planning/RRTStarPlanner"/>
 		<rosparam file="$(find rrt_planning)/config/rrt_star.yaml" command="load" ns="RRTStarPlanner"/>
-		<rosparam file="$(find rrt_planning)/config/differentialDrive.yaml" command="load" ns="RRTStarPlanner" if="$(arg differentialDrive)"/>
-		<rosparam file="$(find rrt_planning)/config/bicycle.yaml" command="load" ns="RRTStarPlanner" unless="$(arg differentialDrive)"/>
+		<rosparam file="$(find rrt_planning)/config/posq_differentialDrive.yaml" command="load" ns="RRTStarPlanner"/>
+
 
 		<!-- Visualization configuration -->
 		<rosparam file="$(find rrt_planning)/config/visualization.yaml" command="load" ns="RRTStarPlanner"/>

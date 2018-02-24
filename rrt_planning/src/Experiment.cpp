@@ -116,7 +116,7 @@ int main(int argc, char** argv)
     }
 
     private_nh.deleteParam("");
-	ROS_FATAL_STREAM("Plan found: " << result);
+	ROS_FATAL_STREAM(node_name + " plan found? " << result);
 
    //Clean up
     if(planner)

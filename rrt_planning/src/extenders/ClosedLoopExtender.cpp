@@ -68,110 +68,95 @@ bool ClosedLoopExtender::compute(const VectorXd& x0, const VectorXd& xRand, Vect
 
 bool ClosedLoopExtender::check(const VectorXd& x0, const VectorXd& xGoal, std::vector<Eigen::VectorXd>& parents, double& cost)
 {
-    controller.setGoal(xGoal);
+    VectorXd xCurr = x0;
     VectorXd xNew;
+    bool is_valid = true;
 
-    VectorXd xStart = x0;
+    do{
+        is_valid = los(xCurr, xGoal, xNew);
+        cost += distance(xCurr, xNew);
+        xCurr = xNew;
+        parents.push_back(xCurr);
 
-    bool valid = false;
+     } while(is_valid && !isReached(xCurr, xGoal));
 
-    for(unsigned i = 0; i < loopN; i++)
+    bool result = is_valid && isReached(xGoal, xNew);
+
+
+    int size = parents.size();
+
+    if(result && size!=0)
     {
-        VectorXd x = model.compute(xStart, deltaT);
-
-        if(map.isFree(x))
+        if(size == 1)
         {
-            xNew = x;
-            valid = true;
-            xStart = x;
+            parents.pop_back();
+            cost = distance(x0, xGoal);
         }
         else
         {
-            break;
+            cost -= distance(parents[size-1], parents[size-2]);
+            parents.pop_back();
+            size = parents.size();
+            cost += distance(parents[size-1], xGoal);
         }
     }
 
-    if(valid && xNew != xGoal) {valid = false;}
+    return result;
 
-    return valid;
 }
+
 
 bool ClosedLoopExtender::los(const VectorXd& x0, const VectorXd& xRand, VectorXd& xNew)
 {
     controller.setGoal(xRand);
 
-    VectorXd xStart = x0;
-
     bool valid = false;
 
-    for(unsigned i = 0; i < loopN; i++)
+    VectorXd x = model.compute(x0, deltaT);
+    if(map.isFree(x))
     {
-        VectorXd x = model.compute(xStart, deltaT);
-
-        if(map.isFree(x))
-        {
-            xNew = x;
-            valid = true;
-            xStart = x;
-        }
-        else
-        {
-            break;
-        }
-    }
+       xNew = x;
+       valid = true;
+     }
 
     return valid;
-
 }
 
 bool ClosedLoopExtender::steer(const VectorXd& xStart, const VectorXd& xCorner, VectorXd& xNew, vector<VectorXd>& parents, double& cost)
 {
-    //Separates the length check from the angle check
-    Distance& l2dis = *l2distance;
-    Distance& thetadis = *thetadistance;
-
+    controller.setGoal(xCorner);
     VectorXd xCurr = xStart;
+    int j = 0;
 
-    bool is_valid = true;
-    set<VectorXd, CmpReached> check;
+    bool is_valid = false;
 
-    double length = l2dis(xCurr, xCorner);
-
-    do{
+    do {
         is_valid = los(xCurr, xCorner, xNew);
-        if(!check.insert(xNew).second){
-            is_valid = false;
-        }
-        cost += l2dis(xCurr, xNew);
+        cost += distance(xCurr, xNew);
         xCurr = xNew;
         parents.push_back(xCurr);
-     } while(is_valid && !((l2dis(xCurr, xCorner) < deltaX) && (thetadis(xCurr, xCorner) < deltaTheta)));
+        j++;
+    } while((loopN == -1 || j < loopN) && is_valid && !isReached(xCurr, xCorner));
 
     return is_valid;
 }
 
 bool ClosedLoopExtender::steer_l2(const VectorXd& xStart, const VectorXd& xCorner, VectorXd& xNew, vector<VectorXd>& parents, double& cost)
 {
-    //Separates the length check from the angle check
-    Distance& l2dis = *l2distance;
-    Distance& thetadis = *thetadistance;
-
+    Distance& l2dis = *this->l2distance;
+    controller.setGoal(xCorner);
     VectorXd xCurr = xStart;
+    int j = 0;
 
-    bool is_valid = true;
-    set<VectorXd, CmpReached> check;
+    bool is_valid = false;
 
-    double length = l2dis(xCurr, xCorner);
-
-    do{
+    do {
         is_valid = los(xCurr, xCorner, xNew);
-        if(!check.insert(xNew).second){
-            is_valid = false;
-        }
         cost += l2dis(xCurr, xNew);
         xCurr = xNew;
         parents.push_back(xCurr);
-     } while(is_valid && !((l2dis(xCurr, xCorner) < deltaX) && (thetadis(xCurr, xCorner) < deltaTheta)));
+        j++;
+    } while((loopN == -1 || j < loopN) && is_valid && !isReached(xCurr, xCorner));
 
     return is_valid;
 }
@@ -188,7 +173,7 @@ bool ClosedLoopExtender::isReached(const VectorXd& x0, const VectorXd& xTarget)
 void ClosedLoopExtender::initialize(ros::NodeHandle& nh)
 {
     nh.param("deltaT", deltaT, 0.5);
-    nh.param("loopN", loopN, 3);
+    nh.param("K", loopN, -1);
 
     std::string plannerNamespace = nh.getNamespace();
     if(plannerNamespace == std::string("/move_base/NHPlanner"))

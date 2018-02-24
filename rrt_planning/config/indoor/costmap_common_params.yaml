@@ -13,11 +13,9 @@ max_obstacle_height: 6.0
 raytrace_range: 20.0
 
 #The footprint of the robot and associated padding
-#footprint: [[-0.1276, -0.1276], [-0.1276, 0.1276], [0.1276, 0.1276], [0.1276, -0.1276]]
-#robot_radius: 0.18045365055
+footprint: [[-0.1276, -0.1276], [-0.1276, 0.1276], [0.1276, 0.1276], [0.1276, -0.1276]]
+robot_radius: 0.18045365055
 
-footprint: [[-0.75, -0.75], [-0.75, 0.75], [0.75, 0.75], [0.75, -0.75]]
-robot_radius: 0.75
 footprint_padding: 0.01
 
 #Cost function parameters

@@ -1,8 +1,9 @@
 # Configuration of rrt planner
 iterations: 100000
+discretization: 0.2
 deltaX: 0.5
 greedy: 0.1
 laneWidth: 2.0
-knn: 10
+knn: 20
 bias: 1.0
-K: 5
+K: 3

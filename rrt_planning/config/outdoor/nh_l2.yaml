@@ -13,7 +13,6 @@ corner_step: 0.5
 step: 0.5
 micro: 1.0
 macro: 1.5
-k_los: 2
 
 
 #Samplers parameters

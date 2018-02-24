@@ -33,10 +33,10 @@ public:
     double getRoughness();
     double getFirstLength();
     double getFirstRoughness();
-    
+
     std::vector<Eigen::VectorXd> getPath();
     std::vector<Eigen::VectorXd> getFirstPath();
-    
+
 
     virtual ~AbstractPlanner();
 
@@ -46,7 +46,7 @@ protected:
 	void computeRoughness(std::vector<Eigen::VectorXd>& path);
 	void computeFirstLength(std::vector<Eigen::VectorXd>& path);
 	void computeLength(std::vector<Eigen::VectorXd>& path);
-	
+
 
 protected:
 	std::chrono::steady_clock::time_point t0;
@@ -56,7 +56,7 @@ protected:
     double roughness;
     double first_length;
     double first_roughness;
-    
+
     std::vector<Eigen::VectorXd> first_path;
     std::vector<Eigen::VectorXd> final_path;
 
