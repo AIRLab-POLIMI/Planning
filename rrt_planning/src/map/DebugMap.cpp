@@ -36,6 +36,11 @@ bool DebugMap::isFree(const Eigen::VectorXd& p)
     return true;
 }
 
+bool DebugMap::isVoronoiFree(const Eigen::VectorXd& p)
+{
+    return true;
+}
+
 unsigned char DebugMap::getCost(const Eigen::VectorXd& p)
 {
     return 0;

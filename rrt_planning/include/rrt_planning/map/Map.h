@@ -35,6 +35,7 @@ class Map
 
 public:
     virtual bool isFree(const Eigen::VectorXd& p) = 0;
+    virtual bool isVoronoiFree(const Eigen::VectorXd& p) = 0;
     virtual unsigned char getCost(const Eigen::VectorXd& p) = 0;
     virtual bool insideBound(const Eigen::VectorXd& p) = 0;
     virtual Eigen::VectorXd getOutsidePoint() = 0;

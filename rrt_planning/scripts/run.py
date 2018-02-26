@@ -6,12 +6,14 @@ import subprocess
 
 from joblib import Parallel, delayed
 
-gflags.DEFINE_integer('n_jobs', 12, 'number of parallel experiments')
+gflags.DEFINE_integer('n_jobs', 4, 'number of parallel experiments')
 gflags.DEFINE_string('deadline', '300', 'deadline (in seconds)')
 gflags.DEFINE_string('model', 'differentialDrive', 'kinematic model')
 
-algorithms = ['nh', 'rrt', 'theta_star_rrt', 'rrt_star']
-maps = ['map', 'offices', 'buildings', 'open']
+#algorithms = ['nh', 'rrt', 'theta_star_rrt', 'rrt_star']
+algorithms = ['voronoi_rrt']
+maps = ['map', 'offices', 'open']
+#maps = ['buildings']
 
 def experiment(a, c, row, i, m):
     print ''

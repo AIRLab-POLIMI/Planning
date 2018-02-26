@@ -46,6 +46,7 @@ public:
     void addUpdate(const Eigen::VectorXd& start, const Eigen::VectorXd& end);
     void addTriangle(const Eigen::VectorXd& a, const Eigen::VectorXd& b, const Eigen::VectorXd& c, const Eigen::VectorXd& point);
     void displayPlan(const std::vector<geometry_msgs::PoseStamped>& plan);
+    void displayBias(const std::vector<geometry_msgs::PoseStamped>& plan);
 
     void displayPoints();
 	void displayPathPoints();

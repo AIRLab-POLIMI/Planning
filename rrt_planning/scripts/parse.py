@@ -2,13 +2,13 @@ import os
 import pandas as pd
 
 #compare everything
-#algorithms = ['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
+algorithms = ['nh', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
 maps = ['open', 'map', 'buildings', 'offices']
 
 
 #compare just some
 #algorithms = ['rrt_star_last', 'rrt_star_first']
-algorithms =['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt']
+#algorithms =['nh', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt']
 #maps = ['open']
 
 max_conf = 5

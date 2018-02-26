@@ -123,6 +123,10 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     ROS_FATAL_STREAM("knn: " << knn);
 #endif
 
+#ifdef VIS_CONF
+    visualizer.displayBias(thetaStarPlan);
+#endif
+
     // Compute RRT-Theta* plan
     Distance& distance = *this->distance;
 
@@ -153,9 +157,11 @@ bool ThetaStarRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 #ifdef VIS_CONF
         visualizer.addPoint(xRand);
 #endif
+        //Strong bias option
+        //auto* xNearest = rrt.searchNearestNode(xRand);
+        //vector<RRTNode*> Xnear = rrt.findNeighborsBias(xNearest->x, knn, laneWidth);
+        //Xnear.push_back(xNearest);
 
-        //Compute the nearest node
-        //auto* node = rrt.searchNearestNode(xRand);
         vector<RRTNode*> Xnear = rrt.findNeighborsBias(xRand, knn, laneWidth);
         VectorXd sample_path = extenderFactory.getKinematicModel().computeProjection(thetaStarPlan, xRand);
         double d1 = sqrt(pow((sample_path(0) - xRand(0)),2) + pow((sample_path(1) - xRand(1)), 2));

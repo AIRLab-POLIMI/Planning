@@ -15,7 +15,7 @@ maps = ['open', 'map', 'buildings', 'offices']
 
 #compare just some
 #algorithms = ['rrt_star_last', 'rrt_star_first']
-algorithms =['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt']
+algorithms =['nh', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
 #maps = ['open']
 #maps = ['open', 'map', 'offices', 'grass']
 
@@ -39,10 +39,11 @@ def plot(m):
         fig, axes = plt.subplots(1, 4, gridspec_kw = {'width_ratios':[1, 1, 1, 1]}, figsize=(20,7))
 
         df_success = df[df.length!=0]
+        df_time = df_success[(df_success.algorithm != 'rrt_star_last') & (df_success.algorithm != 'rrt_star_first') ]
 
-        time = sns.boxplot(x = "algorithm", y = "time", data = df_success, showfliers = False, ax = axes[0])
-        length = sns.boxplot(x = "algorithm", y = "length", data = df_success, showfliers = False, ax = axes[1])
-        roughness = sns.boxplot(x = "algorithm", y = "roughness", data = df_success, showfliers = False, ax = axes[2])
+        time = sns.boxplot(x = "algorithm", y = "time", data = df_time, showfliers = False, ax = axes[0])
+        length = sns.boxplot(x = "algorithm", y = "length", data = df_success, ax = axes[1])
+        roughness = sns.boxplot(x = "algorithm", y = "roughness", data = df_success, ax = axes[2])
 
         x = np.arange(len(algorithms))
         rate = np.arange(len(algorithms))

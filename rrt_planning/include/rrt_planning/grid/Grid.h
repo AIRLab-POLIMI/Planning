@@ -47,6 +47,7 @@ public:
     std::vector<Cell> getObstacles(const Cell& s);
     Cell convertPose(const geometry_msgs::PoseStamped& msg);
     bool isFree(const Cell& s);
+    bool isVoronoiFree(const Cell& s);
     Eigen::VectorXd toMapPose(int X, int Y);
 
 private:

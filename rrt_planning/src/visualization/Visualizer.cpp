@@ -172,6 +172,50 @@ void Visualizer::displayPlan(const std::vector<geometry_msgs::PoseStamped>& plan
 
 }
 
+void Visualizer::displayBias(const std::vector<geometry_msgs::PoseStamped>& plan)
+{
+    if(disableVisualization)
+        return;
+
+    static int id = 0;
+
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = ros::Time();
+    marker.ns = "bias";
+    marker.id = id++;
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.05;
+    marker.scale.y = 0;
+    marker.scale.z = 0;
+    marker.color.a = 1.0;
+    marker.color.r = 0.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+
+    for(int i = 0; i < plan.size(); i++)
+    {
+        geometry_msgs::Point p;
+
+        p.x = plan[i].pose.position.x;
+        p.y = plan[i].pose.position.y;
+        p.z = plan[i].pose.position.z;
+
+        marker.points.push_back(p);
+    }
+
+    pub.publish(marker);
+
+}
+
 void Visualizer::displayPoints()
 {
     static int id = 0;

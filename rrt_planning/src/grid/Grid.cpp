@@ -207,4 +207,11 @@ bool Grid::isFree(const Cell& s)
     return map.isFree(pos);
 }
 
+bool Grid::isVoronoiFree(const Cell& s)
+{
+    Eigen::VectorXd pos = toMapPose(s.first, s.second);
+
+    return map.isVoronoiFree(pos);
+}
+
 }

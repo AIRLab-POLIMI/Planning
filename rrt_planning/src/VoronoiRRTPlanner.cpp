@@ -32,18 +32,21 @@ VoronoiRRTPlanner::VoronoiRRTPlanner()
     distance = nullptr;
 
     voronoiPlanner = new VoronoiPlanner();
+    voronoi = new Voronoi();
 
 }
 
 VoronoiRRTPlanner::VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
     voronoiPlanner = new VoronoiPlanner();
+    voronoi = new Voronoi();
     initialize(name, costmap_ros);
 }
 
 VoronoiRRTPlanner::VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros, std::chrono::duration<double> t)
 {
     voronoiPlanner = new VoronoiPlanner();
+    voronoi = new Voronoi();
     initialize(name, costmap_ros);
     Tmax = t;
 }
@@ -52,6 +55,7 @@ VoronoiRRTPlanner::VoronoiRRTPlanner(std::string name, costmap_2d::Costmap2DROS*
 void VoronoiRRTPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
     voronoiPlanner->initialize(name, costmap_ros);
+    voronoi->initialize(name, costmap_ros);
 
     map = new ROSMap(costmap_ros);
     distance = new L2ThetaDistance();
@@ -87,7 +91,8 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
 
     t0 = chrono::steady_clock::now();
 
-    if(!voronoiPlanner->makePlan(start, goal, voronoiPlan))
+    if(!voronoi->makePlan(start, goal, voronoiPlan))
+    //if(!voronoiPlanner->makePlan(start, goal, voronoiPlan))
     {
 #ifdef PRINT_CONF
         ROS_INFO("Impossible to compute the Voronoi plan");
@@ -95,7 +100,7 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         return false;
     }
 #ifdef VIS_CONF
-    //visualizer.displayPlan(voronoiPlan);
+    visualizer.displayBias(voronoiPlan);
 #endif
 
 #ifdef PRINT_CONF
@@ -115,7 +120,7 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
     ROS_INFO("Voronoi-RRT started");
 #endif
 
-    for(unsigned int i = 0; i < K && !timeOut(); i++)
+    for(unsigned int i = 0; !timeOut(); i++)
     {
         VectorXd xRand;
         double theta;
@@ -135,8 +140,13 @@ bool VoronoiRRTPlanner::makePlan(const geometry_msgs::PoseStamped& start,
         visualizer.addPoint(xRand);
 #endif
 
-        //auto* node = rrt.searchNearestNode(xRand);
+        //Strong bias option
+        //auto* xNearest = rrt.searchNearestNode(xRand);
+        //vector<RRTNode*> Xnear = rrt.findNeighborsBias(xNearest->x, knn, laneWidth);
+        //Xnear.push_back(xNearest);
+
         vector<RRTNode*> Xnear = rrt.findNeighborsBias(xRand, knn, laneWidth);
+
         VectorXd sample_path = extenderFactory.getKinematicModel().computeProjection(voronoiPlan, xRand);
         double d1 = sqrt(pow((sample_path(0) - xRand(0)),2) + pow((sample_path(1) - xRand(1)), 2));
         double theta1 = std::cos(xRand(2) - theta);

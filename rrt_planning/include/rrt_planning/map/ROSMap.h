@@ -37,6 +37,7 @@ public:
     ROSMap(costmap_2d::Costmap2DROS* costmap_ros);
 
     virtual bool isFree(const Eigen::VectorXd& p) override;
+    virtual bool isVoronoiFree(const Eigen::VectorXd& p) override;
     virtual unsigned char getCost(const Eigen::VectorXd& p) override;
     virtual bool insideBound(const Eigen::VectorXd& p) override;
     virtual Eigen::VectorXd getOutsidePoint() override;

@@ -16,6 +16,7 @@
 
 #include <voronoi_planner/planner_core.h>
 #include "rrt_planning/AbstractPlanner.h"
+#include "rrt_planning/Voronoi.h"
 
 namespace rrt_planning{
 
@@ -58,6 +59,7 @@ class VoronoiRRTPlanner : public AbstractPlanner
         double deltaTheta;
 
         voronoi_planner::VoronoiPlanner* voronoiPlanner;
+        rrt_planning::Voronoi* voronoi;
 
         ExtenderFactory extenderFactory;
 

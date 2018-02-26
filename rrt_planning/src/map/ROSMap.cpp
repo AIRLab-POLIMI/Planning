@@ -52,6 +52,11 @@ bool ROSMap::isFree(const Eigen::VectorXd& p)
     return getCost(p) <= costmap_2d::FREE_SPACE;
 }
 
+bool ROSMap::isVoronoiFree(const Eigen::VectorXd& p)
+{
+    return getCost(p) < costmap_2d::LETHAL_OBSTACLE;
+}
+
 unsigned char ROSMap::getCost(const Eigen::VectorXd& p)
 {
     double wx = p(0);
