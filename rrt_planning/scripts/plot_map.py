@@ -10,14 +10,14 @@ import seaborn as sns
 
 #compare everything
 #algorithms = ['nh', 'nh_l2', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
-maps = ['open', 'map', 'buildings', 'offices']
+#maps = ['open', 'map', 'buildings', 'offices']
 
 
 #compare just some
-#algorithms = ['rrt_star_last', 'rrt_star_first']
-algorithms =['nh', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
-#maps = ['open']
-#maps = ['open', 'map', 'offices', 'grass']
+#algorithms = ['rrt_star_last', 'rrt']
+algorithms =['nh', 'rrt', 'rrt_star_last', 'theta_star_rrt', 'voronoi_rrt']
+#maps = ['buildings']
+maps = ['open', 'map', 'offices', 'buildings']
 
 def plot(m):
     wd = os.getcwd()
@@ -33,30 +33,31 @@ def plot(m):
     #f_in = f[(f.algorithm == 'nh') | (f.algorithm == 'nh_l2') | (f.algorithm == 'theta_star_rrt') | (f.algorithm == 'voronoi_rrt')]
     conf = max(f_in.conf) + 1
 
-    for i in range(0,conf):
-        df = f_in[f_in.conf == i]
+    for i in range(0,1):
+        #df = f_in[f_in.conf == i]
+        df = f_in
+        #df = df[df.algorithm != 'rrt_star_first']
+        #df_time = df[(df.algorithm == 'rrt_star_first') | (df.algorithm == 'rrt')]
         plt.clf()
-        fig, axes = plt.subplots(1, 4, gridspec_kw = {'width_ratios':[1, 1, 1, 1]}, figsize=(20,7))
+        fig, axes = plt.subplots(1, 3, gridspec_kw = {'width_ratios':[1, 1, 1, 1]}, figsize=(20,7))
 
-        df_success = df[df.length!=0]
-        df_time = df_success[(df_success.algorithm != 'rrt_star_last') & (df_success.algorithm != 'rrt_star_first') ]
+        #df_time = df_time[df_time.length!=0]
+        df_time = df[(df.algorithm == 'rrt_star_last') | (df.algorithm == 'rrt')]
+        df = df[df.length != 0]
+        df_time = df[df.algorithm != 'rrt_star_last']
+        #df_success = df_success[df_success.length != 0]
+        #df_time = df_success[(df_success.algorithm != 'rrt_star_last') & (df_success.algorithm != 'rrt_star_first') ]
 
         time = sns.boxplot(x = "algorithm", y = "time", data = df_time, showfliers = False, ax = axes[0])
-        length = sns.boxplot(x = "algorithm", y = "length", data = df_success, ax = axes[1])
-        roughness = sns.boxplot(x = "algorithm", y = "roughness", data = df_success, ax = axes[2])
+        length = sns.boxplot(x = "algorithm", y = "length", data = df, showfliers = False, ax = axes[1])
+        roughness = sns.boxplot(x = "algorithm", y = "roughness", data = df, showfliers = False, ax = axes[2])
+        names = ['RRT', 'RRT*']
+
 
         x = np.arange(len(algorithms))
         rate = np.arange(len(algorithms))
-        for alg in algorithms:
-            data = df[(df.algorithm == alg)]
-            success = data[data.length!=0]
-            rate[algorithms.index(alg)] = float(success.shape[0]) / float(data.shape[0]) * 100
 
-        success_rate = plt.bar(x, rate, align='center')
-        plt.xticks(x, algorithms)
-        plt.ylim(ymin=0, ymax=120)
-
-        titles = ['Time (s)', 'Length', 'Roughness', 'Success rate (%)']
+        titles = ['Time (s)', 'Length (m)', 'Smoothness', 'Success rate (%)']
         for ax in fig.axes:
             matplotlib.pyplot.sca(ax)
             plt.xticks(rotation=90)
@@ -66,6 +67,7 @@ def plot(m):
             ax.xaxis.label.set_visible(False)
             ax.yaxis.label.set_visible(False)
             ax.set_title(titles[fig.axes.index(ax)])
+            #ax.set_xticklabels(names)
 
         fig.tight_layout()
         plt.subplots_adjust(top=0.90, bottom=0.1, left=0.05, right=0.95, hspace=0.25, wspace=0.35)

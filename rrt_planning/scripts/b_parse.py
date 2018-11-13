@@ -4,35 +4,29 @@ import numpy as np
 import math
 
 #compare everything
-kinematics = ['differential_drive', 'bicycle']
-algorithms = ['wts', 'theta_star_rrt', 'voronoi_rrt', 'rrt', 'rrt_star_first', 'rrt_star_last']
-maps = ['open', 'floor', 'street', 'offices']
+algorithms = ['nh', 'theta_star_rrt', 'voronoi_rrt', 'rrt', 'rrt_star_first', 'rrt_star_last']
+maps = ['open', 'map', 'buildings', 'offices']
+#maps = ['open']
 
-names = {'wts': 'WTS', 'theta_star_rrt': 'T*-RRT', 'voronoi_rrt': 'V-RRT',
+names = {'nh': 'WTS', 'theta_star_rrt': 'T*-RRT', 'voronoi_rrt': 'V-RRT',
          'rrt': 'RRT', 'rrt_star_first':'RRT*-first', 'rrt_star_last': 'RRT*'}
-
-
-#compare just some
-#algorithms = ['rrt_star_last', 'rrt_star_first']
-#algorithms =['nh', 'rrt', 'rrt_star_first', 'rrt_star_last', 'theta_star_rrt']
-#maps = ['open', 'buildings', 'map', 'offices']
 
 max_conf = 5
 max_run = 50
 
-def parse_logs(kk, m):
+def parse_logs(m):
     wd = os.getcwd()
-    compare = open(wd + '/results/compare/' + kk + '/' + m + '.csv', 'w')
-    compare.writelines('conf,algorithm,run,length,time,roughness,new_r' + '\n')
+    compare = open(wd + '/results/compare/' + m + '_bicycle.csv', 'w')
+    compare.writelines('conf,algorithm,run,length,time,roughness,restarts' + '\n')
     for alg in algorithms:
         for conf in range(0,max_conf):
             for run in range(0,max_run):
                 if alg == 'rrt_star_first':
-                    log = open(wd + '/logs/' + kk + '/' + m + "/" + 'rrt_star_' + str(conf) + '_' + str(run) +'_first.log', 'r')
+                    log = open(wd + '/logs/bicycle/'+ m + "/" + 'rrt_star_' + m + '_' + str(conf) + '_' + str(run) +'_first.log', 'r')
                 elif alg == 'rrt_star_last':
-                    log = open(wd + '/logs/' + kk + '/' + m + "/" + 'rrt_star_' + str(conf) + '_' + str(run) +'_last.log', 'r')
+                    log = open(wd + '/logs/bicycle/'+ m + "/" + 'rrt_star_' + m + '_' + str(conf) + '_' + str(run) +'_last.log', 'r')
                 else:
-                    log = open(wd + '/logs/' + kk + '/' + m + "/" + alg + '_' + str(conf) + '_' + str(run) +'.log', 'r')
+                    log = log = open(wd + '/logs/bicycle/'+ m + "/" + alg +'_' + m + '_' + str(conf) + '_' + str(run) +'.log', 'r')
 
                 log_lines = log.readlines()
                 points = []
@@ -50,13 +44,13 @@ def parse_logs(kk, m):
                         elif s[0] == 'time':
                             results[4] = s[1]
                             if alg == 'voronoi_rrt':
-                                if m == 'floor':
+                                if m == 'map':
                                     results[4] = str(float(results[4]) - 0.084)
                                 elif m == 'offices':
                                     results[4] = str(float(results[4]) - 0.055)
                                 elif m == 'open':
                                     results[4] = str(float(results[4]) - 0.028)
-                                elif m == 'street':
+                                elif m == 'buildings':
                                     results[4] = str(float(results[4]) - 0.060)
                         elif s[0] == 'roughness':
                             results[5] = s[1]
@@ -85,8 +79,15 @@ def parse_logs(kk, m):
 
 
                 log.close()
-                compare.writelines(results[0] + ',' + results[1] + ',' + results[2] + ',' +
-                                   results[3] + ',' + results[4] + ',' + results[5] +  '\n')
+                if alg == 'nh' and (m == 'open' or m == 'buildings'):
+                    fuck_this_shit = open(wd + '/logs/bicycle/'+ m + "/" + alg +'_' + m + '_' + str(conf) + '_' + str(run) +'_restarts.log', 'r')
+                    muda = fuck_this_shit.readlines()
+                    compare.writelines(results[0] + ',' + results[1] + ',' + results[2] + ',' +
+                                       results[3] + ',' + results[4] + ',' + results[5] + '\n')
+
+                else:
+                    compare.writelines(results[0] + ',' + results[1] + ',' + results[2] + ',' +
+                                       results[3] + ',' + results[4] + ',' + results[5] +  '\n')
 
 
     compare.close()
@@ -126,8 +127,8 @@ def table(m):
     remap ={'offices': 'Offices', 'map': 'Floor', 'open' : 'MOUT site', 'buildings': 'Sesto'}
     latex = {'offices': 'offices', 'map': 'floor', 'open' : 'mout', 'buildings': 'sesto'}
     wd = os.getcwd()
-    df = pd.read_csv(wd + '/results/compare/' + m + '.csv')
-    tab = open('/home/reb/MasterThesis/chapters/tables/FUCKdd-' + latex[m] + '.tex', 'w')
+    df = pd.read_csv(wd + '/results/compare/' + m + '_bicycle.csv')
+    tab = open('/home/reb/MasterThesis/chapters/tables/FUKbi-' + latex[m] + '.tex', 'w')
     tab.writelines('\\begin{table}[!h]' + '\n' + '\\begin{center}' + '\\begin{small}' + '\n' +
                    '\\begin{tabular}{c|l|l r|l r|l r|r}')
     for conf in order:
@@ -156,9 +157,9 @@ def table(m):
             std_r = 1.96 * (success.roughness.std() / math.sqrt(n))
             results[5] = std_r * (pow(10, esp))
             if data.shape[0] == 0:
-                print(m)
-                print(a)
-                print(conf)
+                print m
+                print a
+                print conf
             results[6] = float(success.shape[0]) / float(data.shape[0]) * 100
             results[6] = int(results[6])
 
@@ -184,13 +185,12 @@ def table(m):
 
         tab.writelines("\\bottomrule"+ '\n')
 
-    tab.writelines('\end{tabular}\end{small}\end{center}\caption{' + remap[m] + ' - differential drive}\label{tab:dd-' + latex[m] +'}')
+    tab.writelines('\end{tabular}\end{small}\end{center}\caption{' + remap[m] + ' - bicycle}\label{tab:bi-' + latex[m] + '}')
     tab.writelines('\end{table}' + '\n')
     tab.close()
 
 
 if __name__ == '__main__':
-    for kk in kinematics:
-        for m in maps:
-            parse_logs(kk, m)
-            #table(m)
+    for m in maps:
+        parse_logs(m)
+        #table(m)

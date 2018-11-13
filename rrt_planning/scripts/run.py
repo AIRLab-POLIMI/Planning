@@ -6,13 +6,13 @@ import subprocess
 
 from joblib import Parallel, delayed
 
-gflags.DEFINE_integer('n_jobs', 4, 'number of parallel experiments')
+gflags.DEFINE_integer('n_jobs', 2, 'number of parallel experiments')
 gflags.DEFINE_string('deadline', '300', 'deadline (in seconds)')
 gflags.DEFINE_string('model', 'differentialDrive', 'kinematic model')
 
 #algorithms = ['nh', 'rrt', 'theta_star_rrt', 'rrt_star']
-algorithms = ['voronoi_rrt']
-maps = ['map', 'offices', 'open']
+algorithms = ['nh']
+maps = ['buildings']
 #maps = ['buildings']
 
 def experiment(a, c, row, i, m):
@@ -35,7 +35,7 @@ def experiment(a, c, row, i, m):
               ' ' + c +
               ' ' + it +
               ' ' + gflags.FLAGS.deadline +
-              ' ' + os.getcwd() + '/logs/' + m + '/')
+              ' ' + os.getcwd() + '/logs/wtf' +'/')
 
 
 def run(configurations, alg, m):
@@ -50,10 +50,10 @@ def run(configurations, alg, m):
     tf = subprocess.Popen(['rosrun', 'tf', 'static_transform_publisher',
                             '1','0','0','0','0','0','1','base_link','map','100'])
     time.sleep(1)
-
+    conf = configurations[1]
     Parallel(n_jobs=gflags.FLAGS.n_jobs)(delayed(experiment)
                                         (alg, conf, str(configurations.index(conf)), str(i), m)
-                                         for conf in configurations
+                                         #for conf in configurations
                                          for i in range(0,50)
                                          )
     print alg + ' out'
