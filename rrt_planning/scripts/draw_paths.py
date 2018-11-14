@@ -6,7 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from scipy.misc import imread
 
-path = '/home/dave/Planning/plots/'
+save_path = '/home/dave/Planning/plots/'
 
 models = ['differential_drive', 'bicycle']
 maps = ['floor', 'street', 'open', 'offices']
@@ -50,7 +50,7 @@ def draw(k, m, c, savefig=False):
 
     plt.axis('off')
     if savefig:
-        plt.savefig(path + '/paths/' + m + '_' + c + '.pdf')
+        plt.savefig(save_path + '/paths/' + k + '/' + m + '_' + c + '.pdf')
 
 
 def get_path(k, m, a, c):
@@ -118,9 +118,12 @@ def get_path(k, m, a, c):
 
 
 if __name__ == '__main__':
+    show = False
+    savefig = True
     for k in models:
         for m in maps:
             for i in range(0,5):
-                draw(k, m, str(i))
-                plt.show()
+                draw(k, m, str(i), savefig)
+                if show:
+                    plt.show()
                 plt.close('all')
