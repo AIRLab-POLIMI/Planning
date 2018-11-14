@@ -31,7 +31,7 @@ def draw(k, m, c, savefig=False):
     matplotlib.rcParams.update(params)
 
     filename = os.getcwd() + '/maps/' + map_names[m]
-    img = imread(filename)
+    img = imread(filename, mode='RGB')
     r = resolution[m]
     left = 0
     right = (values[m][0] * r)
