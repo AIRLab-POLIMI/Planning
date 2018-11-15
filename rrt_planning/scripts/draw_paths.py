@@ -44,7 +44,7 @@ def draw(k, m, c, savefig=False, bounding_box=None, fair=True):
     matplotlib.rcParams.update(params)
 
     filename = os.getcwd() + '/maps/' + map_names[m]
-    plt.figure()
+    fig = plt.figure()
     img = imread(filename, mode='RGB')
 
     r = resolution[m]
@@ -74,6 +74,7 @@ def draw(k, m, c, savefig=False, bounding_box=None, fair=True):
     plt.legend(fontsize=8)
 
     plt.axis('off')
+    fig.tight_layout()
     if savefig:
         postfix = '' if bounding_box is None else '_cut'
         postfix += '' if fair else '_unfair'
@@ -150,7 +151,7 @@ def get_path(k, m, a, c, fair):
 
 
 if __name__ == '__main__':
-    show = False
+    show = True
     savefig = True
     plot_all = False
 
